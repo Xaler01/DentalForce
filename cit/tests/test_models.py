@@ -1,8 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from cit.models import Clinica, Sucursal, Especialidad, Cubiculo
-from datetime import time
+from cit.models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista
+from datetime import time, date
 
 
 class ClinicaModelTest(TestCase):
@@ -443,3 +443,266 @@ class CubiculoModelTest(TestCase):
         
         with self.assertRaises(ValidationError):
             cubiculo2.full_clean()
+
+
+class DentistaModelTest(TestCase):
+    """Tests para el modelo Dentista"""
+    
+    def setUp(self):
+        """Configuración inicial"""
+        # Crear usuario administrador
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            password='admin123',
+            first_name='Admin',
+            last_name='User'
+        )
+        
+        # Crear usuarios para dentistas
+        self.user1 = User.objects.create_user(
+            username='dr_martinez',
+            password='pass123',
+            first_name='Juan',
+            last_name='Martínez'
+        )
+        
+        self.user2 = User.objects.create_user(
+            username='dra_garcia',
+            password='pass123',
+            first_name='María',
+            last_name='García'
+        )
+        
+        # Crear clínica y sucursal
+        self.clinica = Clinica.objects.create(
+            nombre='Clínica Test',
+            direccion='Av Test',
+            telefono='02-1111111',
+            email='test@test.com',
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.sucursal = Sucursal.objects.create(
+            clinica=self.clinica,
+            nombre='Sucursal Principal',
+            direccion='Av Principal',
+            telefono='02-2222222',
+            horario_apertura=time(8, 0),
+            horario_cierre=time(18, 0),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        # Crear especialidades
+        self.ortodoncia = Especialidad.objects.create(
+            nombre='Ortodoncia',
+            duracion_default=45,
+            color_calendario='#3498db',
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.endodoncia = Especialidad.objects.create(
+            nombre='Endodoncia',
+            duracion_default=60,
+            color_calendario='#e74c3c',
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+    
+    def test_crear_dentista(self):
+        """Test: Crear un dentista con todos los campos"""
+        dentista = Dentista.objects.create(
+            usuario=self.user1,
+            sucursal_principal=self.sucursal,
+            cedula_profesional='1234567',
+            numero_licencia='LIC-2025-001',
+            telefono_movil='0999-123456',
+            fecha_contratacion=date(2025, 1, 15),
+            biografia='Especialista en ortodoncia',
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        dentista.especialidades.add(self.ortodoncia)
+        
+        self.assertEqual(dentista.usuario, self.user1)
+        self.assertEqual(dentista.cedula_profesional, '1234567')
+        self.assertEqual(dentista.especialidades.count(), 1)
+        self.assertTrue(dentista.estado)
+    
+    def test_dentista_str_representation(self):
+        """Test: Representación en string de dentista"""
+        dentista = Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='9876543',
+            numero_licencia='LIC-2025-002',
+            telefono_movil='0999-654321',
+            fecha_contratacion=date(2025, 2, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        expected = "Dr(a). Juan Martínez"
+        self.assertEqual(str(dentista), expected)
+    
+    def test_dentista_multiples_especialidades(self):
+        """Test: Un dentista puede tener múltiples especialidades (M2M)"""
+        dentista = Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='5555555',
+            numero_licencia='LIC-2025-003',
+            telefono_movil='0999-555555',
+            fecha_contratacion=date(2025, 3, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        dentista.especialidades.add(self.ortodoncia, self.endodoncia)
+        
+        self.assertEqual(dentista.especialidades.count(), 2)
+        self.assertIn(self.ortodoncia, dentista.especialidades.all())
+        self.assertIn(self.endodoncia, dentista.especialidades.all())
+    
+    def test_dentista_cedula_unica(self):
+        """Test: La cédula profesional debe ser única"""
+        Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='CEDULA-123',
+            numero_licencia='LIC-2025-004',
+            telefono_movil='0999-111111',
+            fecha_contratacion=date(2025, 4, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        # Intentar crear otro dentista con la misma cédula
+        dentista2 = Dentista(
+            usuario=self.user2,
+            cedula_profesional='CEDULA-123',  # Cédula duplicada
+            numero_licencia='LIC-2025-005',
+            telefono_movil='0999-222222',
+            fecha_contratacion=date(2025, 5, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError):
+            dentista2.full_clean()
+    
+    def test_dentista_licencia_unica(self):
+        """Test: El número de licencia debe ser único"""
+        Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='CED-001',
+            numero_licencia='LICENCIA-UNICA',
+            telefono_movil='0999-333333',
+            fecha_contratacion=date(2025, 6, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        dentista2 = Dentista(
+            usuario=self.user2,
+            cedula_profesional='CED-002',
+            numero_licencia='LICENCIA-UNICA',  # Licencia duplicada
+            telefono_movil='0999-444444',
+            fecha_contratacion=date(2025, 7, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError):
+            dentista2.full_clean()
+    
+    def test_dentista_cedula_formato_invalido(self):
+        """Test: Validación de formato de cédula profesional"""
+        dentista = Dentista(
+            usuario=self.user1,
+            cedula_profesional='ABC-XYZ',  # Formato inválido (solo letras)
+            numero_licencia='LIC-2025-006',
+            telefono_movil='0999-555555',
+            fecha_contratacion=date(2025, 8, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError):
+            dentista.full_clean()
+    
+    def test_dentista_telefono_invalido(self):
+        """Test: Validación de teléfono móvil"""
+        dentista = Dentista(
+            usuario=self.user1,
+            cedula_profesional='123456',
+            numero_licencia='LIC-2025-007',
+            telefono_movil='123',  # Teléfono muy corto
+            fecha_contratacion=date(2025, 9, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError):
+            dentista.full_clean()
+    
+    def test_dentista_fecha_contratacion_futura(self):
+        """Test: La fecha de contratación no puede ser futura"""
+        fecha_futura = date(2026, 12, 31)
+        
+        dentista = Dentista(
+            usuario=self.user1,
+            cedula_profesional='654321',
+            numero_licencia='LIC-2025-008',
+            telefono_movil='0999-666666',
+            fecha_contratacion=fecha_futura,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError):
+            dentista.full_clean()
+    
+    def test_dentista_onetoone_usuario(self):
+        """Test: Relación OneToOne - un usuario solo puede tener un dentista"""
+        # Crear primer dentista
+        Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='111111',
+            numero_licencia='LIC-2025-009',
+            telefono_movil='0999-777777',
+            fecha_contratacion=date(2025, 10, 1),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        # Intentar crear otro dentista con el mismo usuario
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            Dentista.objects.create(
+                usuario=self.user1,  # Usuario ya usado
+                cedula_profesional='222222',
+                numero_licencia='LIC-2025-010',
+                telefono_movil='0999-888888',
+                fecha_contratacion=date(2025, 11, 1),
+                uc=self.admin_user,
+                um=self.admin_user.id
+            )
+    
+    def test_get_especialidades_nombres(self):
+        """Test: Método para obtener nombres de especialidades"""
+        dentista = Dentista.objects.create(
+            usuario=self.user1,
+            cedula_profesional='333333',
+            numero_licencia='LIC-2025-011',
+            telefono_movil='0999-999999',
+            fecha_contratacion=date(2025, 11, 15),
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        dentista.especialidades.add(self.ortodoncia, self.endodoncia)
+        
+        nombres = dentista.get_especialidades_nombres()
+        self.assertIn('Ortodoncia', nombres)
+        self.assertIn('Endodoncia', nombres)

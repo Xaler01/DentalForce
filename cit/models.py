@@ -240,3 +240,105 @@ class Cubiculo(ClaseModelo):
         if self.nombre:
             self.nombre = self.nombre.strip().title()
 
+
+class Dentista(ClaseModelo):
+    """
+    Modelo para representar un dentista/odontólogo.
+    Cada dentista está vinculado a un usuario del sistema y puede tener múltiples especialidades.
+    """
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='dentista_profile',
+        verbose_name='Usuario',
+        help_text='Usuario del sistema asociado al dentista'
+    )
+    especialidades = models.ManyToManyField(
+        Especialidad,
+        related_name='dentistas',
+        verbose_name='Especialidades',
+        help_text='Especialidades que practica el dentista'
+    )
+    sucursal_principal = models.ForeignKey(
+        Sucursal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dentistas',
+        verbose_name='Sucursal Principal',
+        help_text='Sucursal donde trabaja principalmente'
+    )
+    cedula_profesional = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='Cédula Profesional',
+        help_text='Número de cédula profesional de odontología'
+    )
+    numero_licencia = models.CharField(
+        max_length=30,
+        unique=True,
+        verbose_name='Número de Licencia',
+        help_text='Número de licencia para ejercer'
+    )
+    telefono_movil = models.CharField(
+        max_length=20,
+        verbose_name='Teléfono Móvil',
+        help_text='Número de teléfono móvil personal'
+    )
+    fecha_contratacion = models.DateField(
+        verbose_name='Fecha de Contratación',
+        help_text='Fecha en que inició labores'
+    )
+    biografia = models.TextField(
+        verbose_name='Biografía',
+        help_text='Descripción profesional, estudios, experiencia',
+        blank=True
+    )
+    foto = models.ImageField(
+        upload_to='dentistas/fotos/',
+        verbose_name='Fotografía',
+        help_text='Foto del dentista',
+        blank=True,
+        null=True
+    )
+    
+    class Meta:
+        verbose_name = 'Dentista'
+        verbose_name_plural = 'Dentistas'
+        ordering = ['usuario__last_name', 'usuario__first_name']
+    
+    def __str__(self):
+        return f"Dr(a). {self.usuario.get_full_name() or self.usuario.username}"
+    
+    def clean(self):
+        """Validaciones personalizadas"""
+        from django.core.exceptions import ValidationError
+        import re
+        
+        # Validar cédula profesional (solo números y guiones)
+        if self.cedula_profesional:
+            if not re.match(r'^[0-9\-]+$', self.cedula_profesional):
+                raise ValidationError({
+                    'cedula_profesional': 'La cédula profesional solo puede contener números y guiones'
+                })
+        
+        # Validar teléfono móvil
+        if self.telefono_movil and len(self.telefono_movil.strip()) < 7:
+            raise ValidationError({
+                'telefono_movil': 'El teléfono móvil debe tener al menos 7 caracteres'
+            })
+        
+        # Validar fecha de contratación (no puede ser futura)
+        if self.fecha_contratacion:
+            from datetime import date
+            if self.fecha_contratacion > date.today():
+                raise ValidationError({
+                    'fecha_contratacion': 'La fecha de contratación no puede ser futura'
+                })
+    
+    def get_especialidades_nombres(self):
+        """Retorna una lista de nombres de especialidades"""
+        return ", ".join([esp.nombre for esp in self.especialidades.all()])
+    
+    get_especialidades_nombres.short_description = 'Especialidades'
+

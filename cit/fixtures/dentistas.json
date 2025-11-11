@@ -1,0 +1,249 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "ing_jacome",
+      "first_name": "Alexander Abel",
+      "last_name": "Jácome Urbina",
+      "email": "ajacome@powerdent.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$600000$dummy$hashvalue",
+      "date_joined": "2025-01-15T08:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+      "username": "dra_garcia",
+      "first_name": "María Elena",
+      "last_name": "García Rodríguez",
+      "email": "mgarcia@powerdent.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$600000$dummy$hashvalue",
+      "date_joined": "2025-02-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+      "username": "dr_silva",
+      "first_name": "Roberto",
+      "last_name": "Silva Mendoza",
+      "email": "rsilva@powerdent.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$600000$dummy$hashvalue",
+      "date_joined": "2025-03-10T08:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 5,
+    "fields": {
+      "username": "dra_lopez",
+      "first_name": "Ana Patricia",
+      "last_name": "López Fernández",
+      "email": "alopez@powerdent.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$600000$dummy$hashvalue",
+      "date_joined": "2025-04-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 6,
+    "fields": {
+      "username": "dr_torres",
+      "first_name": "Carlos Alberto",
+      "last_name": "Torres Ramírez",
+      "email": "ctorres@powerdent.com",
+      "is_staff": true,
+      "is_active": true,
+      "is_superuser": false,
+      "password": "pbkdf2_sha256$600000$dummy$hashvalue",
+      "date_joined": "2025-05-15T08:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista",
+    "pk": 1,
+    "fields": {
+      "usuario": 2,
+      "sucursal_principal": 1,
+      "cedula_profesional": "1234567890",
+      "numero_licencia": "ODO-EC-2020-0456",
+      "telefono_movil": "0999-123456",
+      "fecha_contratacion": "2025-01-15",
+      "biografia": "Especialista en Ortodoncia con 8 años de experiencia. Graduado de la Universidad Central del Ecuador. Maestría en Ortodoncia y Ortopedia Maxilofacial. Miembro activo de la Sociedad Ecuatoriana de Ortodoncia.",
+      "foto": "",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-01-15T08:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista",
+    "pk": 2,
+    "fields": {
+      "usuario": 3,
+      "sucursal_principal": 1,
+      "cedula_profesional": "0987654321",
+      "numero_licencia": "ODO-EC-2018-1023",
+      "telefono_movil": "0998-765432",
+      "fecha_contratacion": "2025-02-01",
+      "biografia": "Endodoncista certificada con especialización en tratamientos de conducto y cirugía endodóntica. Graduada de la Universidad San Francisco de Quito. Diplomado en Endodoncia Moderna y Microscopia Dental.",
+      "foto": "",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-02-01T08:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista",
+    "pk": 3,
+    "fields": {
+      "usuario": 4,
+      "sucursal_principal": 2,
+      "cedula_profesional": "1122334455",
+      "numero_licencia": "ODO-EC-2019-0789",
+      "telefono_movil": "0997-111222",
+      "fecha_contratacion": "2025-03-10",
+      "biografia": "Cirujano oral y maxilofacial. Especialista en implantología dental y cirugía reconstructiva. Graduado de la Universidad de Guayaquil. Certificación Internacional en Implantes Dentales.",
+      "foto": "",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-03-10T08:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista",
+    "pk": 4,
+    "fields": {
+      "usuario": 5,
+      "sucursal_principal": 2,
+      "cedula_profesional": "5566778899",
+      "numero_licencia": "ODO-EC-2021-0345",
+      "telefono_movil": "0996-555666",
+      "fecha_contratacion": "2025-04-01",
+      "biografia": "Odontopediatra especializada en atención dental infantil. Graduada de la Universidad de las Américas. Certificación en Manejo de Conducta Infantil y Odontología Preventiva Pediátrica.",
+      "foto": "",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-04-01T08:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista",
+    "pk": 5,
+    "fields": {
+      "usuario": 6,
+      "sucursal_principal": 1,
+      "cedula_profesional": "9988776655",
+      "numero_licencia": "ODO-EC-2017-2134",
+      "telefono_movil": "0995-888999",
+      "fecha_contratacion": "2025-05-15",
+      "biografia": "Especialista en Periodoncia y Prostodoncia. Experto en rehabilitación oral completa. Graduado de la Pontificia Universidad Católica del Ecuador. Maestría en Prostodoncia e Implantología.",
+      "foto": "",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-05-15T08:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 1,
+      "especialidad_id": 1
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 1,
+      "especialidad_id": 7
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 2,
+      "especialidad_id": 2
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 2,
+      "especialidad_id": 8
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 3,
+      "especialidad_id": 5
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 3,
+      "especialidad_id": 9
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 4,
+      "especialidad_id": 4
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 4,
+      "especialidad_id": 8
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 5,
+      "especialidad_id": 3
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 5,
+      "especialidad_id": 6
+    }
+  },
+  {
+    "model": "cit.dentista_especialidades",
+    "fields": {
+      "dentista_id": 5,
+      "especialidad_id": 7
+    }
+  }
+]

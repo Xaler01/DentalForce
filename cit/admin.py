@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Clinica, Sucursal, Especialidad, Cubiculo
+from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista
 
 # Register your models here.
 
@@ -146,5 +146,49 @@ class CubiculoAdmin(admin.ModelAdmin):
         obj.um = request.user
         super().save_model(request, obj, form, change)
 
+
+@admin.register(Dentista)
+class DentistaAdmin(admin.ModelAdmin):
+    """Administración de Dentistas"""
+    list_display = ('get_nombre_completo', 'cedula_profesional', 'sucursal_principal', 'get_especialidades_nombres', 'telefono_movil', 'estado', 'fc')
+    list_filter = ('sucursal_principal', 'especialidades', 'estado', 'fc')
+    search_fields = ('usuario__first_name', 'usuario__last_name', 'usuario__username', 'cedula_profesional', 'numero_licencia')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    autocomplete_fields = ['sucursal_principal']
+    filter_horizontal = ['especialidades']
+    
+    fieldsets = (
+        ('Información del Usuario', {
+            'fields': ('usuario',)
+        }),
+        ('Datos Profesionales', {
+            'fields': ('cedula_profesional', 'numero_licencia', 'especialidades', 'sucursal_principal')
+        }),
+        ('Información de Contacto', {
+            'fields': ('telefono_movil',)
+        }),
+        ('Información Adicional', {
+            'fields': ('fecha_contratacion', 'biografia', 'foto')
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_nombre_completo(self, obj):
+        """Retorna el nombre completo del dentista"""
+        return f"Dr(a). {obj.usuario.get_full_name() or obj.usuario.username}"
+    get_nombre_completo.short_description = 'Nombre'
+    get_nombre_completo.admin_order_field = 'usuario__last_name'
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user
         super().save_model(request, obj, form, change)
 
