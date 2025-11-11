@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from cit.models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista
+from cit.models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente
 from datetime import time, date
 
 
@@ -706,3 +706,266 @@ class DentistaModelTest(TestCase):
         nombres = dentista.get_especialidades_nombres()
         self.assertIn('Ortodoncia', nombres)
         self.assertIn('Endodoncia', nombres)
+
+
+class PacienteModelTest(TestCase):
+    """Tests para el modelo Paciente"""
+    
+    def setUp(self):
+        """Configuración inicial para los tests"""
+        # Usuario admin para auditoría
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            password='admin123',
+            email='admin@test.com'
+        )
+        
+        # Crear clínica
+        self.clinica = Clinica.objects.create(
+            nombre='Clínica Test',
+            telefono='098-123456',
+            direccion='Av. Test 123',
+            email='test@clinica.com',
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+    
+    def test_crear_paciente(self):
+        """Test: Crear paciente correctamente"""
+        paciente = Paciente.objects.create(
+            nombres='Juan Carlos',
+            apellidos='Pérez González',
+            cedula='1234567890',
+            fecha_nacimiento=date(1990, 5, 15),
+            genero='M',
+            telefono='099-123456',
+            email='juan.perez@email.com',
+            direccion='Calle Principal 123',
+            tipo_sangre='O+',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.assertEqual(paciente.nombres, 'Juan Carlos')
+        self.assertEqual(paciente.apellidos, 'Pérez González')
+        self.assertEqual(paciente.cedula, '1234567890')
+        self.assertEqual(paciente.genero, 'M')
+        self.assertEqual(paciente.tipo_sangre, 'O+')
+        self.assertEqual(paciente.clinica, self.clinica)
+    
+    def test_paciente_str_representation(self):
+        """Test: Representación en string del paciente"""
+        paciente = Paciente.objects.create(
+            nombres='María',
+            apellidos='López',
+            cedula='0987654321',
+            fecha_nacimiento=date(1985, 8, 20),
+            genero='F',
+            telefono='098-765432',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.assertEqual(str(paciente), 'López, María - 0987654321')
+    
+    def test_paciente_get_edad(self):
+        """Test: Cálculo de edad del paciente"""
+        # Paciente nacido hace exactamente 30 años
+        from datetime import date as date_class
+        today = date_class.today()
+        fecha_nacimiento = date_class(today.year - 30, today.month, today.day)
+        
+        paciente = Paciente.objects.create(
+            nombres='Pedro',
+            apellidos='Sánchez',
+            cedula='1111111111',
+            fecha_nacimiento=fecha_nacimiento,
+            genero='M',
+            telefono='099-111111',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.assertEqual(paciente.get_edad(), 30)
+    
+    def test_paciente_get_nombre_completo(self):
+        """Test: Obtener nombre completo del paciente"""
+        paciente = Paciente.objects.create(
+            nombres='Ana María',
+            apellidos='Rodríguez Torres',
+            cedula='2222222222',
+            fecha_nacimiento=date(1995, 3, 10),
+            genero='F',
+            telefono='098-222222',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.assertEqual(paciente.get_nombre_completo(), 'Ana María Rodríguez Torres')
+    
+    def test_paciente_cedula_unica(self):
+        """Test: La cédula debe ser única"""
+        Paciente.objects.create(
+            nombres='Luis',
+            apellidos='Martínez',
+            cedula='3333333333',
+            fecha_nacimiento=date(1980, 1, 1),
+            genero='M',
+            telefono='099-333333',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            Paciente.objects.create(
+                nombres='Carlos',
+                apellidos='García',
+                cedula='3333333333',  # Cédula duplicada
+                fecha_nacimiento=date(1992, 6, 15),
+                genero='M',
+                telefono='098-444444',
+                clinica=self.clinica,
+                uc=self.admin_user,
+                um=self.admin_user.id
+            )
+    
+    def test_paciente_cedula_formato_invalido(self):
+        """Test: Formato de cédula inválido"""
+        from django.core.exceptions import ValidationError
+        
+        paciente = Paciente(
+            nombres='Laura',
+            apellidos='Fernández',
+            cedula='ABC1234567',  # Formato inválido
+            fecha_nacimiento=date(1988, 9, 25),
+            genero='F',
+            telefono='099-555555',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError) as context:
+            paciente.full_clean()
+        
+        self.assertIn('cedula', context.exception.message_dict)
+    
+    def test_paciente_fecha_nacimiento_futura(self):
+        """Test: Fecha de nacimiento no puede ser futura"""
+        from django.core.exceptions import ValidationError
+        from datetime import date as date_class, timedelta
+        
+        fecha_futura = date_class.today() + timedelta(days=1)
+        
+        paciente = Paciente(
+            nombres='Jorge',
+            apellidos='Ramírez',
+            cedula='4444444444',
+            fecha_nacimiento=fecha_futura,
+            genero='M',
+            telefono='098-666666',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError) as context:
+            paciente.full_clean()
+        
+        self.assertIn('fecha_nacimiento', context.exception.message_dict)
+    
+    def test_paciente_edad_invalida(self):
+        """Test: Edad no puede ser mayor a 150 años"""
+        from django.core.exceptions import ValidationError
+        from datetime import date as date_class
+        
+        fecha_muy_antigua = date_class(1800, 1, 1)
+        
+        paciente = Paciente(
+            nombres='Matusalén',
+            apellidos='Anciano',
+            cedula='5555555555',
+            fecha_nacimiento=fecha_muy_antigua,
+            genero='M',
+            telefono='099-777777',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError) as context:
+            paciente.full_clean()
+        
+        self.assertIn('fecha_nacimiento', context.exception.message_dict)
+    
+    def test_paciente_telefono_invalido(self):
+        """Test: Teléfono debe tener mínimo 7 dígitos"""
+        from django.core.exceptions import ValidationError
+        
+        paciente = Paciente(
+            nombres='Elena',
+            apellidos='Vargas',
+            cedula='6666666666',
+            fecha_nacimiento=date(1993, 12, 5),
+            genero='F',
+            telefono='123',  # Muy corto
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        with self.assertRaises(ValidationError) as context:
+            paciente.full_clean()
+        
+        self.assertIn('telefono', context.exception.message_dict)
+    
+    def test_paciente_con_informacion_medica(self):
+        """Test: Paciente con información médica completa"""
+        paciente = Paciente.objects.create(
+            nombres='Roberto',
+            apellidos='Castro',
+            cedula='7777777777',
+            fecha_nacimiento=date(1975, 4, 18),
+            genero='M',
+            telefono='099-888888',
+            email='roberto.castro@email.com',
+            direccion='Av. Secundaria 456',
+            tipo_sangre='AB+',
+            alergias='Penicilina, Polen',
+            observaciones_medicas='Hipertensión controlada',
+            contacto_emergencia_nombre='María Castro',
+            contacto_emergencia_telefono='098-999999',
+            contacto_emergencia_relacion='Esposa',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        self.assertEqual(paciente.alergias, 'Penicilina, Polen')
+        self.assertEqual(paciente.observaciones_medicas, 'Hipertensión controlada')
+        self.assertEqual(paciente.contacto_emergencia_nombre, 'María Castro')
+        self.assertEqual(paciente.contacto_emergencia_relacion, 'Esposa')
+    
+    def test_paciente_delete_clinica_protegido(self):
+        """Test: No se puede eliminar una clínica con pacientes"""
+        Paciente.objects.create(
+            nombres='Sofía',
+            apellidos='Morales',
+            cedula='8888888888',
+            fecha_nacimiento=date(1991, 7, 22),
+            genero='F',
+            telefono='098-111111',
+            clinica=self.clinica,
+            uc=self.admin_user,
+            um=self.admin_user.id
+        )
+        
+        from django.db.models import ProtectedError
+        with self.assertRaises(ProtectedError):
+            self.clinica.delete()

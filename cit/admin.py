@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista
+from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente
 
 # Register your models here.
 
@@ -192,3 +192,55 @@ class DentistaAdmin(admin.ModelAdmin):
         obj.um = request.user
         super().save_model(request, obj, form, change)
 
+
+@admin.register(Paciente)
+class PacienteAdmin(admin.ModelAdmin):
+    """Administración de Pacientes"""
+    list_display = ('get_nombre_completo', 'cedula', 'get_edad', 'telefono', 'clinica', 'estado', 'fc')
+    list_filter = ('clinica', 'genero', 'tipo_sangre', 'estado', 'fc')
+    search_fields = ('nombres', 'apellidos', 'cedula', 'telefono', 'email')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    autocomplete_fields = ['clinica']
+    
+    fieldsets = (
+        ('Información Personal', {
+            'fields': ('nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'genero')
+        }),
+        ('Información de Contacto', {
+            'fields': ('telefono', 'email', 'direccion')
+        }),
+        ('Información Médica', {
+            'fields': ('tipo_sangre', 'alergias', 'observaciones_medicas')
+        }),
+        ('Contacto de Emergencia', {
+            'fields': ('contacto_emergencia_nombre', 'contacto_emergencia_telefono', 'contacto_emergencia_relacion')
+        }),
+        ('Clínica', {
+            'fields': ('clinica',)
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_nombre_completo(self, obj):
+        """Retorna el nombre completo del paciente"""
+        return f"{obj.nombres} {obj.apellidos}"
+    get_nombre_completo.short_description = 'Nombre Completo'
+    get_nombre_completo.admin_order_field = 'apellidos'
+    
+    def get_edad(self, obj):
+        """Retorna la edad del paciente"""
+        return obj.get_edad()
+    get_edad.short_description = 'Edad'
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user
+        super().save_model(request, obj, form, change)
