@@ -10,26 +10,25 @@
     https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
-# from decouple import config
 from pathlib import Path
+from dotenv import load_dotenv
 
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-j9z^cvmc_i7jlk292sv7obpny1ep4wk(o7$&jpyrzgmf9ddfj^'
-# SECRET_KEY=config(¨SECRET_KEY¨)
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
 # Application definition
 
@@ -83,16 +82,14 @@ WSGI_APPLICATION = 'powerdent.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'orbedentbd1',
-        'USER':  'urbinaf',  # 'alexanderjacome', #'postgres',
-        'PASSWORD': 'sood2024',  # 'sood2023',
-        'HOST': 'localhost',
-        'PORT': '5432',  # Puerto de conexión de MariaDB, el valor predeterminado es 3306
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql_psycopg2'),
+        'NAME': os.getenv('DB_NAME', 'orbedentbd1'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
-
 }
 
 

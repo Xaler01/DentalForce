@@ -16,7 +16,7 @@ class Categoria(ClaseModelo):
 
     def save(self, *args, **kwargs):
         self.descripcion = self.descripcion.upper()
-        super(Categoria, self).save().save(*args, **kwargs)
+        super(Categoria, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Categorias"
@@ -34,7 +34,7 @@ class SubCategoria(ClaseModelo):
 
     def save(self, *args, **kwargs):
         self.descripcion = self.descripcion.upper()
-        super(SubCategoria, self).save().save(*args, **kwargs)
+        super(SubCategoria, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Sub Categorias"
@@ -53,7 +53,7 @@ class Marca(ClaseModelo):
 
     def save(self, *args, **kwargs):
         self.descripcion = self.descripcion.upper()
-        super(Marca, self).save().save(*args, **kwargs)
+        super(Marca, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Marcas"
@@ -71,7 +71,7 @@ class UnidadMedida(ClaseModelo):
 
     def save(self, *args, **kwargs):
         self.descripcion = self.descripcion.upper()
-        super(UnidadMedida, self).save().save(*args, **kwargs)
+        super(UnidadMedida, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Unidades de Medida"
@@ -98,7 +98,7 @@ class Producto(ClaseModelo):
 
     def save(self, *args, **kwargs):
         self.descripcion = self.descripcion.upper()
-        super(Producto, self).save().save(*args, **kwargs)
+        super(Producto, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name_plural = "Productos"

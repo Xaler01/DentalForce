@@ -1,101 +1,113 @@
 <div class="modal-dialog modal-lg">
     <div class="modal-content">
-        <form method="POST" role="form" action="{% if obj %}{% url 'inv:producto_edit' obj.pk %}{% else %}{% url 'inv:producto_new' %}{% endif %}" enctype="multipart/form-data">
+        <form method="POST" 
+              role="form" 
+              action="{% if obj %}{% url 'inv:producto_edit' obj.pk %}{% else %}{% url 'inv:producto_new' %}{% endif %}" 
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            
             {% if obj %}
-           <div class="card border-left-warning shadow h-100 py-2">
-           {%else %}
-           <div class="card border-left-success shadow h-100 py-2">
-           {% endif %}
+            <div class="card border-left-warning shadow h-100 py-2">
+            {% else %}
+            <div class="card border-left-success shadow h-100 py-2">
+            {% endif %}
                 <div class="modal-header">
-                    {% if obj %}
-                    <h5 class="modal-title text-xs font-weight-bold text-warning text-uppercase mb-1">Editar Producto</h5>
-                    {% else %}
-                    <h5 class="modal-title text-xs font-weight-bold text-success text-uppercase mb-1">Nuevo Producto</h5>
-                    {% endif %}
+                    <h5 class="modal-title text-xs font-weight-bold {% if obj %}text-warning{% else %}text-success{% endif %} text-uppercase mb-1">
+                        {% if obj %}Editar{% else %}Nuevo{% endif %} Producto
+                    </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
 
                 <div class="modal-body">
-                    {% csrf_token %}
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                {{ form.codigo.label_tag }}
+                                <label for="{{ form.codigo.id_for_label }}">Código <span class="text-danger">*</span></label>
                                 {{ form.codigo }}
                             </div>
                             <div class="form-group">
-                                {{ form.descripcion.label_tag }}
+                                <label for="{{ form.descripcion.id_for_label }}">Descripción del Producto <span class="text-danger">*</span></label>
                                 {{ form.descripcion }}
                             </div>
                             <div class="form-group">
-                                {{ form.existencia.label_tag }}
-                                {{ form.existencia }}
+                                <label for="{{ form.categoria.id_for_label }}">Categoría</label>
+                                {{ form.categoria }}
+                                <small class="form-text text-muted">Filtra las subcategorías disponibles</small>
                             </div>
                             <div class="form-group">
-                                {{ form.ultima_compra.label_tag }}
-                                {{ form.ultima_compra }}
-                            </div>
-                            <div class="form-group">
-                                {{ form.subcategoria.label_tag }}
+                                <label for="{{ form.subcategoria.id_for_label }}">Sub Categoría <span class="text-danger">*</span></label>
                                 {{ form.subcategoria }}
                             </div>
                             <div class="form-group">
-                                {{ form.foto.label_tag }}
-                                {{ form.foto }}
-                            </div>
-
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                {{ form.codigo_barra.label_tag }}
-                                {{ form.codigo_barra }}
-                            </div>
-                            <div class="form-group">
-                                {{ form.marca.label_tag }}
+                                <label for="{{ form.marca.id_for_label }}">Marca <span class="text-danger">*</span></label>
                                 {{ form.marca }}
                             </div>
                             <div class="form-group">
-                                {{ form.unidad_medida.label_tag }}
+                                <label for="{{ form.unidad_medida.id_for_label }}">Unidad de Medida <span class="text-danger">*</span></label>
                                 {{ form.unidad_medida }}
                             </div>
+                        </div>
+                        
+                        <div class="col-md-6">
                             <div class="form-group">
-                                {{ form.cantidad_minima.label_tag }}
-                                {{ form.cantidad_minima }}
+                                <label for="{{ form.codigo_barra.id_for_label }}">Código de Barra</label>
+                                {{ form.codigo_barra }}
                             </div>
                             <div class="form-group">
-                                {{ form.precio.label_tag }}
+                                <label for="{{ form.precio.id_for_label }}">Precio <span class="text-danger">*</span></label>
                                 {{ form.precio }}
                             </div>
                             <div class="form-group">
-                                {{ form.estado.label_tag }}
-                                {{ form.estado }}
+                                <label for="{{ form.cantidad_minima.id_for_label }}">Cantidad Mínima <span class="text-danger">*</span></label>
+                                {{ form.cantidad_minima }}
+                                <small class="form-text text-muted">Stock mínimo que debe mantener</small>
                             </div>
                             <div class="form-group">
-                                {{ form.categoria.label_tag }}
-                                {{ form.categoria }}
+                                <label for="{{ form.existencia.id_for_label }}">Existencia</label>
+                                {{ form.existencia }}
+                                <small class="form-text text-muted">Se actualiza automáticamente con las compras</small>
                             </div>
                             <div class="form-group">
-                                {{ form.foto.label_tag }}
-                                {{ form.foto }}
+                                <label for="{{ form.ultima_compra.id_for_label }}">Última Compra</label>
+                                {{ form.ultima_compra }}
+                            </div>
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    {{ form.estado }}
+                                    <label class="custom-control-label" for="{{ form.estado.id_for_label }}">Activo</label>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
-           </div>
+            </div>
         </form>
     </div>
 </div>
+
 <script>
     $(function() {
+        // Configurar valor inicial de categoría y subcategoría en modo edición
+        {% if obj %}
         $("#id_categoria").val("{{ obj.subcategoria.categoria.id }}").change();
         $("#id_subcategoria").val("{{ obj.subcategoria.id }}").change();
+        {% endif %}
+        
+        // Configurar dependencia de subcategoría con categoría
         $("#id_subcategoria").chained("#id_categoria");
+        
+        // Enfocar el primer campo al abrir el modal
+        $('#id_codigo').focus();
     });
 </script>

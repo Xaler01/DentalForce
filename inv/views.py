@@ -160,9 +160,9 @@ def marca_inactivar(request, id):
         contexto = {'obj': marca}
 
     if request.method == 'POST':
-        marca.estado = False
-        marca.save()
-        messages.success(request, 'Marca Inactivada')
+        # Eliminar físicamente la marca en lugar de inactivarla
+        marca.delete()
+        messages.success(request, 'Marca eliminada correctamente')
         return redirect("inv:marca_list")
 
     return render(request, template_name, contexto)
@@ -189,7 +189,6 @@ class UMNew(SuccessMessageMixin, SinPrivilegios, generic.CreateView):
 
     def form_valid(self, form):
         form.instance.uc = self.request.user
-        print(self.request.user.id)
         return super().form_valid(form)
 
 
@@ -205,7 +204,6 @@ class UMEdit(SuccessMessageMixin, SinPrivilegios, generic.UpdateView):
 
     def form_valid(self, form):
         form.instance.um = self.request.user.id
-        print(self.request.user.id)
         return super().form_valid(form)
 
 
@@ -223,10 +221,11 @@ def um_inactivar(request, id):
         contexto = {'obj': um}
 
     if request.method == 'POST':
-        um.estado = False
-        um.save()
+        # Eliminar físicamente la unidad de medida en lugar de inactivarla
+        um.delete()
+        messages.success(request, 'Unidad de medida eliminada correctamente')
         return redirect("inv:um_list")
-
+    
     return render(request, template_name, contexto)
 
 
@@ -298,8 +297,9 @@ def producto_inactivar(request, id):
         contexto = {'obj': prod}
 
     if request.method == 'POST':
-        prod.estado = False
-        prod.save()
+        # Eliminar físicamente el producto en lugar de inactivarlo
+        prod.delete()
+        messages.success(request, 'Producto eliminado correctamente')
         return redirect("inv:producto_list")
 
     return render(request, template_name, contexto)

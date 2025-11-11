@@ -1,25 +1,39 @@
 {% extends 'base/base.html' %}
+
 {% block page_content %}
-<form method="POST" class="form-inline">
-    {% csrf_token %}
-    <div class="col-xl-6 col-md-6 mb-6">
-        <div class="card border-left-danger shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            ¿Desactivar {{ obj.descripcion  }}?</div>
-                        <button type="submit" class="btn btn-success"><i class="far fa-question-circle"></i> Si, desactivar </button>
-                        <!-- <a href="{% url 'inv:categoria_list' %}" class="btn btn-danger"><span class="fa fa-undo"></span>Cancelar</a>-->
-                        <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-danger"><span class="fa fa-undo"></span>Cancelar</a>
-                    </div>
-                    <div class="col-auto">
-                        <i class="far fa-question-circle fa-2x text-gray-300"></i>
+<div class="container-fluid">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-xl-6 col-md-8 col-sm-12">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-3">
+                                    ¿Está seguro de eliminar "{{ obj.descripcion }}"?
+                                </div>
+                                <p class="text-muted mb-3">Esta acción no se puede deshacer.</p>
+                                <div class="btn-group" role="group">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash-alt"></i> Sí, eliminar
+                                    </button>
+                                    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-  </div>
-</form>
+    </form>
+</div>
 {% endblock page_content %}
-{% block js_page %}{% endblock js_page%}
+
+{% block js_page %}
+{% endblock js_page %}

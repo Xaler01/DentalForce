@@ -7,6 +7,7 @@
 *.pyc
 __pycache__/
 local_settings.py
+settings_local.py
 
 db.sqlite3
 db.sqlite3-journal
@@ -134,12 +135,31 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
 # Spyder project settings
 .spyderproject

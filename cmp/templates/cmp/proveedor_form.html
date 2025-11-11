@@ -1,105 +1,72 @@
 <div class="modal-dialog modal-lg">
     <div class="modal-content">
-        <form method="post" role="form"  action="{% if obj %}{% url 'cmp:proveedor_edit' obj.pk %}{% else %}{% url 'cmp:proveedor_new' %}{% endif %}" enctype="multipart/form-data">
+        <form method="POST" 
+              role="form" 
+              action="{% if obj %}{% url 'cmp:proveedor_edit' obj.pk %}{% else %}{% url 'cmp:proveedor_new' %}{% endif %}" 
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            
             {% if obj %}
-           <div class="card border-left-warning shadow h-100 py-2">
-           {%else %}
-           <div class="card border-left-success shadow h-100 py-2">
-           {% endif %}
+            <div class="card border-left-warning shadow h-100 py-2">
+            {% else %}
+            <div class="card border-left-success shadow h-100 py-2">
+            {% endif %}
                 <div class="modal-header">
-                    {% if obj %}
-                    <h5 class="modal-title text-xs font-weight-bold text-warning text-uppercase mb-1">Editar Proveedor</h5>
-                    {% else %}
-                    <h5 class="modal-title text-xs font-weight-bold text-success text-uppercase mb-1">Nuevo Proveedor</h5>
-                    {% endif %}
+                    <h5 class="modal-title text-xs font-weight-bold {% if obj %}text-warning{% else %}text-success{% endif %} text-uppercase mb-1">
+                        {% if obj %}Editar{% else %}Nuevo{% endif %} Proveedor
+                    </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+                
                 <div class="modal-body">
-                    {% csrf_token %}
                     <div class="row">
-                       <!--{{ form.as_p }} -->
-
-                        <div class="form-group col-md-6">
-                            {{ form.descripcion.label_tag }}
-                            {{ form.descripcion }}
-                        </div>
-                        <div class="form-group col-md-6">
-                            {{ form.contacto.label_tag }}
-                            {{ form.contacto }}
-                        </div>
-                    </div>
-                   <div class="row">
-                        <div class="form-group col-md-6">
-                            {{ form.direccion.label_tag }}
-                            {{ form.direccion }}
-                        </div>
-                         <div class="form-group col-md-6">
-                            {{ form.telefono.label_tag }}
-                            {{ form.telefono }}
-                        </div>
-                   </div>
-                   <div class="row">
-                        <div class="form-group col-md-6">
-                            {{ form.email.label_tag }}
-                            {{ form.email }}
-                        </div>
-                        <div class="form-group col-md-1">
-                            {{ form.estado.label_tag }}
-                            {{ form.estado }}
-                        </div>
-                   </div>
-                </div>
-
-                <!-- <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="row">
-                       {{ form.as_p }} -->
-                        <!--<div class="col-md-6">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                {{ form.descripcion.label_tag }}
+                                <label for="{{ form.descripcion.id_for_label }}">Descripción <span class="text-danger">*</span></label>
                                 {{ form.descripcion }}
                             </div>
                             <div class="form-group">
-                                {{ form.direccion.label_tag }}
+                                <label for="{{ form.direccion.id_for_label }}">Dirección</label>
                                 {{ form.direccion }}
                             </div>
                             <div class="form-group">
-                                {{ form.email.label_tag }}
+                                <label for="{{ form.email.id_for_label }}">Email <span class="text-danger">*</span></label>
                                 {{ form.email }}
                             </div>
                         </div>
+                        
                         <div class="col-md-6">
                             <div class="form-group">
-                                {{ form.contacto.label_tag }}
+                                <label for="{{ form.contacto.id_for_label }}">Contacto</label>
                                 {{ form.contacto }}
                             </div>
-                             <div class="form-group">
-                                {{ form.telefono.label_tag }}
+                            <div class="form-group">
+                                <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
                                 {{ form.telefono }}
                             </div>
                             <div class="form-group">
-                                {{ form.estado.label_tag }}
-                                {{ form.estado }}
+                                <label>&nbsp;</label>
+                                <div class="custom-control custom-checkbox">
+                                    {{ form.estado }}
+                                    <label class="custom-control-label" for="{{ form.estado.id_for_label }}">Activo</label>
+                                </div>
                             </div>
-
                         </div>
                     </div>
-                </div> -->
+                </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-danger" onclick="return cerrar_modal()" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
                 </div>
-           </div>
+            </div>
         </form>
     </div>
 </div>
-<script>
-    $(function() {
-        $("#id_categoria").val("{{ obj.subcategoria.categoria.id }}").change();
-        $("#id_subcategoria").val("{{ obj.subcategoria.id }}").change();
-        $("#id_subcategoria").chained("#id_categoria");
-    });
-</script>
+<!-- Removed irrelevant JS (chained selects) which caused console errors in proveedor modal -->

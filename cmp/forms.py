@@ -13,30 +13,39 @@ class ProveedorForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in iter(self.fields):
-            self.fields[field].widget.attrs.update({
-                'class': 'form-control'
-            })
+        for name, field in self.fields.items():
+            from django.forms import CheckboxInput
+            widget = field.widget
+            if isinstance(widget, CheckboxInput):
+                widget.attrs.update({'class': 'custom-control-input'})
+            else:
+                widget.attrs.update({'class': 'form-control'})
 
 
 class ComprasEncForm(forms.ModelForm):
-    fecha_compra = forms.DateInput()
-    fecha_factura = forms.DateInput()
+    # Use proper DateField with a DateInput widget so validation works correctly
+    fecha_compra = forms.DateField(required=False, widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
+    fecha_factura = forms.DateField(required=True, widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
 
     class Meta:
         model = ComprasEnc
         fields = ['proveedor', 'fecha_compra', 'observacion',
                   'no_factura', 'fecha_factura', 'sub_total',
                   'descuento', 'total']
+        widgets = {
+            'sub_total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': True}),
+            'descuento': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': True}),
+            'total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': True}),
+        }
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            for field in iter(self.fields):
-                self.fields[field].widget.attrs.update({
-                    'class': 'form-comtrol'
-                })
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            # apply default bootstrap classes to widgets when not already set by explicit widget
+            if field_name not in ['sub_total', 'descuento', 'total']:
+                field.widget.attrs.setdefault('class', 'form-control')
+        # make some fields readonly
+        if 'fecha_compra' in self.fields:
             self.fields['fecha_compra'].widget.attrs['readonly'] = True
+        if 'fecha_factura' in self.fields:
             self.fields['fecha_factura'].widget.attrs['readonly'] = True
-            self.fields['sub_total'].widget.attrs['readonly'] = True
-            self.fields['descuento'].widget.attrs['readonly'] = True
-            self.fields['total'].widget.attrs['readonly'] = True

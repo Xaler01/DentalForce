@@ -16,6 +16,7 @@
                     <div class="dropdown-header">Acciones</div>
                     <a class="dropdown-item" href="{% url 'cmp:compras_new' %}"><i class="far fa-calendar-plus"></i> Nueva</a>
 
+
                 </div>
             </div>
         </div>
@@ -35,69 +36,97 @@
                       <th>Descuento</th>
                       <th>Total</th>
                       <th>Estado</th>
-                      <th class="all">Accion</th>
+                      <th class="all">Acciones</th>
                     </thead>
                     <tbody>
                       {% for item in obj  %}
                       <tr>
                           <td>{{ item.id }}</td>
-                          <td>{{ item.fecha_compra }}</td>
-                          <td>{{ item.observacion }}</td>
+                          <td>{{ item.fecha_compra|date:"d/m/Y" }}</td>
+                          <td>{{ item.observacion|truncatechars:20 }}</td>
                           <td>{{ item.no_factura }}</td>
                           <td>{{ item.sub_total }}</td>
                           <td>{{ item.descuento }}</td>
                           <td>{{ item.total }}</td>
                           <td>{{item.estado|yesno:"Activo,Inactivo"}}</td>
                           <td>
-                              <a class="btn btn-warning btn-circle" href="#"><i class="far fa-edit"></i></a>
-                              <!--<a class="btn btn-warning btn-circle" href="{% url 'cmp:compras_edit' item.id %}')"><i class="far fa-edit"></i></a>
-                              <button class="btn btn-warning btn-circle" onclick="return abrir_modal('{% url 'cmp:compras_edit' item.id %}')">
-                              <i class="far fa-edit"></i></button>
-                              <button class="btn btn-danger btn-circle" onclick="return abrir_modal('{% url 'cmp:proveedor_inactivar' item.id %}')">
-                              <i class="far fa-thumbs-down"></i></button>
-                              <a href="{% url 'inv:producto_edit' item.id %}" class="btn btn-warning btn-circle" role="button"><i class="far fa-edit"></i></a>
-                              <a href="{% url 'cmp:proveedor_inactivar' item.id %}" class="btn   btn-circle" role="button"><i class="far fa-thumbs-down"></i></a>-->
+                              <a class="btn btn-warning btn-circle" href="{% url 'cmp:compras_edit' item.id %}" title="Editar"><i class="far fa-edit"></i></a>
+                              <button type="button" class="btn btn-danger btn-circle" onclick="eliminarCompra('{{ item.id }}', '{{ item.observacion|escapejs }}')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
                           </td>
                       </tr>
                       {% endfor %}
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
 
 {% endblock page_content %}
 {% block js_page %}
 <script>
-    // Call the datatables Jquerys plugin
+    /**
+     * Inicialización de DataTables para el listado de compras
+     */
     $(document).ready(function() {
         $('.table').DataTable({
-            "language": {
-                "sProcessing":"Procesando...",
-                "sLengthMenu" :"Mostrar _MENU_ registros",
-                "sZeroRecords" : "No se encontraron resultados",
-                "sEmptyTable":"Ningun dato disponible en esta tabla",
-                "sInfo":"Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty":"Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered":"(filtrado de un total de _MAX_ regitros)",
-                "sInfoPostFix":"",
-                "sSearch":"Buscar:",
-                "sUrl":"",
-                "sInfoThousands":",",
-                "sLoadingRecords":"Cargando...",
-                "oPaginate":{
-                    "sFirst":"<span class='fa fa-angle-double-left'></span>",
-                    "sLast":"<span class='fa fa-angle-double-right'></span>",
-                    "sNext":"<span class='fa fa-angle-right'></span>",
-                    "sPrevious":"<span class='fa fa-angle-left'></span>"
+            pageLength: 10,
+            lengthMenu: [[10, 20, 50, 100], [10, 20, 50, 100]],
+            responsive: true,
+            scrollX: true,
+            autoWidth: false,
+            language: {
+                sProcessing: "Procesando...",
+                sLengthMenu: "Mostrar _MENU_ registros",
+                sZeroRecords: "No se encontraron resultados",
+                sEmptyTable: "Ningún dato disponible en esta tabla",
+                sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
+                sInfoPostFix: "",
+                sSearch: "Buscar:",
+                sUrl: "",
+                sInfoThousands: ",",
+                sLoadingRecords: "Cargando...",
+                oPaginate: {
+                    sFirst: "<span class='fa fa-angle-double-left'></span>",
+                    sLast: "<span class='fa fa-angle-double-right'></span>",
+                    sNext: "<span class='fa fa-angle-right'></span>",
+                    sPrevious: "<span class='fa fa-angle-left'></span>"
                 },
-                "oAria":{
-                    "sSortAscending":": Activar para ordenar la colimna de manera ascendente",
-                    "sSortDescending":": Activar para ordenar la colimna de manea descendente",
+                oAria: {
+                    sSortAscending: ": Activar para ordenar la columna de manera ascendente",
+                    sSortDescending: ": Activar para ordenar la columna de manera descendente"
                 }
             }
         });
     });
+
+    /**
+     * Elimina una compra completa con confirmación
+     * @param {number} compraId - ID de la compra a eliminar
+     * @param {string} observacion - Descripción de la compra para mostrar en el mensaje
+     */
+    function eliminarCompra(compraId, observacion) {
+        $.confirm({
+            title: 'Eliminar Compra',
+            content: '¿Está seguro de eliminar la compra <strong>' + observacion + '</strong>?<br><br>' +
+                     '<span class="text-danger">Esta acción eliminará también todos los detalles asociados.</span>',
+            type: 'red',
+            buttons: {
+                cancel: {
+                    text: 'Cancelar',
+                    btnClass: 'btn-secondary',
+                    action: function() {}
+                },
+                confirm: {
+                    text: 'Sí, eliminar',
+                    btnClass: 'btn-danger',
+                    action: function() {
+                        window.location.href = '/cmp/compras/eliminar/' + compraId;
+                    }
+                }
+            }
+        });
+    }
 </script>
 {% endblock js_page %}

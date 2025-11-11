@@ -5,7 +5,11 @@ from datetime import date
 
 class CategoriaModelTest(TestCase):
     def setUp(self):
-        self.categoria = Categoria.objects.create(descripcion="Categoria de Prueba")
+        self.user = User.objects.create(username="testuser")
+        self.categoria = Categoria.objects.create(
+            descripcion="Categoria de Prueba",
+            uc=self.user
+        )
 
     def test_categoria_creacion(self):
         self.assertEqual(self.categoria.descripcion, "CATEGORIA DE PRUEBA")
@@ -18,26 +22,32 @@ class SubCategoriaModelTest(TestCase):
 
     def setUp(self):
         self.user = User.objects.create(username="testuser")
-        self.categoria = Categoria.objects.create(descripcion="Categoria de Prueba",uc_id=self.user.id)
-        self.subcategoria = SubCategoria.objects.create(categoria=self.categoria, descripcion="Subcategoria de Prueba")
+        self.categoria = Categoria.objects.create(
+            descripcion="Categoria de Prueba",
+            uc=self.user
+        )
+        self.subcategoria = SubCategoria.objects.create(
+            categoria=self.categoria,
+            descripcion="Subcategoria de Prueba",
+            uc=self.user
+        )
 
     def test_subcategoria_creacion(self):
         self.assertEqual(self.subcategoria.descripcion, "SUBCATEGORIA DE PRUEBA")
         self.assertEqual(self.subcategoria.categoria.descripcion, "CATEGORIA DE PRUEBA")
 
     def test_subcategoria_str(self):
-        subcategoria = SubCategoria.objects.create(
-            descripcion="Subcategoria de Prueba",
-            categoria=self.categoria,
-            uc_id=self.user.id
-        )
-        self.assertEqual(str(subcategoria), "Subcategoria de Prueba")
+        self.assertEqual(str(self.subcategoria), "CATEGORIA DE PRUEBA:SUBCATEGORIA DE PRUEBA")
 
 
 
 class MarcaModelTest(TestCase):
     def setUp(self):
-        self.marca = Marca.objects.create(descripcion="Marca de Prueba")
+        self.user = User.objects.create(username="testuser")
+        self.marca = Marca.objects.create(
+            descripcion="Marca de Prueba",
+            uc=self.user
+        )
 
     def test_marca_creacion(self):
         self.assertEqual(self.marca.descripcion, "MARCA DE PRUEBA")
@@ -47,7 +57,11 @@ class MarcaModelTest(TestCase):
 
 class UnidadMedidaModelTest(TestCase):
     def setUp(self):
-        self.unidad_medida = UnidadMedida.objects.create(descripcion="Unidad de Prueba")
+        self.user = User.objects.create(username="testuser")
+        self.unidad_medida = UnidadMedida.objects.create(
+            descripcion="Unidad de Prueba",
+            uc=self.user
+        )
 
     def test_unidad_medida_creacion(self):
         self.assertEqual(self.unidad_medida.descripcion, "UNIDAD DE PRUEBA")
@@ -57,10 +71,24 @@ class UnidadMedidaModelTest(TestCase):
 
 class ProductoModelTest(TestCase):
     def setUp(self):
-        self.categoria = Categoria.objects.create(descripcion="Categoria de Prueba")
-        self.subcategoria = SubCategoria.objects.create(categoria=self.categoria, descripcion="Subcategoria de Prueba")
-        self.marca = Marca.objects.create(descripcion="Marca de Prueba")
-        self.unidad_medida = UnidadMedida.objects.create(descripcion="Unidad de Prueba")
+        self.user = User.objects.create(username="testuser")
+        self.categoria = Categoria.objects.create(
+            descripcion="Categoria de Prueba",
+            uc=self.user
+        )
+        self.subcategoria = SubCategoria.objects.create(
+            categoria=self.categoria,
+            descripcion="Subcategoria de Prueba",
+            uc=self.user
+        )
+        self.marca = Marca.objects.create(
+            descripcion="Marca de Prueba",
+            uc=self.user
+        )
+        self.unidad_medida = UnidadMedida.objects.create(
+            descripcion="Unidad de Prueba",
+            uc=self.user
+        )
         self.producto = Producto.objects.create(
             codigo="PRD001",
             codigo_barra="1234567890123",
@@ -71,7 +99,8 @@ class ProductoModelTest(TestCase):
             cantidad_minima=10,
             marca=self.marca,
             unidad_medida=self.unidad_medida,
-            subcategoria=self.subcategoria
+            subcategoria=self.subcategoria,
+            uc=self.user
         )
 
     def test_producto_creacion(self):

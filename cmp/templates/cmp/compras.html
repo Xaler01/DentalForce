@@ -1,5 +1,68 @@
 {% extends 'base/base.html'%}
+{% load l10n %}
 {% block page_content %}
+<style>
+    /* Estilos para la tabla de productos */
+    .tbl-productos-container {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: relative;
+    }
+    
+    /* Scrollbar personalizado */
+    .tbl-productos-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .tbl-productos-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .tbl-productos-container::-webkit-scrollbar-thumb {
+        background: #17a2b8;
+        border-radius: 4px;
+    }
+    
+    .tbl-productos-container::-webkit-scrollbar-thumb:hover {
+        background: #138496;
+    }
+    
+    /* Hacer que la tabla no se salga del contenedor */
+    .tbl-productos {
+        table-layout: fixed;
+        width: 100% !important;
+    }
+    
+    .tbl-productos td,
+    .tbl-productos th {
+        word-wrap: break-word;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Header fijo */
+    .tbl-productos thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Botones deshabilitados durante edición */
+    .btn-select-producto.disabled,
+    .btn-select-producto:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* Filas de tabla deshabilitadas */
+    .tbl-productos tbody tr.table-secondary {
+        opacity: 0.6;
+    }
+</style>
     <form method="post" id="frmCompras">
         {% csrf_token %}
         <div class="col-xl-12 col-md-12 mb-12">
@@ -9,178 +72,274 @@
             <div class="card border-left-success shadow h-100 py-2">
             {% endif %}
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                {% if encabezado %} Editar {% else %} Nueva {% endif %} Compra
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <div class="row">
-                                <!-- Inicio Izquierda -->
-                                <div class="col-6">
-                                    <!-- Inicio Encabezado -->
-                                    <div class="form-group row">
-                                        <label for="staticEmail" class="col-sm-2 col-form-label">Proveedor:</label>
-                                        <div class="col-sm-10">
-                                          {{ form_enc.proveedor }}
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <div class="form-group">
-                                                <label for="id_fecha_compra">Fecha Compra:</label>
-                                                {{form_enc.fecha_compra}}
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="id_descripcion">Descripción:</label>
-                                                {{form_enc.observacion}}
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="form-group">
-                                                <label for="id_fecha_compra">No. Factura:</label>
-                                                {{form_enc.no_factura}}
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="id_descripcion">Fecha Factura:</label>
-                                                {{form_enc.fecha_factura}}
-                                            </div>
-                                            <div class="row">
-                                                <div class="col">
-                                                    <label for="Sub Total">Sub Total:</label>
-                                                </div>
-                                                <div class="col">
-                                                    {{ form_enc.sub_total }}
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col">
-                                                    <label for="sub_total">Descuento:</label>
-                                                </div>
-                                                <div class="col">
-                                                    {{ form_enc.descuento }}
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col">
-                                                    <label for="total">Total:</label>
-                                                </div>
-                                                <div class="col">
-                                                    {{ form_enc.total }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Fin Encabezado -->
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    {% if encabezado %} Editar {% else %} Nueva {% endif %} Compra
                                 </div>
-                                <!-- Fin Izquierda -->
-                                <!-- Inicio Derecha -->
-                                <div class="col-6">
-                                    <div class="row">
-                                        <div class="col">
-                                            <table class="table table-striped table-hover dt-responsive table-sm nowrap tbl-productos" style="width:100%">
-                                                <thead>
-                                                    <th>Id</th>
-                                                    <th class="all">Descripción</th>
-                                                    <th class="all">Acciones</th>
-                                                </thead>
-                                                <tbody>
-                                                    {% for item in productos %}
-                                                    <tr>
-                                                    <td>{{ item.id }}</td>
-                                                    <td>{{ item.descripcion }}</td>
-                                                    <td>
-                                                        <button type="button" class="btn btn-warning btn-circle"
-                                                        onclick="selectProducto({{item.id}},'{{item.descripcion}}')" ><i class="far fa-hand-pointer"></i></button>
-                                                    </td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                                <div class="dropdown-divider"></div>
+                                
+                                <!-- SECCIÓN SUPERIOR: Datos del Encabezado -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <!-- Fila 1: Proveedor -->
+                                                <div class="form-group row">
+                                                    <label for="id_proveedor" class="col-sm-1 col-form-label">Proveedor:</label>
+                                                    <div class="col-sm-11">
+                                                        {{ form_enc.proveedor }}
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Fila 2: Fecha Compra, Num. Factura, Fecha Factura -->
+                                                <div class="form-group row">
+                                                    <label for="id_fecha_compra" class="col-sm-1 col-form-label">Fecha Compra:</label>
+                                                    <div class="col-sm-3">
+                                                        {{form_enc.fecha_compra}}
+                                                    </div>
+                                                    
+                                                    <label for="id_no_factura" class="col-sm-1 col-form-label">Num. Factura:</label>
+                                                    <div class="col-sm-3">
+                                                        {{form_enc.no_factura}}
+                                                    </div>
+                                                    
+                                                    <label for="id_fecha_factura" class="col-sm-1 col-form-label">Fecha Factura:</label>
+                                                    <div class="col-sm-3">
+                                                        {{form_enc.fecha_factura}}
+                                                    </div>
+                                                </div>
+                                                
+                                <!-- Fila 2: Descripción -->
+                                                <div class="form-group row mb-0">
+                                                    <label for="id_observacion" class="col-sm-1 col-form-label">Descripción:</label>
+                                                    <div class="col-sm-11">
+                                                        {{form_enc.observacion}}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="form-group row">
-                                        <label for="id_id_producto" class="col-sm-3 col-form-label">Producto</label>
-                                        <div class="col-sm-2">
-                                            <input type="text" readonly class="form-control-plaintext" name="id_id_producto" id="id_id_producto" value="" required>
-                                        </div>
-                                        <div class="col-sm-7">
-                                            <input type="text" readonly class="form-control-plaintext" id="id_descripcion_producto" value="" required>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="id_cantidad_detalle" class="col-sm-2 col-form-label">Cant.:</label>
-                                        <div class="col-sm-2">
-                                            <input type="number" class="form-control" name="id_cantidad_detalle" id="id_cantidad_detalle" value="00" required>
-                                        </div>
-                                        <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
-                                        <div class="col-sm-2">
-                                            <input type="number" class="form-control" name="id_precio_detalle" id="id_precio_detalle" value="00" required>
-                                        </div>
-                                        <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Desc.:</label>
-                                        <div class="col-sm-2">
-                                            <input type="text" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="00">
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="id_sub_total_detalle" class="col-sm-2 col-form-label">S. Total:</label>
-                                        <div class="col-sm-4">
-                                            <input type="text" readonly class="form-control-plaintext" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
-                                        </div>
-                                        <label for="id_total_detalle" class="col-sm-2 col-form-label">Total:</label>
-                                        <div class="col-sm-3">
-                                            <input type="text" readonly class="form-control-plaintext col-sm-10" name="id_total_detalle" id="id_total_detalle" value="00">
-                                        </div>
-                                        <div class="col-sm-1">
-                                            <button type="button" class="btn btn-sm col-sm-2" onclick="clear_Detail();"><i class="fa fa-minus-circle" aria-hidden="true"></i></button>
-                                        </div>
-                                    </div>
-                                    <!-- Botones -->
-                                    <div class="dropdown-divider"></div>
-                                    <div class="row">
-                                        <div class="col">
-                                            <button type="submit" class="btn btn-danger"><span class="fa fa-save"></span> Guardar</button>
-                                            <a href="{% url 'cmp:compras_list' %}" class="btn btn-success"><i class="far fa-hand-point-left"></i> Cancelar</a>
-                                        </div>
-                                    </div>
-                                    <!-- Fin Botones -->
                                 </div>
-                                <!-- Fin Derecha -->
-                            </div>
-                            <!-- Inicio Detalle -->
-                            <div class="row">
-                                <div class="col">
-                                    <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
-                                        <thead>
-                                            <th>Producto</th>
-                                            <th>Cantidad</th>
-                                            <th>Precio</th>
-                                            <th>Sub Total</th>
-                                            <th>Desc.</th>
-                                            <th>Total</th>
-                                            <th class="all">Acciones</th>
-                                        </thead>
-                                        <tbody>
-                                            {% for item in detalle %}
-                                            <tr>
-                                            <td>{{ item.producto }}</td>
-                                            <td>{{ item.cantidad }}</td>
-                                            <td>{{ item.cantidad }}</td>
-                                            <td>{{ item.sub_total }}</td>
-                                            <td>{{ item.descuento }}</td>
-                                            <td>{{ item.total }}</td>
-                                            <td>
-                                                <button class="btn btn-danger btn-circle"> <!--onclick="return abrir_modal('{% url 'cmp:compras_del' encabezado.pk item.id %}')"--><i class="fas fa-trash-alt"></i></button>
-                                            </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                                
+                                <!-- SECCIÓN MEDIA: Productos y Detalle de Compra -->
+                                <div class="row">
+                                    <!-- Columna Izquierda: Lista de Productos -->
+                                    <div class="col-md-5 mb-3">
+                                        <div class="card">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="m-0">Productos Disponibles</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="tbl-productos-container">
+                                                    <table class="table table-striped table-hover table-sm tbl-productos mb-0">
+                                                        <thead class="thead-light">
+                                                            <tr>
+                                                                <th style="width: 10%;">Id</th>
+                                                                <th style="width: 45%;">Descripción</th>
+                                                                <th style="width: 25%;">Marca</th>
+                                                                <th style="width: 20%;" class="text-center">Acciones</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in productos %}
+                                                            <tr>
+                                                                <td>{{ item.id }}</td>
+                                                                <td title="{{ item.descripcion }}">{{ item.descripcion }}</td>
+                                                                <td title="{{ item.marca }}">{{ item.marca }}</td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-warning btn-circle btn-sm btn-select-producto"
+                                                                    onclick="selectProducto({{item.id}},'{{item.descripcion}}')" 
+                                                                    title="Seleccionar producto"><i class="far fa-hand-pointer"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Columna Derecha: Formulario de Detalle -->
+                                    <div class="col-md-7 mb-3">
+                                        <div class="card">
+                                            <div class="card-header bg-success text-white">
+                                                <h6 class="m-0">Agregar/Editar Producto a la Compra</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Producto Seleccionado -->
+                                                <div class="form-group row">
+                                                    <label for="id_id_producto" class="col-sm-2 col-form-label">Producto:</label>
+                                                    <div class="col-sm-2">
+                                                        <input type="hidden" name="id_detalle_id" id="id_detalle_id" value="">
+                                                        <input type="text" readonly class="form-control-plaintext" name="id_id_producto" id="id_id_producto" value="" required>
+                                                    </div>
+                                                    <div class="col-sm-8">
+                                                        <input type="text" readonly class="form-control-plaintext font-weight-bold" id="id_descripcion_producto" value="" required>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Cantidad, Precio, Descuento -->
+                                                <div class="form-group row">
+                                                    <label for="id_cantidad_detalle" class="col-sm-2 col-form-label">Cantidad:</label>
+                                                    <div class="col-sm-2">
+                                                        <input type="number" step="1" class="form-control" name="id_cantidad_detalle" id="id_cantidad_detalle" value="00" required>
+                                                    </div>
+                                                    <label for="id_precio_detalle" class="col-sm-2 col-form-label">Precio:</label>
+                                                    <div class="col-sm-2">
+                                                        <input type="number" step="0.01" class="form-control" name="id_precio_detalle" id="id_precio_detalle" value="0.00" required>
+                                                    </div>
+                                                    <label for="id_descuento_detalle" class="col-sm-2 col-form-label">Descuento:</label>
+                                                    <div class="col-sm-2">
+                                                        <input type="number" step="0.01" class="form-control" name="id_descuento_detalle" id="id_descuento_detalle" value="0.00">
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Tipo de Descuento -->
+                                                <div class="form-group row">
+                                                    <label class="col-sm-2 col-form-label">Tipo Descuento:</label>
+                                                    <div class="col-sm-4">
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="id_tipo_descuento" id="id_tipo_descuento_valor" value="V" checked>
+                                                            <label class="form-check-label" for="id_tipo_descuento_valor">
+                                                                <i class="fas fa-dollar-sign"></i> Valor
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="id_tipo_descuento" id="id_tipo_descuento_porcentaje" value="P">
+                                                            <label class="form-check-label" for="id_tipo_descuento_porcentaje">
+                                                                <i class="fas fa-percentage"></i> Porcentaje
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <small class="form-text text-muted" id="desc_help_text">Ingrese el valor del descuento</small>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Subtotal y Total del Detalle -->
+                                                <div class="form-group row">
+                                                    <label for="id_sub_total_detalle" class="col-sm-2 col-form-label">Sub Total:</label>
+                                                    <div class="col-sm-3">
+                                                        <input type="text" readonly class="form-control-plaintext font-weight-bold" name="id_sub_total_detalle" id="id_sub_total_detalle" value="00">
+                                                    </div>
+                                                    <label for="id_total_detalle" class="col-sm-2 col-form-label">Total:</label>
+                                                    <div class="col-sm-3">
+                                                        <input type="text" readonly class="form-control-plaintext font-weight-bold" name="id_total_detalle" id="id_total_detalle" value="00">
+                                                    </div>
+                                                    <div class="col-sm-2">
+                                                        <button type="button" class="btn btn-warning btn-sm" onclick="clear_Detail();" title="Limpiar formulario"><i class="fa fa-minus-circle"></i> Limpiar</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Botones -->
+                                                <div class="dropdown-divider"></div>
+                                                <div class="row">
+                                                    <div class="col text-right">
+                                                        <button type="submit" class="btn btn-danger"><span class="fa fa-save"></span> Guardar</button>
+                                                        <a href="{% url 'cmp:compras_list' %}" class="btn btn-success"><i class="far fa-hand-point-left"></i> Cancelar</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+                                <!-- Inicio Detalle -->
+                                <div class="row">
+                                    <div class="col">
+                                        <table class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
+                                            <thead>
+                                                <th>ID</th>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio</th>
+                                                <th>Sub Total</th>
+                                                <th>Descuento</th>
+                                                <th>Total</th>
+                                                <th class="all">Acciones</th>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in detalle %}
+                                                <tr>
+                                                <td>{{ item.id }}</td>
+                                                <td>{{ item.producto }}</td>
+                                                <td>{{ item.cantidad|floatformat:0 }}</td>
+                                                <td>{{ item.precio_prv|floatformat:2 }}</td>
+                                                <td>{{ item.sub_total|floatformat:2 }}</td>
+                                                <td>
+                                                    {{ item.descuento|floatformat:2 }}
+                                                    {% if item.tipo_descuento == 'P' %}
+                                                        <span class="badge badge-info">%</span>
+                                                    {% else %}
+                                                        <span class="badge badge-success">$</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.total|floatformat:2 }}</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-warning btn-circle" 
+                                                        data-detalle-id="{{ item.id }}" 
+                                                        data-producto-id="{{ item.producto.id }}" 
+                                                        data-descripcion="{{ item.producto }}" 
+                                                        data-cantidad="{{ item.cantidad|unlocalize }}" 
+                                                        data-precio="{{ item.precio_prv|unlocalize }}" 
+                                                        data-descuento="{{ item.descuento|unlocalize }}"
+                                                        data-tipo-descuento="{{ item.tipo_descuento }}"
+                                                        onclick="editarProducto(this)" 
+                                                        title="Editar"><i class="far fa-edit"></i></button>
+                                                    <button type="button" class="btn btn-danger btn-circle" onclick="eliminarDetalle('{{ item.id }}', '{{ item.producto }}')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                                                </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- Fin Detalle -->
+                                
+                                <!-- SECCIÓN INFERIOR: Totales Generales -->
+                                <div class="row mt-3">
+                                    <div class="col-md-8">
+                                        <!-- Espacio vacío -->
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="m-0 font-weight-bold">Resumen de Compra</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Sub Total -->
+                                                <div class="form-group row mb-2">
+                                                    <label for="id_sub_total" class="col-sm-6 col-form-label">Sub Total:</label>
+                                                    <div class="col-sm-6">
+                                                        {{ form_enc.sub_total }}
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Descuento -->
+                                                <div class="form-group row mb-2">
+                                                    <label for="id_descuento" class="col-sm-6 col-form-label">Descuento:</label>
+                                                    <div class="col-sm-6">
+                                                        {{ form_enc.descuento }}
+                                                    </div>
+                                                </div>
+                                                
+                                                <hr class="my-2">
+                                                
+                                                <!-- Total -->
+                                                <div class="form-group row mb-0">
+                                                    <label for="id_total" class="col-sm-6 col-form-label font-weight-bold text-primary" style="font-size: 1.1rem;">TOTAL:</label>
+                                                    <div class="col-sm-6">
+                                                        {{ form_enc.total }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Fin Totales -->
                             </div>
-                            <!-- Fin Detalle -->
                         </div>
-                    </div>
                 </div>
         </div>
     </form>
@@ -195,141 +354,330 @@
         });
 
         $("#sidebarToggle").click();
+        
+        // Formatear campos de totales generales a 2 decimales
+        function formatearTotalesGenerales() {
+            const subTotal = parseFloat($('#id_sub_total').val()) || 0;
+            const descuento = parseFloat($('#id_descuento').val()) || 0;
+            const total = parseFloat($('#id_total').val()) || 0;
+            
+            $('#id_sub_total').val(subTotal.toFixed(2));
+            $('#id_descuento').val(descuento.toFixed(2));
+            $('#id_total').val(total.toFixed(2));
+        }
+        
+        // Ejecutar al cargar la página
+        formatearTotalesGenerales();
 
-        $('.table').DataTable({
-            "pageLength": 2,
-            "language": {
-            "sProcessing": "Procesando...",
-            "sLengthMenu": "Mostrar _MENU_ registros",
-            "sZeroRecords": "No se encontraron resultados",
-            "sEmptyTable": "Ningún dato disponible en esta tabla",
-            "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-            "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "sInfoPostFix": "",
-            "sSearch": "Buscar:",
-            "sUrl": "",
-            "sInfoThousands": ",",
-            "sLoadingRecords": "Cargando...",
-            "oPaginate": {
-                "sFirst": "<span class='fa fa-angle-double-left'></span>",
-                "sLast": "<span class='fa fa-angle-double-right'></span>",
-                "sNext": "<span class='fa fa-angle-right'></span>",
-                "sPrevious": "<span class='fa fa-angle-left'></span>"
-            },
-            "oAria": {
-                "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-            }
+        // Configuración de DataTables solo para la tabla de detalles (no para productos)
+        $('.table').not('.tbl-productos').DataTable({
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            responsive: true,
+            language: {
+                sProcessing: "Procesando...",
+                sLengthMenu: "Mostrar _MENU_ registros",
+                sZeroRecords: "No se encontraron resultados",
+                sEmptyTable: "Ningún dato disponible en esta tabla",
+                sInfo: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                sInfoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                sInfoFiltered: "(filtrado de un total de _MAX_ registros)",
+                sInfoPostFix: "",
+                sSearch: "Buscar:",
+                sUrl: "",
+                sInfoThousands: ",",
+                sLoadingRecords: "Cargando...",
+                oPaginate: {
+                    sFirst: "<span class='fa fa-angle-double-left'></span>",
+                    sLast: "<span class='fa fa-angle-double-right'></span>",
+                    sNext: "<span class='fa fa-angle-right'></span>",
+                    sPrevious: "<span class='fa fa-angle-left'></span>"
+                },
+                oAria: {
+                    sSortAscending: ": Activar para ordenar la columna de manera ascendente",
+                    sSortDescending: ": Activar para ordenar la columna de manera descendente"
+                }
             }
         });
 
-        $('#id_cantidad_detalle,#id_precio_detalle,#id_descuento_detalle').change(function(){
+        // Event listeners para cálculo automático
+        $('#id_cantidad_detalle, #id_precio_detalle, #id_descuento_detalle').change(function() {
             calcular_detalle();
         });
 
-        /*Validar Envío de Detalle */
-        $("#frmCompras").submit(function(e){
-
-            var  no_fact = $("#id_no_factura").val();
-            console.log(no_fact);
-
-            if(no_fact.trim()==""){
-                e.preventDefault()
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'Debe Especificar No. de Factura'
-                        });
-                return false;
+        // Event listener para cambio de tipo de descuento
+        $('input[name="id_tipo_descuento"]').change(function() {
+            const tipoDescuento = $(this).val();
+            const descuentoActual = parseFloat($('#id_descuento_detalle').val()) || 0;
+            
+            // Actualizar texto de ayuda
+            if (tipoDescuento === 'P') {
+                $('#desc_help_text').text('Ingrese el porcentaje de descuento (0-100)');
+                // Si el valor actual es mayor a 100, ajustarlo
+                if (descuentoActual > 100) {
+                    $('#id_descuento_detalle').val('0');
+                }
+            } else {
+                $('#desc_help_text').text('Ingrese el valor del descuento');
             }
-
-
-            if($("#id_fecha_compra").val()=="" || $("#id_fecha_factura").val()==""){
-                e.preventDefault()
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'Debe Especificar Fecha'
-                        });
-                return false;
-            }
-
-            if($('#id_total_detalle').val()==0 || $('#id_id_producto').val()==0 ){
-                e.preventDefault();
-                //alert("No ha agregado producto o está sin cantidades");
-                $.alert({
-                        type:'red',
-                        title:'',
-                        content:'No ha agregado producto o está sin cantidades'
-                        })
-            }
+            
+            // Recalcular totales
+            calcular_detalle();
         });
-        /*Fin Validar Envío de Detalle */
+
+        // Validar envío del formulario
+        $("#frmCompras").submit(function(e) {
+            const noFactura = $("#id_no_factura").val();
+            const fechaCompra = $("#id_fecha_compra").val();
+            const fechaFactura = $("#id_fecha_factura").val();
+            const totalDetalle = $('#id_total_detalle').val();
+            const idProducto = $('#id_id_producto').val();
+
+            // Validar número de factura
+            if (!noFactura || noFactura.trim() === "") {
+                e.preventDefault();
+                $.alert({
+                    type: 'red',
+                    title: 'Error de Validación',
+                    content: 'Debe especificar el número de factura'
+                });
+                return false;
+            }
+
+            // Validar fechas
+            if (!fechaCompra || !fechaFactura) {
+                e.preventDefault();
+                $.alert({
+                    type: 'red',
+                    title: 'Error de Validación',
+                    content: 'Debe especificar las fechas de compra y factura'
+                });
+                return false;
+            }
+
+            // Validar que haya productos agregados
+            if (totalDetalle == 0 || !idProducto) {
+                e.preventDefault();
+                $.alert({
+                    type: 'red',
+                    title: 'Error de Validación',
+                    content: 'No ha agregado productos o están sin cantidades'
+                });
+                return false;
+            }
+
+            return true;
+        });
 
     });
 
-    function selectProducto(id,descripcion)
-    {
+    /**
+     * Selecciona un producto de la lista para agregarlo al detalle
+     * @param {number} id - ID del producto
+     * @param {string} descripcion - Descripción del producto
+     */
+    function selectProducto(id, descripcion) {
+        // Verificar si hay un detalle en edición
+        const detalleId = $("#id_detalle_id").val();
+        if (detalleId) {
+            $.alert({
+                type: 'orange',
+                title: 'Edición en Progreso',
+                content: 'Está editando un detalle existente. No puede cambiar el producto.<br>Use el botón "Limpiar" para cancelar la edición.'
+            });
+            return false;
+        }
+
+        // Limpiar campos del detalle
         $("#id_cantidad_detalle").val(0);
         $('#id_precio_detalle').val(0);
         $('#id_descuento_detalle').val(0);
-
         $('#id_sub_total_detalle').val(0);
         $('#id_total_detalle').val(0);
 
+        // Establecer producto seleccionado
         $("#id_id_producto").val(+id);
         $('#id_descripcion_producto').val(descripcion);
+        
+        // Enfocar en el campo de cantidad
         $('#id_cantidad_detalle').focus();
         $('#id_cantidad_detalle').select();
-
-        $('.table').DataTable().search('').draw();
     }
 
-    function calcular_detalle()
-    {
-        var cant,prec,desc,stotal,total;
+    /**
+     * Calcula el subtotal y total del detalle basado en cantidad, precio y descuento
+     */
+    function calcular_detalle() {
+        // Obtener y validar cantidad
+        let cantidad = $("#id_cantidad_detalle").val();
+        cantidad = cantidad === "" ? 0 : +cantidad;
+        cantidad = cantidad < 0 ? 0 : cantidad;
 
-        cant = $("#id_cantidad_detalle").val();
-        cant = cant==="" ? 0 : +cant;
-        cant = cant<0 ? 0 : cant;
+        // Obtener y validar precio
+        let precio = $('#id_precio_detalle').val();
+        precio = precio === "" ? 0 : parseFloat(precio);
+        precio = precio < 0 ? 0 : precio;
 
-        prec =$('#id_precio_detalle').val();
-        prec = prec==="" ? 0 : +prec;
-        prec = prec<0 ? 0 : prec;
+        // Obtener y validar descuento
+        let descuento = $('#id_descuento_detalle').val();
+        descuento = descuento === "" ? 0 : parseFloat(descuento);
+        descuento = descuento < 0 ? 0 : descuento;
 
-        desc = $('#id_descuento_detalle').val();
-        desc = desc==="" ? 0 : +desc;
-        desc = desc<0 ? 0 : desc;
+        // Obtener tipo de descuento
+        const tipoDescuento = $('input[name="id_tipo_descuento"]:checked').val();
 
-        desc = desc>(cant * prec) ? 0 : desc;
+        // Calcular subtotal
+        const subtotalCalculado = cantidad * precio;
 
-        stotal = cant * prec;
-        total  = stotal - desc;
+        // Calcular descuento según el tipo
+        let descuentoCalculado = 0;
+        if (tipoDescuento === 'P') {
+            // Porcentaje: validar que no sea mayor a 100
+            if (descuento > 100) {
+                descuento = 100;
+                $('#id_descuento_detalle').val(descuento.toFixed(2));
+            }
+            descuentoCalculado = subtotalCalculado * (descuento / 100);
+        } else {
+            // Valor: validar que no sea mayor al subtotal
+            if (descuento > subtotalCalculado) {
+                descuento = subtotalCalculado;
+                $('#id_descuento_detalle').val(descuento.toFixed(2));
+            }
+            descuentoCalculado = descuento;
+        }
 
-        $('#id_cantidad_detalle').val(cant);
-        $('#id_precio_detalle').val(prec);
-        $('#id_descuento_detalle').val(desc);
+        // Calcular totales
+        const subtotal = subtotalCalculado.toFixed(2);
+        const total = (subtotalCalculado - descuentoCalculado).toFixed(2);
 
-        $('#id_sub_total_detalle').val(stotal);
+        // Actualizar campos
+        $('#id_cantidad_detalle').val(cantidad);
+        $('#id_precio_detalle').val(precio.toFixed(2));
+        $('#id_sub_total_detalle').val(subtotal);
         $('#id_total_detalle').val(total);
-
     }
 
-    function clear_Detail(){
+    /**
+     * Limpia todos los campos del formulario de detalle
+     */
+    function clear_Detail() {
+        $('#id_detalle_id').val('');
         $('#id_cantidad_detalle').val(0);
         $('#id_precio_detalle').val(0);
         $('#id_descuento_detalle').val(0);
-
         $('#id_sub_total_detalle').val(0);
         $('#id_total_detalle').val(0);
-
         $('#id_id_producto').val('');
         $('#id_descripcion_producto').val('');
+        
+        // Resetear tipo de descuento a Valor
+        $('#id_tipo_descuento_valor').prop('checked', true);
+        $('#desc_help_text').text('Ingrese el valor del descuento');
 
-        $('.table').DataTable().search('').draw();
+        // Rehabilitar botones de selección de productos
+        $('.btn-select-producto').prop('disabled', false).removeClass('disabled');
+        $('.tbl-productos tbody tr').removeClass('table-secondary');
 
+        // Enfocar en el campo de proveedor
         $("#id_proveedor").focus();
+    }
+
+    /**
+     * Carga los datos de un detalle existente para edición
+     * @param {HTMLElement} button - Botón de editar que contiene los datos en atributos data-*
+     */
+    function editarProducto(button) {
+        // Leer valores desde los atributos data del botón
+        const detalleId = $(button).data('detalle-id');
+        const productoId = $(button).data('producto-id');
+        const descripcion = $(button).data('descripcion');
+        const cantidad = $(button).data('cantidad');
+        const precio = $(button).data('precio');
+        const descuento = $(button).data('descuento');
+        const tipoDescuento = $(button).data('tipo-descuento') || 'V';
+        
+        // Log para debugging
+        console.log('Editando producto:', {
+            detalleId,
+            productoId,
+            descripcion,
+            cantidad,
+            precio,
+            descuento,
+            tipoDescuento
+        });
+        
+        // Cargar ID del detalle (indica que estamos editando)
+        $("#id_detalle_id").val(detalleId);
+        
+        // Cargar datos del producto
+        $("#id_id_producto").val(productoId);
+        $('#id_descripcion_producto').val(descripcion);
+        
+        // Convertir a números preservando decimales
+        const cantidadNum = parseInt(cantidad) || 0;
+        const precioNum = parseFloat(precio) || 0;
+        const descuentoNum = parseFloat(descuento) || 0;
+        
+        // Cargar valores en los campos
+        $('#id_cantidad_detalle').val(cantidadNum);
+        $('#id_precio_detalle').val(precioNum.toFixed(2));
+        $('#id_descuento_detalle').val(descuentoNum.toFixed(2));
+        
+        // Establecer tipo de descuento
+        if (tipoDescuento === 'P') {
+            $('#id_tipo_descuento_porcentaje').prop('checked', true);
+            $('#desc_help_text').text('Ingrese el porcentaje de descuento (0-100)');
+        } else {
+            $('#id_tipo_descuento_valor').prop('checked', true);
+            $('#desc_help_text').text('Ingrese el valor del descuento');
+        }
+
+        // Calcular subtotal y total
+        calcular_detalle();
+
+        // Deshabilitar botones de selección de productos para evitar cambio de producto
+        $('.btn-select-producto').prop('disabled', true).addClass('disabled');
+        $('.tbl-productos tbody tr').addClass('table-secondary');
+
+        // Enfocar en el campo de cantidad
+        $('#id_cantidad_detalle').focus();
+        $('#id_cantidad_detalle').select();
+    }
+
+    /**
+     * Elimina un detalle de compra con confirmación
+     * @param {number} detalleId - ID del detalle a eliminar
+     * @param {string} productoNombre - Nombre del producto para mostrar en el mensaje
+     */
+    function eliminarDetalle(detalleId, productoNombre) {
+        {% if encabezado %}
+        const compraId = {{ encabezado.pk }};
+        {% else %}
+        console.error('No se puede eliminar un detalle sin una compra guardada');
+        return;
+        {% endif %}
+        
+        $.confirm({
+            title: 'Eliminar Detalle de Compra',
+            content: '¿Está seguro de eliminar el detalle de compra <strong>' + productoNombre + '</strong>?',
+            type: 'red',
+            buttons: {
+                cancel: {
+                    text: 'Cancelar',
+                    btnClass: 'btn-secondary',
+                    action: function() {}
+                },
+                confirm: {
+                    text: 'Sí, eliminar',
+                    btnClass: 'btn-danger',
+                    action: function() {
+                        window.location.href = '/cmp/compras/delete/' + compraId + '/' + detalleId;
+                    }
+                }
+            }
+        });
     }
 
     $("#id_proveedor").focus();
