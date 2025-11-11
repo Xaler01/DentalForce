@@ -1,0 +1,248 @@
+[
+  {
+    "model": "cit.especialidad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Ortodoncia",
+      "descripcion": "Especialidad dedicada al estudio, prevención, diagnóstico y tratamiento de las anomalías de forma, posición, relación y función de las estructuras dentomaxilofaciales.",
+      "duracion_default": 45,
+      "color_calendario": "#3498db",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 2,
+    "fields": {
+      "nombre": "Endodoncia",
+      "descripcion": "Rama de la odontología que trata las enfermedades de la pulpa dental y los tejidos periapicales. Incluye tratamientos de conducto.",
+      "duracion_default": 60,
+      "color_calendario": "#e74c3c",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 3,
+    "fields": {
+      "nombre": "Periodoncia",
+      "descripcion": "Especialidad que estudia la prevención, diagnóstico y tratamiento de las enfermedades que afectan las encías y el soporte de los dientes.",
+      "duracion_default": 40,
+      "color_calendario": "#2ecc71",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 4,
+    "fields": {
+      "nombre": "Odontopediatría",
+      "descripcion": "Rama de la odontología encargada de tratar a los niños, desde el nacimiento hasta la adolescencia.",
+      "duracion_default": 30,
+      "color_calendario": "#f39c12",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 5,
+    "fields": {
+      "nombre": "Cirugía Oral",
+      "descripcion": "Especialidad quirúrgica que incluye extracción de dientes, implantes dentales y cirugía correctiva de mandíbula.",
+      "duracion_default": 90,
+      "color_calendario": "#9b59b6",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 6,
+    "fields": {
+      "nombre": "Prostodoncia",
+      "descripcion": "Especialidad dedicada a la restauración y reemplazo de dientes mediante prótesis, coronas, puentes e implantes.",
+      "duracion_default": 60,
+      "color_calendario": "#1abc9c",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 7,
+    "fields": {
+      "nombre": "Estética Dental",
+      "descripcion": "Procedimientos destinados a mejorar la apariencia de los dientes, incluyendo blanqueamiento, carillas y contorneo.",
+      "duracion_default": 45,
+      "color_calendario": "#e91e63",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 8,
+    "fields": {
+      "nombre": "Limpieza Dental",
+      "descripcion": "Procedimiento preventivo de higiene oral que incluye remoción de placa, sarro y manchas dentales.",
+      "duracion_default": 30,
+      "color_calendario": "#34495e",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 9,
+    "fields": {
+      "nombre": "Implantología",
+      "descripcion": "Especialidad enfocada en la colocación de implantes dentales para reemplazar raíces de dientes perdidos.",
+      "duracion_default": 120,
+      "color_calendario": "#16a085",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.especialidad",
+    "pk": 10,
+    "fields": {
+      "nombre": "Radiología Dental",
+      "descripcion": "Diagnóstico mediante imágenes radiográficas para identificar problemas dentales no visibles.",
+      "duracion_default": 15,
+      "color_calendario": "#95a5a6",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 1,
+    "fields": {
+      "sucursal": 1,
+      "nombre": "Consultorio General 1",
+      "numero": 1,
+      "capacidad": 2,
+      "equipamiento": "Silla dental eléctrica, Lámpara LED, Rayos X intraoral, Equipo de aspiración, Instrumental básico",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 2,
+    "fields": {
+      "sucursal": 1,
+      "nombre": "Consultorio General 2",
+      "numero": 2,
+      "capacidad": 2,
+      "equipamiento": "Silla dental eléctrica, Lámpara LED, Cámara intraoral, Equipo de aspiración, Instrumental básico",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 3,
+    "fields": {
+      "sucursal": 1,
+      "nombre": "Sala de Cirugía",
+      "numero": 3,
+      "capacidad": 4,
+      "equipamiento": "Silla dental quirúrgica, Lámpara quirúrgica de alta intensidad, Monitor de signos vitales, Equipo de anestesia, Instrumental quirúrgico completo",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 4,
+    "fields": {
+      "sucursal": 2,
+      "nombre": "Consultorio General 1",
+      "numero": 1,
+      "capacidad": 2,
+      "equipamiento": "Silla dental eléctrica, Lámpara LED, Rayos X digital, Equipo de aspiración, Instrumental básico",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 5,
+    "fields": {
+      "sucursal": 2,
+      "nombre": "Consultorio Pediátrico",
+      "numero": 2,
+      "capacidad": 3,
+      "equipamiento": "Silla dental pediátrica, Decoración infantil, Televisión con contenido infantil, Instrumental pediátrico, Juguetes educativos",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  },
+  {
+    "model": "cit.cubiculo",
+    "pk": 6,
+    "fields": {
+      "sucursal": 2,
+      "nombre": "Sala de Ortodoncia",
+      "numero": 3,
+      "capacidad": 2,
+      "equipamiento": "Silla dental reclinable, Lámpara LED, Espejo panorámico, Set de ortodoncia, Modelos dentales",
+      "estado": true,
+      "uc": 1,
+      "um": 1,
+      "fc": "2025-11-11T10:00:00Z",
+      "fm": "2025-11-11T10:00:00Z"
+    }
+  }
+]
