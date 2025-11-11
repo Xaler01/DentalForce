@@ -1,0 +1,62 @@
+# ============================================
+# PowerDent - Dependencias de Producción
+# ============================================
+# Actualizado: Noviembre 10, 2025
+# Python: 3.12+
+# PostgreSQL: 12+
+
+# ==========================================
+# Framework Web
+# ==========================================
+asgiref==3.7.2
+Django==4.2.6
+sqlparse==0.4.4
+
+# ==========================================
+# Base de Datos
+# ==========================================
+psycopg2==2.9.9
+psycopg2-binary==2.9.9
+
+# ==========================================
+# Configuración y Seguridad
+# ==========================================
+python-dotenv==1.2.1
+
+# ==========================================
+# Dependencias Adicionales (Opcional)
+# ==========================================
+# Descomenta las siguientes líneas si las necesitas:
+
+# Servidor WSGI para Producción
+# gunicorn==21.2.0
+
+# Servir archivos estáticos
+# whitenoise==6.6.0
+
+# Gestión de formularios
+# django-crispy-forms==2.1
+
+# Manejo de imágenes
+# Pillow==10.1.0
+
+# ==========================================
+# Notas de Instalación
+# ==========================================
+# 1. Instalar dependencias:
+#    pip install -r requirements.txt
+#
+# 2. Crear archivo .env con:
+#    - SECRET_KEY
+#    - DEBUG
+#    - ALLOWED_HOSTS
+#    - DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+#
+# 3. Aplicar migraciones:
+#    python manage.py migrate
+#
+# 4. Crear superusuario:
+#    python manage.py createsuperuser
+#
+# 5. Ejecutar servidor:
+#    python manage.py runserver

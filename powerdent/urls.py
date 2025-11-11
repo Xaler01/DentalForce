@@ -24,6 +24,7 @@ urlpatterns = [
 
     path('', include(('bases.urls', 'bases'), namespace='bases')),
     path('inv/', include(('inv.urls', 'inv'), namespace='inv')),
+    path('cmp/', include(('cmp.urls', 'cmp'), namespace='cmp')),
 
     path('admin/', admin.site.urls),
     # path('', inicio, name='Inicio'),  # La ruta raíz ahora renderiza el index.html
