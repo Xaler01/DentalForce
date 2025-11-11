@@ -1,0 +1,109 @@
+{% extends 'base/base.html' %}
+{% block page_content %}
+
+ <!-- Dropdown Card Example -->
+    <div class="card shadow mb-4">
+        <!-- Card Header - Dropdown -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Listado de Proveedor</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-600"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                    aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Acciones</div>
+                    <a class="dropdown-item" onclick="return abrir_modal('{% url "cmp:proveedor_new" %}')" href="#"><i class="far fa-calendar-plus"></i> Nuevo</a>
+                    <!--<a class="dropdown-item" href="#">Another action</a>-->
+                     <!--<div class="dropdown-divider"></div>
+                   <a class="dropdown-item" href="#">Something else here</a>-->
+                </div>
+            </div>
+        </div>
+        <!-- Card Body -->
+        <div class="card-body">
+            {% if not obj %}
+            <div class="alert alert-info">No hay Proveedores</div>
+            {% endif %}
+            <div class="table-responsive-sm">
+                                <table class="table table-responsive table-striped table-hover dt-responsive wrap" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>Id</th>
+                                                <th>Descripcion</th>
+                                                <th>Direccion</th>
+                                                <th>Contacto</th>
+                                                <th>Teléfono</th>
+                                                <th>Email</th>
+                                                <th>Estado</th>
+                                                <th class="all">Accion</th>
+                                            </tr>
+                                        </thead>
+                    <tbody>
+                      {% for item in obj  %}
+                      <tr>
+                          <td>{{ item.id }}</td>
+                          <td>{{ item.descripcion }}</td>
+                          <td>{{ item.direccion}}</td>
+                          <td>{{ item.contacto }}</td>
+                          <td>{{ item.telefono }}</td>
+                          <td>{{ item.email }}</td>
+                          <td>
+                              {% if item.estado %}
+                              <span class="badge badge-success">Activo</span>
+                              {% else %}
+                              <span class="badge badge-secondary">Inactivo</span>
+                              {% endif %}
+                          </td>
+                          <td>
+                              <button class="btn btn-warning btn-circle btn-sm" onclick="return abrir_modal('{% url "cmp:proveedor_edit" item.id %}')">
+                              <i class="far fa-edit"></i></button>
+                              <button class="btn btn-danger btn-circle btn-sm" onclick="return abrir_modal('{% url "cmp:proveedor_inactivar" item.id %}')">
+                              <i class="far fa-trash-alt"></i></button>
+                              <!--<a href="{% url 'inv:producto_edit' item.id %}" class="btn btn-warning btn-circle" role="button"><i class="far fa-edit"></i></a>
+                              <a href="{% url 'cmp:proveedor_inactivar' item.id %}" class="btn   btn-circle" role="button"><i class="far fa-thumbs-down"></i></a>-->
+                          </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock page_content %}
+{% block js_page %}
+<script>
+    // Call the datatables jQuery plugin using the shorthand ready handler
+    jQuery(function($) {
+        $('.table').DataTable({
+            "language": {
+                "sProcessing": "Procesando...",
+                "sLengthMenu": "Mostrar _MENU_ registros",
+                "sZeroRecords": "No se encontraron resultados",
+                "sEmptyTable": "Ningun dato disponible en esta tabla",
+                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+                "sInfoFiltered": "(filtrado de un total de _MAX_ regitros)",
+                "sInfoPostFix": "",
+                "sSearch": "Buscar:",
+                "sUrl": "",
+                "sInfoThousands": ",",
+                "sLoadingRecords": "Cargando...",
+                "oPaginate": {
+                    "sFirst": "<span class='fa fa-angle-double-left'></span>",
+                    "sLast": "<span class='fa fa-angle-double-right'></span>",
+                    "sNext": "<span class='fa fa-angle-right'></span>",
+                    "sPrevious": "<span class='fa fa-angle-left'></span>"
+                },
+                "oAria": {
+                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                }
+            }
+        });
+    });
+</script>
+{% endblock js_page %}

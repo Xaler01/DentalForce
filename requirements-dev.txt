@@ -1,0 +1,64 @@
+# ============================================
+# PowerDent - Dependencias de Desarrollo
+# ============================================
+# Actualizado: Noviembre 10, 2025
+# Estas dependencias son ADICIONALES a requirements.txt
+
+# ==========================================
+# Primero instalar dependencias base:
+# pip install -r requirements.txt
+# ==========================================
+
+# ==========================================
+# Testing y Automatización
+# ==========================================
+robotframework==7.2
+robotframework-assertion-engine==3.0.3
+robotframework-browser==19.2.0
+robotframework-pythonlibcore==4.4.1
+
+# ==========================================
+# Utilidades de Desarrollo
+# ==========================================
+natsort==8.4.0
+seedir==0.5.0
+click==8.1.8
+wrapt==1.17.2
+overrides==7.7.0
+
+# ==========================================
+# Comunicación (gRPC)
+# ==========================================
+grpcio==1.70.0
+grpcio-tools==1.70.0
+protobuf==5.29.3
+
+# ==========================================
+# Herramientas Recomendadas Adicionales
+# ==========================================
+# Descomenta según necesites:
+
+# Debugging
+# django-debug-toolbar==4.2.0
+# ipython==8.18.1
+# ipdb==0.13.13
+
+# Linting y Formateo
+# flake8==6.1.0
+# black==23.11.0
+# isort==5.12.0
+# pylint==3.0.2
+
+# Testing Adicional
+# pytest==7.4.3
+# pytest-django==4.7.0
+# coverage==7.3.2
+# factory-boy==3.3.0
+
+# Pre-commit Hooks
+# pre-commit==3.5.0
+
+# ==========================================
+# Instalación
+# ==========================================
+# pip install -r requirements-dev.txt
