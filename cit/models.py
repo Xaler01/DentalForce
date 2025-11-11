@@ -521,3 +521,191 @@ class Paciente(ClaseModelo):
     
     get_nombre_completo.short_description = 'Nombre Completo'
 
+
+class Cita(ClaseModelo):
+    """Modelo de Cita Odontológica"""
+    
+    # Opciones de Estado
+    ESTADO_PENDIENTE = 'PEN'
+    ESTADO_CONFIRMADA = 'CON'
+    ESTADO_EN_ATENCION = 'ATE'
+    ESTADO_COMPLETADA = 'COM'
+    ESTADO_CANCELADA = 'CAN'
+    ESTADO_NO_ASISTIO = 'NAS'
+    
+    ESTADOS_CHOICES = [
+        (ESTADO_PENDIENTE, 'Pendiente'),
+        (ESTADO_CONFIRMADA, 'Confirmada'),
+        (ESTADO_EN_ATENCION, 'En Atención'),
+        (ESTADO_COMPLETADA, 'Completada'),
+        (ESTADO_CANCELADA, 'Cancelada'),
+        (ESTADO_NO_ASISTIO, 'No Asistió'),
+    ]
+    
+    # Relaciones
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.PROTECT,
+        related_name='citas',
+        verbose_name='Paciente',
+        help_text='Paciente que tiene la cita'
+    )
+    dentista = models.ForeignKey(
+        Dentista,
+        on_delete=models.PROTECT,
+        related_name='citas',
+        verbose_name='Dentista',
+        help_text='Dentista que atenderá la cita'
+    )
+    especialidad = models.ForeignKey(
+        Especialidad,
+        on_delete=models.PROTECT,
+        related_name='citas',
+        verbose_name='Especialidad',
+        help_text='Especialidad odontológica de la cita'
+    )
+    cubiculo = models.ForeignKey(
+        Cubiculo,
+        on_delete=models.PROTECT,
+        related_name='citas',
+        verbose_name='Cubículo',
+        help_text='Cubículo donde se realizará la cita'
+    )
+    
+    # Información de la Cita
+    fecha_hora = models.DateTimeField(
+        verbose_name='Fecha y Hora',
+        help_text='Fecha y hora de inicio de la cita'
+    )
+    duracion = models.PositiveIntegerField(
+        verbose_name='Duración (minutos)',
+        help_text='Duración estimada en minutos',
+        default=30
+    )
+    estado = models.CharField(
+        max_length=3,
+        choices=ESTADOS_CHOICES,
+        default=ESTADO_PENDIENTE,
+        verbose_name='Estado',
+        help_text='Estado actual de la cita'
+    )
+    observaciones = models.TextField(
+        verbose_name='Observaciones',
+        blank=True,
+        help_text='Notas u observaciones sobre la cita'
+    )
+    motivo_cancelacion = models.TextField(
+        verbose_name='Motivo de Cancelación',
+        blank=True,
+        help_text='Razón por la cual se canceló la cita'
+    )
+    
+    class Meta:
+        verbose_name = 'Cita'
+        verbose_name_plural = 'Citas'
+        ordering = ['-fecha_hora']
+        indexes = [
+            models.Index(fields=['fecha_hora', 'estado']),
+            models.Index(fields=['dentista', 'fecha_hora']),
+            models.Index(fields=['paciente', 'fecha_hora']),
+        ]
+    
+    def __str__(self):
+        return f"{self.paciente.get_nombre_completo()} - {self.especialidad.nombre} - {self.fecha_hora.strftime('%d/%m/%Y %H:%M')}"
+    
+    def clean(self):
+        """Validaciones personalizadas"""
+        from django.core.exceptions import ValidationError
+        from datetime import datetime, timedelta
+        
+        errors = {}
+        
+        # Validación 1: No solapamiento por dentista
+        if self.dentista and self.fecha_hora and self.duracion:
+            fecha_fin = self.fecha_hora + timedelta(minutes=self.duracion)
+            
+            # Buscar citas del mismo dentista que se solapen
+            citas_solapadas_dentista = Cita.objects.filter(
+                dentista=self.dentista,
+                fecha_hora__lt=fecha_fin,
+                estado__in=[self.ESTADO_PENDIENTE, self.ESTADO_CONFIRMADA, self.ESTADO_EN_ATENCION]
+            ).exclude(pk=self.pk)
+            
+            for cita in citas_solapadas_dentista:
+                cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
+                if cita.fecha_hora < fecha_fin and cita_fin > self.fecha_hora:
+                    errors['dentista'] = f'El dentista {self.dentista} ya tiene una cita programada entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
+                    break
+        
+        # Validación 2: No solapamiento por cubículo
+        if self.cubiculo and self.fecha_hora and self.duracion:
+            fecha_fin = self.fecha_hora + timedelta(minutes=self.duracion)
+            
+            citas_solapadas_cubiculo = Cita.objects.filter(
+                cubiculo=self.cubiculo,
+                fecha_hora__lt=fecha_fin,
+                estado__in=[self.ESTADO_PENDIENTE, self.ESTADO_CONFIRMADA, self.ESTADO_EN_ATENCION]
+            ).exclude(pk=self.pk)
+            
+            for cita in citas_solapadas_cubiculo:
+                cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
+                if cita.fecha_hora < fecha_fin and cita_fin > self.fecha_hora:
+                    errors['cubiculo'] = f'El cubículo {self.cubiculo} ya está ocupado entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
+                    break
+        
+        # Validación 3: Dentista tiene la especialidad
+        if self.dentista and self.especialidad:
+            if not self.dentista.especialidades.filter(pk=self.especialidad.pk).exists():
+                errors['especialidad'] = f'El dentista {self.dentista} no tiene la especialidad {self.especialidad.nombre}'
+        
+        # Validación 4: Cubículo pertenece a la sucursal del dentista
+        if self.dentista and self.cubiculo:
+            if self.dentista.sucursal_principal and self.cubiculo.sucursal != self.dentista.sucursal_principal:
+                errors['cubiculo'] = f'El cubículo debe pertenecer a la sucursal {self.dentista.sucursal_principal.nombre} del dentista'
+        
+        # Validación 5: Domingos requieren confirmación
+        if self.fecha_hora:
+            if self.fecha_hora.weekday() == 6:  # 6 = Domingo
+                if self.estado == self.ESTADO_PENDIENTE:
+                    errors['fecha_hora'] = 'Las citas en domingo deben estar confirmadas. No se pueden crear citas pendientes los domingos.'
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def get_duracion_display_horas(self):
+        """Retorna la duración en formato horas:minutos"""
+        horas = self.duracion // 60
+        minutos = self.duracion % 60
+        if horas > 0:
+            return f"{horas}h {minutos}min" if minutos > 0 else f"{horas}h"
+        return f"{minutos}min"
+    
+    get_duracion_display_horas.short_description = 'Duración'
+    
+    def get_estado_badge(self):
+        """Retorna el estado con formato de badge para templates"""
+        estados_colores = {
+            self.ESTADO_PENDIENTE: 'warning',
+            self.ESTADO_CONFIRMADA: 'info',
+            self.ESTADO_EN_ATENCION: 'primary',
+            self.ESTADO_COMPLETADA: 'success',
+            self.ESTADO_CANCELADA: 'danger',
+            self.ESTADO_NO_ASISTIO: 'secondary',
+        }
+        return {
+            'estado': self.get_estado_display(),
+            'color': estados_colores.get(self.estado, 'secondary')
+        }
+    
+    def puede_cancelar(self):
+        """Verifica si la cita puede ser cancelada"""
+        return self.estado in [self.ESTADO_PENDIENTE, self.ESTADO_CONFIRMADA]
+    
+    def puede_confirmar(self):
+        """Verifica si la cita puede ser confirmada"""
+        return self.estado == self.ESTADO_PENDIENTE
+    
+    def puede_iniciar_atencion(self):
+        """Verifica si la cita puede iniciar atención"""
+        return self.estado in [self.ESTADO_CONFIRMADA, self.ESTADO_PENDIENTE]
+

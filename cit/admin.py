@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente
+from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente, Cita
 
 # Register your models here.
 
@@ -244,3 +244,64 @@ class PacienteAdmin(admin.ModelAdmin):
             obj.uc = request.user
         obj.um = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Cita)
+class CitaAdmin(admin.ModelAdmin):
+    """Administración de Citas"""
+    list_display = ('get_info_cita', 'paciente', 'dentista', 'especialidad', 'fecha_hora', 'duracion', 'get_estado_badge_display', 'cubiculo')
+    list_filter = ('estado', 'especialidad', 'dentista', 'cubiculo__sucursal', 'fecha_hora')
+    search_fields = ('paciente__nombres', 'paciente__apellidos', 'paciente__cedula', 'dentista__usuario__first_name', 'dentista__usuario__last_name', 'observaciones')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    autocomplete_fields = ['paciente', 'dentista', 'especialidad', 'cubiculo']
+    date_hierarchy = 'fecha_hora'
+    list_per_page = 25
+    
+    fieldsets = (
+        ('Información del Paciente', {
+            'fields': ('paciente',)
+        }),
+        ('Información de la Cita', {
+            'fields': ('dentista', 'especialidad', 'cubiculo', 'fecha_hora', 'duracion')
+        }),
+        ('Estado y Observaciones', {
+            'fields': ('estado', 'observaciones', 'motivo_cancelacion')
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_info_cita(self, obj):
+        """Retorna información resumida de la cita"""
+        return f"Cita #{obj.pk}"
+    get_info_cita.short_description = 'ID'
+    
+    def get_estado_badge_display(self, obj):
+        """Retorna el estado con formato HTML"""
+        badge_info = obj.get_estado_badge()
+        colores = {
+            'warning': '#ffc107',
+            'info': '#17a2b8',
+            'primary': '#007bff',
+            'success': '#28a745',
+            'danger': '#dc3545',
+            'secondary': '#6c757d',
+        }
+        color = colores.get(badge_info['color'], '#6c757d')
+        return f'<span style="background-color: {color}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">{badge_info["estado"]}</span>'
+    get_estado_badge_display.short_description = 'Estado'
+    get_estado_badge_display.allow_tags = True
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        """Optimizar consultas con select_related"""
+        qs = super().get_queryset(request)
+        return qs.select_related('paciente', 'dentista', 'dentista__usuario', 'especialidad', 'cubiculo', 'cubiculo__sucursal')
