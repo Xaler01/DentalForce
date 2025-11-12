@@ -487,3 +487,120 @@ def get_dentista_especialidades(request, dentista_id):
             'success': False,
             'mensaje': 'Dentista no encontrado'
         })
+
+
+# ============================================================================
+# VISTAS DE CALENDARIO
+# ============================================================================
+
+class CalendarioCitasView(LoginRequiredMixin, ListView):
+    """
+    Vista para mostrar el calendario de citas con FullCalendar.
+    """
+    model = Cita
+    template_name = 'cit/calendario_citas.html'
+    context_object_name = 'citas'
+    
+    def get_context_data(self, **kwargs):
+        """Agregar datos adicionales al contexto"""
+        context = super().get_context_data(**kwargs)
+        
+        # Lista de dentistas para filtros
+        context['dentistas'] = Dentista.objects.filter(estado=True).select_related('usuario')
+        
+        # Lista de especialidades para filtros
+        context['especialidades'] = Especialidad.objects.filter(estado=True)
+        
+        # Estados para filtros
+        context['estados'] = Cita.ESTADOS_CHOICES
+        
+        return context
+
+
+@login_required
+def citas_json(request):
+    """
+    Endpoint JSON para FullCalendar.
+    Retorna las citas en formato de eventos de FullCalendar.
+    """
+    # Obtener parámetros de fecha de FullCalendar
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    
+    # Filtros opcionales
+    dentista_id = request.GET.get('dentista_id')
+    especialidad_id = request.GET.get('especialidad_id')
+    estado = request.GET.get('estado')
+    
+    # Consulta base con optimización
+    queryset = Cita.objects.select_related(
+        'paciente',
+        'dentista',
+        'dentista__usuario',
+        'especialidad',
+        'cubiculo'
+    ).all()
+    
+    # Filtrar por rango de fechas si se proporciona
+    if start and end:
+        try:
+            start_date = datetime.fromisoformat(start.replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(end.replace('Z', '+00:00'))
+            queryset = queryset.filter(
+                fecha_hora__gte=start_date,
+                fecha_hora__lte=end_date
+            )
+        except ValueError:
+            pass
+    
+    # Aplicar filtros adicionales
+    if dentista_id:
+        queryset = queryset.filter(dentista_id=dentista_id)
+    
+    if especialidad_id:
+        queryset = queryset.filter(especialidad_id=especialidad_id)
+    
+    if estado:
+        queryset = queryset.filter(estado=estado)
+    
+    # Construir eventos para FullCalendar
+    eventos = []
+    for cita in queryset:
+        # Calcular fecha de fin
+        fecha_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
+        
+        # Determinar color según estado
+        color_map = {
+            Cita.ESTADO_PENDIENTE: '#ffc107',      # warning - amarillo
+            Cita.ESTADO_CONFIRMADA: '#17a2b8',     # info - azul
+            Cita.ESTADO_EN_ATENCION: '#007bff',    # primary - azul oscuro
+            Cita.ESTADO_COMPLETADA: '#28a745',     # success - verde
+            Cita.ESTADO_CANCELADA: '#6c757d',      # secondary - gris
+            Cita.ESTADO_NO_ASISTIO: '#dc3545',     # danger - rojo
+        }
+        
+        evento = {
+            'id': cita.id,
+            'title': f"{cita.paciente.nombres} {cita.paciente.apellidos}",
+            'start': cita.fecha_hora.isoformat(),
+            'end': fecha_fin.isoformat(),
+            'backgroundColor': color_map.get(cita.estado, '#6c757d'),
+            'borderColor': color_map.get(cita.estado, '#6c757d'),
+            'textColor': '#ffffff',
+            'extendedProps': {
+                'paciente': str(cita.paciente),
+                'paciente_cedula': cita.paciente.cedula,
+                'dentista': str(cita.dentista),
+                'especialidad': cita.especialidad.nombre,
+                'especialidad_color': cita.especialidad.color_calendario,
+                'cubiculo': cita.cubiculo.nombre,
+                'estado': cita.get_estado_display(),
+                'estado_codigo': cita.estado,
+                'duracion': cita.duracion,
+                'duracion_display': cita.get_duracion_display_horas(),
+                'observaciones': cita.observaciones or '',
+            }
+        }
+        eventos.append(evento)
+    
+    return JsonResponse(eventos, safe=False)

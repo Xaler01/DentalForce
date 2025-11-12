@@ -1,0 +1,345 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .fc-event {
+        cursor: pointer;
+    }
+    
+    .fc-event:hover {
+        opacity: 0.8;
+    }
+    
+    .tooltip-cita {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-size: 12px;
+        max-width: 300px;
+    }
+    
+    .tooltip-cita .tooltip-header {
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .tooltip-cita .tooltip-row {
+        margin: 4px 0;
+    }
+    
+    .tooltip-cita .tooltip-label {
+        font-weight: bold;
+        display: inline-block;
+        width: 90px;
+    }
+    
+    .badge-estado {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        color: white;
+    }
+    
+    .filtros-card {
+        margin-bottom: 20px;
+    }
+    
+    .leyenda-estados {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .leyenda-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-alt"></i> Calendario de Citas
+        </h1>
+        <div>
+            <a href="{% url 'cit:cita-create' %}" class="btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-plus"></i> Nueva Cita
+            </a>
+            <a href="{% url 'cit:cita-list' %}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-list"></i> Ver Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4 filtros-card">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="filtro-dentista">Dentista</label>
+                    <select class="form-control" id="filtro-dentista">
+                        <option value="">Todos</option>
+                        {% for dentista in dentistas %}
+                        <option value="{{ dentista.id }}">
+                            Dr./Dra. {{ dentista.usuario.first_name }} {{ dentista.usuario.last_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filtro-especialidad">Especialidad</label>
+                    <select class="form-control" id="filtro-especialidad">
+                        <option value="">Todas</option>
+                        {% for esp in especialidades %}
+                        <option value="{{ esp.id }}">{{ esp.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filtro-estado">Estado</label>
+                    <select class="form-control" id="filtro-estado">
+                        <option value="">Todos</option>
+                        {% for codigo, nombre in estados %}
+                        <option value="{{ codigo }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button class="btn btn-primary btn-block" id="btn-aplicar-filtros">
+                            <i class="fas fa-search"></i> Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leyenda de Estados -->
+            <div class="leyenda-estados mt-3">
+                <strong>Leyenda:</strong>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #ffc107;"></div>
+                    <span>Pendiente</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #17a2b8;"></div>
+                    <span>Confirmada</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #007bff;"></div>
+                    <span>En Atención</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #28a745;"></div>
+                    <span>Completada</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #6c757d;"></div>
+                    <span>Cancelada</span>
+                </div>
+                <div class="leyenda-item">
+                    <div class="leyenda-color" style="background-color: #dc3545;"></div>
+                    <span>No Asistió</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<!-- Idioma español -->
+<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    
+    // Inicializar FullCalendar
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        // Configuración básica
+        initialView: 'timeGridWeek',
+        locale: 'es',
+        timeZone: 'America/Guayaquil',
+        height: 'auto',
+        
+        // Header toolbar
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        
+        // Botones personalizados
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día'
+        },
+        
+        // Configuración de horario laboral
+        slotMinTime: '08:00:00',
+        slotMaxTime: '20:00:00',
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00:00',
+        
+        // Configuración de días
+        weekends: true,
+        firstDay: 1, // Lunes
+        
+        // Configuración de eventos
+        events: {
+            url: '{% url "cit:citas-json" %}',
+            method: 'GET',
+            extraParams: function() {
+                return {
+                    dentista_id: $('#filtro-dentista').val(),
+                    especialidad_id: $('#filtro-especialidad').val(),
+                    estado: $('#filtro-estado').val()
+                };
+            },
+            failure: function() {
+                alert('Error al cargar las citas. Por favor, recarga la página.');
+            }
+        },
+        
+        // Evento al hacer clic en una cita
+        eventClick: function(info) {
+            var citaId = info.event.id;
+            window.location.href = '{% url "cit:cita-detail" 0 %}'.replace('0', citaId);
+        },
+        
+        // Tooltip al pasar el mouse
+        eventDidMount: function(info) {
+            var props = info.event.extendedProps;
+            var tooltip = document.createElement('div');
+            tooltip.className = 'tooltip-cita';
+            tooltip.style.display = 'none';
+            tooltip.style.position = 'absolute';
+            tooltip.style.zIndex = '9999';
+            
+            var estadoColor = info.event.backgroundColor;
+            
+            tooltip.innerHTML = `
+                <div class="tooltip-header" style="color: ${estadoColor};">
+                    <i class="fas fa-calendar-check"></i> ${info.event.title}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Cédula:</span> ${props.paciente_cedula}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Dentista:</span> ${props.dentista}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Especialidad:</span> ${props.especialidad}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Cubículo:</span> ${props.cubiculo}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Duración:</span> ${props.duracion_display}
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Estado:</span> 
+                    <span class="badge-estado" style="background-color: ${estadoColor};">
+                        ${props.estado}
+                    </span>
+                </div>
+                ${props.observaciones ? `
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Observaciones:</span>
+                    <div style="margin-top: 4px; font-size: 11px; font-style: italic;">
+                        ${props.observaciones}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            // Mostrar tooltip al pasar el mouse
+            info.el.addEventListener('mouseenter', function(e) {
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.pageX + 10) + 'px';
+                tooltip.style.top = (e.pageY + 10) + 'px';
+            });
+            
+            // Mover tooltip con el mouse
+            info.el.addEventListener('mousemove', function(e) {
+                tooltip.style.left = (e.pageX + 10) + 'px';
+                tooltip.style.top = (e.pageY + 10) + 'px';
+            });
+            
+            // Ocultar tooltip al salir
+            info.el.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+            });
+        },
+        
+        // Configuración de vista
+        allDaySlot: false,
+        nowIndicator: true,
+        
+        // Eventos de navegación
+        datesSet: function(info) {
+            console.log('Vista cambiada a: ' + info.view.type);
+        }
+    });
+    
+    calendar.render();
+    
+    // Aplicar filtros
+    $('#btn-aplicar-filtros').on('click', function() {
+        calendar.refetchEvents();
+    });
+    
+    // Aplicar filtros al cambiar los selectores (opcional)
+    $('#filtro-dentista, #filtro-especialidad, #filtro-estado').on('change', function() {
+        calendar.refetchEvents();
+    });
+});
+</script>
+{% endblock %}

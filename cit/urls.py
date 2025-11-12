@@ -35,4 +35,10 @@ urlpatterns = [
     path('api/dentista/<int:dentista_id>/especialidades/', 
          views.get_dentista_especialidades, 
          name='ajax-dentista-especialidades'),
+    
+    # ========================================================================
+    # Calendario
+    # ========================================================================
+    path('calendario/', views.CalendarioCitasView.as_view(), name='calendario'),
+    path('api/citas.json', views.citas_json, name='citas-json'),
 ]
