@@ -12,48 +12,33 @@
     
     .fc-event {
         cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     
     .fc-event:hover {
-        opacity: 0.8;
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 1000 !important;
     }
     
-    .tooltip-cita {
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-size: 12px;
-        max-width: 300px;
-    }
-    
-    .tooltip-cita .tooltip-header {
-        font-weight: bold;
+    /* Estilos para el modal de detalles de cita */
+    .cita-detail-modal {
         font-size: 14px;
-        margin-bottom: 8px;
-        padding-bottom: 5px;
-        border-bottom: 1px solid #eee;
     }
     
-    .tooltip-cita .tooltip-row {
-        margin: 4px 0;
+    .cita-detail-modal .row {
+        padding: 4px 0;
     }
     
-    .tooltip-cita .tooltip-label {
-        font-weight: bold;
-        display: inline-block;
-        width: 90px;
+    .cita-detail-modal strong {
+        color: #495057;
     }
     
-    .badge-estado {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
-        font-size: 11px;
-        color: white;
+    .cita-detail-modal .badge {
+        font-size: 12px;
     }
     
+    /* Filtros */
     .filtros-card {
         margin-bottom: 20px;
     }
@@ -194,13 +179,8 @@
 <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
 
 <script>
-console.log('🔧 Script de calendario cargado');
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📅 DOMContentLoaded - Iniciando FullCalendar');
-    
     var calendarEl = document.getElementById('calendar');
-    console.log('📍 Elemento calendario:', calendarEl);
     
     if (!calendarEl) {
         console.error('❌ ERROR: No se encontró el elemento #calendar');
@@ -211,8 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ ERROR: FullCalendar no está cargado');
         return;
     }
-    
-    console.log('✅ FullCalendar disponible, inicializando...');
     
     // Inicializar FullCalendar
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -252,6 +230,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Configuración de días
         weekends: true,
         firstDay: 1, // Lunes
+        hiddenDays: [0], // Ocultar domingos (0 = domingo)
+        
+        // Horarios personalizados por día
+        businessHours: [
+            {
+                daysOfWeek: [1, 2, 3, 4, 5], // Lunes a viernes
+                startTime: '08:00',
+                endTime: '20:00'
+            },
+            {
+                daysOfWeek: [6], // Sábado
+                startTime: '08:00',
+                endTime: '12:00' // Solo hasta mediodía
+            }
+        ],
+        
+        // Validar horarios al mover/crear eventos
+        selectConstraint: 'businessHours',
+        eventConstraint: 'businessHours',
         
         // Configuración de eventos
         events: {
@@ -270,91 +267,155 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Log cuando se cargan eventos
-        loading: function(isLoading) {
-            if (isLoading) {
-                console.log('⏳ Cargando eventos del calendario...');
-            } else {
-                console.log('✅ Eventos cargados');
-            }
-        },
         
-        eventSourceSuccess: function(content, xhr) {
-            console.log('📊 Eventos recibidos:', content);
-            return content;
-        },
-        
-        // Evento al hacer clic en una cita
+        // ====================================================================
+        // CLIC EN CITA: Mostrar modal con detalles
+        // ====================================================================
         eventClick: function(info) {
-            var citaId = info.event.id;
-            window.location.href = '{% url "cit:cita-detail" 0 %}'.replace('0', citaId);
+            // Prevenir navegación por defecto
+            info.jsEvent.preventDefault();
+            
+            var props = info.event.extendedProps;
+            var estadoColor = info.event.backgroundColor;
+            var estadoBadgeClass = props.estado_codigo === 'PEN' ? 'warning' :
+                                   props.estado_codigo === 'CON' ? 'info' :
+                                   props.estado_codigo === 'ATE' ? 'primary' :
+                                   props.estado_codigo === 'COM' ? 'success' :
+                                   props.estado_codigo === 'CAN' ? 'secondary' : 'danger';
+            
+            // Formatear fecha usando la fecha del evento directamente (viene del backend en formato correcto)
+            var fechaEvento = new Date(info.event.startStr);
+            var diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            
+            var diaSemana = diasSemana[fechaEvento.getUTCDay()];
+            var dia = fechaEvento.getUTCDate();
+            var mes = meses[fechaEvento.getUTCMonth()];
+            var anio = fechaEvento.getUTCFullYear();
+            var horas = fechaEvento.getUTCHours().toString().padStart(2, '0');
+            var minutos = fechaEvento.getUTCMinutes().toString().padStart(2, '0');
+            
+            var fechaFormateada = `${diaSemana}, ${dia} de ${mes} de ${anio}, ${horas}:${minutos}`;
+            
+            // Crear modal con jquery-confirm
+            $.dialog({
+                title: '<i class="fas fa-calendar-check"></i> Detalles de la Cita',
+                content: `
+                    <div class="cita-detail-modal">
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h5 class="mb-0">${info.event.title}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> 
+                                    ${fechaFormateada}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-id-card"></i> Cédula:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.paciente_cedula}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-user-md"></i> Dentista:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.dentista}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-tooth"></i> Especialidad:</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge" style="background-color: ${props.especialidad_color};">
+                                    ${props.especialidad}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-door-open"></i> Cubículo:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.cubiculo}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-hourglass-half"></i> Duración:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.duracion_display}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-info-circle"></i> Estado:</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge badge-${estadoBadgeClass}">${props.estado}</span>
+                            </div>
+                        </div>
+                        
+                        ${props.observaciones ? `
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong><i class="fas fa-comment"></i> Observaciones:</strong>
+                                <p class="mb-0 mt-1 text-muted small">${props.observaciones}</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `,
+                columnClass: 'col-md-6 col-md-offset-3',
+                type: 'blue',
+                buttons: {
+                    verDetalle: {
+                        text: '<i class="fas fa-eye"></i> Ver Detalle Completo',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            window.location.href = '{% url "cit:cita-detail" 0 %}'.replace('0', info.event.id);
+                        }
+                    },
+                    cerrar: {
+                        text: 'Cerrar',
+                        btnClass: 'btn-secondary'
+                    }
+                },
+                escapeKey: true,
+                backgroundDismiss: true
+            });
         },
         
-        // Tooltip al pasar el mouse
+        
+        // ====================================================================
+        // TOOLTIP SIMPLE: Mostrar info básica al hacer hover
+        // ====================================================================
         eventDidMount: function(info) {
+            // Agregar título HTML nativo para tooltip simple al hacer hover
             var props = info.event.extendedProps;
-            var tooltip = document.createElement('div');
-            tooltip.className = 'tooltip-cita';
-            tooltip.style.display = 'none';
-            tooltip.style.position = 'absolute';
-            tooltip.style.zIndex = '9999';
+            var tooltipText = `${info.event.title}\n` +
+                            `${info.event.start.toLocaleString('es-EC', { 
+                                weekday: 'short', 
+                                day: 'numeric', 
+                                month: 'short', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })}\n` +
+                            `${props.dentista} - ${props.especialidad}`;
             
-            var estadoColor = info.event.backgroundColor;
-            
-            tooltip.innerHTML = `
-                <div class="tooltip-header" style="color: ${estadoColor};">
-                    <i class="fas fa-calendar-check"></i> ${info.event.title}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Cédula:</span> ${props.paciente_cedula}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Dentista:</span> ${props.dentista}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Especialidad:</span> ${props.especialidad}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Cubículo:</span> ${props.cubiculo}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Duración:</span> ${props.duracion_display}
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Estado:</span> 
-                    <span class="badge-estado" style="background-color: ${estadoColor};">
-                        ${props.estado}
-                    </span>
-                </div>
-                ${props.observaciones ? `
-                <div class="tooltip-row">
-                    <span class="tooltip-label">Observaciones:</span>
-                    <div style="margin-top: 4px; font-size: 11px; font-style: italic;">
-                        ${props.observaciones}
-                    </div>
-                </div>
-                ` : ''}
-            `;
-            
-            document.body.appendChild(tooltip);
-            
-            // Mostrar tooltip al pasar el mouse
-            info.el.addEventListener('mouseenter', function(e) {
-                tooltip.style.display = 'block';
-                tooltip.style.left = (e.pageX + 10) + 'px';
-                tooltip.style.top = (e.pageY + 10) + 'px';
-            });
-            
-            // Mover tooltip con el mouse
-            info.el.addEventListener('mousemove', function(e) {
-                tooltip.style.left = (e.pageX + 10) + 'px';
-                tooltip.style.top = (e.pageY + 10) + 'px';
-            });
-            
-            // Ocultar tooltip al salir
-            info.el.addEventListener('mouseleave', function() {
-                tooltip.style.display = 'none';
-            });
+            info.el.setAttribute('title', tooltipText);
         },
         
         // Configuración de vista
@@ -369,15 +430,49 @@ document.addEventListener('DOMContentLoaded', function() {
             var nuevaFechaHora = info.event.start;
             var duracion = info.event.extendedProps.duracion;
             
+            // Validar día domingo
+            if (nuevaFechaHora.getDay() === 0) {
+                info.revert();
+                $.alert({
+                    title: 'Día no permitido',
+                    content: 'No se pueden agendar citas los domingos',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-triangle'
+                });
+                return;
+            }
+            
+            // Validar sábado después de las 12:00
+            if (nuevaFechaHora.getDay() === 6) {
+                var hora = nuevaFechaHora.getHours();
+                var minutos = nuevaFechaHora.getMinutes();
+                var horaDecimal = hora + (minutos / 60);
+                
+                if (horaDecimal >= 12) {
+                    info.revert();
+                    $.alert({
+                        title: 'Horario no disponible',
+                        content: 'Los sábados solo se atiende hasta las 12:00 del mediodía',
+                        type: 'orange',
+                        icon: 'fa fa-clock'
+                    });
+                    return;
+                }
+            }
+            
             // Formatear fecha para mostrar
-            var fechaFormateada = nuevaFechaHora.toLocaleDateString('es-EC', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            
+            // Usar getUTC* para obtener los valores exactos sin conversiones de timezone
+            var diaSemana = dias[nuevaFechaHora.getUTCDay()];
+            var dia = nuevaFechaHora.getUTCDate();
+            var mes = meses[nuevaFechaHora.getUTCMonth()];
+            var año = nuevaFechaHora.getUTCFullYear();
+            var hora = nuevaFechaHora.getUTCHours().toString().padStart(2, '0');
+            var minuto = nuevaFechaHora.getUTCMinutes().toString().padStart(2, '0');
+            
+            var fechaFormateada = `${diaSemana}, ${dia} de ${mes} de ${año}, ${hora}:${minuto}`;
             
             // Confirmar con jquery-confirm (consistente con el resto del sistema)
             $.confirm({
@@ -393,6 +488,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Mostrar indicador de carga
                             info.el.style.opacity = '0.5';
                             
+                            // Enviar fecha en formato ISO (Django la convertirá automáticamente)
+                            var fechaHoraISO = nuevaFechaHora.toISOString();
+                            
                             // Enviar al servidor
                             $.ajax({
                                 url: `/cit/api/citas/${citaId}/mover/`,
@@ -402,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     'Content-Type': 'application/json'
                                 },
                                 data: JSON.stringify({
-                                    fecha_hora: nuevaFechaHora.toISOString(),
+                                    fecha_hora: fechaHoraISO,
                                     duracion: duracion
                                 }),
                                 success: function(response) {
@@ -500,6 +598,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         text: 'Sí, cambiar',
                         btnClass: 'btn-primary',
                         action: function() {
+                            // Enviar fecha en formato ISO (Django la convertirá automáticamente)
+                            var fechaHoraISO = start.toISOString();
+                            
                             // Enviar al servidor
                             $.ajax({
                                 url: `/cit/api/citas/${citaId}/mover/`,
@@ -509,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     'Content-Type': 'application/json'
                                 },
                                 data: JSON.stringify({
-                                    fecha_hora: start.toISOString(),
+                                    fecha_hora: fechaHoraISO,
                                     duracion: nuevaDuracion
                                 }),
                                 success: function(response) {
@@ -556,11 +657,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-        },
-        
-        // Eventos de navegación
-        datesSet: function(info) {
-            console.log('Vista cambiada a: ' + info.view.type);
         }
     });
     
@@ -596,21 +692,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 4000);
     }
     
-    console.log('🎨 Renderizando calendario...');
     try {
         calendar.render();
-        console.log('✅ Calendario renderizado exitosamente');
     } catch (error) {
         console.error('❌ ERROR al renderizar calendario:', error);
     }
     
     // Aplicar filtros
     $('#btn-aplicar-filtros').on('click', function() {
-        console.log('🔄 Recargando eventos...');
         calendar.refetchEvents();
     });
     
-    // Aplicar filtros al cambiar los selectores (opcional)
+    // Aplicar filtros al cambiar los selectores
     $('#filtro-dentista, #filtro-especialidad, #filtro-estado').on('change', function() {
         calendar.refetchEvents();
     });

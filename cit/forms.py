@@ -193,27 +193,45 @@ class CitaForm(forms.ModelForm):
         cubiculo = cleaned_data.get('cubiculo')
         fecha_hora = cleaned_data.get('fecha_hora')
         duracion = cleaned_data.get('duracion')
+        estado = cleaned_data.get('estado')
         
         # Solo validar si todos los campos necesarios están presentes
         if not all([dentista, especialidad, cubiculo, fecha_hora, duracion]):
             return cleaned_data
         
-        # Validar que el dentista tenga la especialidad
+        # ========================================================================
+        # VALIDACIÓN 1: Dentista tiene la especialidad
+        # ========================================================================
         if especialidad not in dentista.especialidades.all():
             raise ValidationError({
                 'especialidad': f'El Dr./Dra. {dentista} no tiene certificación en {especialidad}'
             })
         
-        # Validar que el cubículo pertenezca a la sucursal del dentista
+        # ========================================================================
+        # VALIDACIÓN 2: Cubículo pertenece a la sucursal del dentista
+        # ========================================================================
         if dentista.sucursal_principal and cubiculo.sucursal != dentista.sucursal_principal:
             raise ValidationError({
                 'cubiculo': f'El cubículo debe pertenecer a la sucursal {dentista.sucursal_principal}'
             })
         
-        # Validar disponibilidad del dentista
+        # ========================================================================
+        # VALIDACIÓN 3: Horario laboral extendido
+        # ========================================================================
+        # Validar que la cita termine antes del cierre (20:00)
         fecha_fin = fecha_hora + timedelta(minutes=duracion)
+        hora_cierre = datetime.strptime('20:00', '%H:%M').time()
         
-        # Excluir la cita actual si es edición
+        if fecha_fin.time() > hora_cierre:
+            raise ValidationError({
+                'duracion': f'La cita terminaría a las {fecha_fin.strftime("%H:%M")}, '
+                           f'después del horario de cierre (20:00). '
+                           f'Ajuste la hora de inicio o la duración.'
+            })
+        
+        # ========================================================================
+        # VALIDACIÓN 4: Disponibilidad del dentista (evitar solapamientos)
+        # ========================================================================
         citas_dentista = Cita.objects.filter(
             dentista=dentista,
             fecha_hora__lt=fecha_fin,
@@ -222,13 +240,17 @@ class CitaForm(forms.ModelForm):
         
         for cita in citas_dentista:
             cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
+            # Verificar si hay solapamiento
             if cita.fecha_hora < fecha_fin and cita_fin > fecha_hora:
                 raise ValidationError({
-                    'fecha_hora': f'El Dr./Dra. {dentista} ya tiene una cita programada en este horario '
-                                  f'({cita.fecha_hora.strftime("%d/%m/%Y %H:%M")})'
+                    'fecha_hora': f'El Dr./Dra. {dentista} ya tiene una cita programada en este horario. '
+                                  f'Cita existente: {cita.fecha_hora.strftime("%d/%m/%Y %H:%M")} - '
+                                  f'{cita_fin.strftime("%H:%M")} con {cita.paciente}'
                 })
         
-        # Validar disponibilidad del cubículo
+        # ========================================================================
+        # VALIDACIÓN 5: Disponibilidad del cubículo (evitar solapamientos)
+        # ========================================================================
         citas_cubiculo = Cita.objects.filter(
             cubiculo=cubiculo,
             fecha_hora__lt=fecha_fin,
@@ -237,19 +259,84 @@ class CitaForm(forms.ModelForm):
         
         for cita in citas_cubiculo:
             cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
+            # Verificar si hay solapamiento
             if cita.fecha_hora < fecha_fin and cita_fin > fecha_hora:
                 raise ValidationError({
-                    'cubiculo': f'El cubículo {cubiculo} ya está ocupado en este horario '
-                                f'({cita.fecha_hora.strftime("%d/%m/%Y %H:%M")})'
+                    'cubiculo': f'El cubículo {cubiculo} ya está ocupado en este horario. '
+                                f'Cita existente: {cita.fecha_hora.strftime("%d/%m/%Y %H:%M")} - '
+                                f'{cita_fin.strftime("%H:%M")} (Dr./Dra. {cita.dentista})'
                 })
         
-        # Validar citas en domingo requieren confirmación
+        # ========================================================================
+        # VALIDACIÓN 6: Límite de citas por día para el paciente
+        # ========================================================================
+        paciente = cleaned_data.get('paciente')
+        if paciente and fecha_hora:
+            # Contar citas del mismo día
+            inicio_dia = fecha_hora.replace(hour=0, minute=0, second=0, microsecond=0)
+            fin_dia = inicio_dia + timedelta(days=1)
+            
+            citas_dia = Cita.objects.filter(
+                paciente=paciente,
+                fecha_hora__gte=inicio_dia,
+                fecha_hora__lt=fin_dia,
+                estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA, Cita.ESTADO_EN_ATENCION]
+            ).exclude(pk=self.instance.pk if self.instance.pk else None)
+            
+            if citas_dia.count() >= 3:
+                raise ValidationError({
+                    'paciente': f'{paciente} ya tiene 3 citas programadas para el {fecha_hora.strftime("%d/%m/%Y")}. '
+                                f'Límite máximo alcanzado.'
+                })
+        
+        # ========================================================================
+        # VALIDACIÓN 7: Validar transiciones de estado (solo en edición)
+        # ========================================================================
+        if self.instance.pk and estado:
+            estado_anterior = self.instance.estado
+            
+            # Definir transiciones permitidas
+            transiciones_permitidas = {
+                Cita.ESTADO_PENDIENTE: [Cita.ESTADO_CONFIRMADA, Cita.ESTADO_CANCELADA],
+                Cita.ESTADO_CONFIRMADA: [Cita.ESTADO_EN_ATENCION, Cita.ESTADO_CANCELADA, Cita.ESTADO_NO_ASISTIO],
+                Cita.ESTADO_EN_ATENCION: [Cita.ESTADO_COMPLETADA],
+                Cita.ESTADO_COMPLETADA: [],  # Estado final
+                Cita.ESTADO_CANCELADA: [],   # Estado final
+                Cita.ESTADO_NO_ASISTIO: [],  # Estado final
+            }
+            
+            if estado != estado_anterior:
+                if estado not in transiciones_permitidas.get(estado_anterior, []):
+                    raise ValidationError({
+                        'estado': f'No se puede cambiar de "{self.instance.get_estado_display()}" '
+                                  f'a "{dict(Cita.ESTADOS_CHOICES)[estado]}". Transición no permitida.'
+                    })
+        
+        # ========================================================================
+        # VALIDACIÓN 8: Citas en domingo requieren confirmación previa
+        # ========================================================================
         if fecha_hora.weekday() == 6:  # 6 = domingo
-            estado = cleaned_data.get('estado', Cita.ESTADO_PENDIENTE)
             if estado == Cita.ESTADO_PENDIENTE and not self.instance.pk:
                 raise ValidationError({
-                    'estado': 'Las citas programadas para domingo deben estar confirmadas desde su creación'
+                    'estado': 'Las citas programadas para domingo deben estar confirmadas desde su creación. '
+                              'Cambie el estado a "Confirmada".'
                 })
+        
+        # ========================================================================
+        # VALIDACIÓN 9: No permitir editar citas en estado final
+        # ========================================================================
+        if self.instance.pk:
+            if self.instance.estado in [Cita.ESTADO_COMPLETADA, Cita.ESTADO_CANCELADA, Cita.ESTADO_NO_ASISTIO]:
+                # Verificar si se están cambiando campos críticos
+                campos_criticos = ['paciente', 'dentista', 'especialidad', 'cubiculo', 'fecha_hora', 'duracion']
+                for campo in campos_criticos:
+                    valor_original = getattr(self.instance, campo)
+                    valor_nuevo = cleaned_data.get(campo)
+                    if valor_original != valor_nuevo:
+                        raise ValidationError(
+                            f'No se puede modificar una cita en estado "{self.instance.get_estado_display()}". '
+                            f'Solo puede editar las observaciones.'
+                        )
         
         return cleaned_data
 
