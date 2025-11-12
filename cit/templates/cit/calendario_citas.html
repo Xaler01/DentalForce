@@ -46,24 +46,46 @@
     .leyenda-estados {
         display: flex;
         flex-wrap: wrap;
-        gap: 15px;
-        margin-top: 10px;
-        padding: 10px;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 6px 10px;
         background: #f8f9fa;
         border-radius: 4px;
+    }
+    
+    .leyenda-estados strong {
+        font-size: 12px;
+        margin-right: 5px;
+        color: #495057;
     }
     
     .leyenda-item {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
     }
     
     .leyenda-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 3px;
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
     }
+    
+    /* Colores para el texto de la leyenda */
+    .leyenda-item span {
+        font-weight: 600;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    
+    .leyenda-pendiente span { color: #d39e00 !important; }   /* Pendiente - amarillo oscuro */
+    .leyenda-confirmada span { color: #138496 !important; }  /* Confirmada - cyan oscuro */
+    .leyenda-atencion span { color: #0056b3 !important; }    /* En Atención - azul oscuro */
+    .leyenda-completada span { color: #1e7e34 !important; }  /* Completada - verde oscuro */
+    .leyenda-cancelada span { color: #545b62 !important; }   /* Cancelada - gris oscuro */
+    .leyenda-no-asistio span { color: #bd2130 !important; }  /* No Asistió - rojo oscuro */
+
 </style>
 {% endblock %}
 
@@ -131,35 +153,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Leyenda de Estados -->
-            <div class="leyenda-estados mt-3">
-                <strong>Leyenda:</strong>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #ffc107;"></div>
-                    <span>Pendiente</span>
-                </div>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #17a2b8;"></div>
-                    <span>Confirmada</span>
-                </div>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #007bff;"></div>
-                    <span>En Atención</span>
-                </div>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #28a745;"></div>
-                    <span>Completada</span>
-                </div>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #6c757d;"></div>
-                    <span>Cancelada</span>
-                </div>
-                <div class="leyenda-item">
-                    <div class="leyenda-color" style="background-color: #dc3545;"></div>
-                    <span>No Asistió</span>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -167,6 +160,39 @@
     <div class="card shadow mb-4">
         <div class="card-body">
             <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Leyenda de Estados (debajo del calendario) -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="leyenda-estados">
+                <strong>Leyenda:</strong>
+                <div class="leyenda-item leyenda-pendiente">
+                    <div class="leyenda-color" style="background-color: #ffc107;"></div>
+                    <span style="color: #d39e00; font-weight: 600;">Pendiente</span>
+                </div>
+                <div class="leyenda-item leyenda-confirmada">
+                    <div class="leyenda-color" style="background-color: #17a2b8;"></div>
+                    <span style="color: #138496; font-weight: 600;">Confirmada</span>
+                </div>
+                <div class="leyenda-item leyenda-atencion">
+                    <div class="leyenda-color" style="background-color: #007bff;"></div>
+                    <span style="color: #0056b3; font-weight: 600;">En Atención</span>
+                </div>
+                <div class="leyenda-item leyenda-completada">
+                    <div class="leyenda-color" style="background-color: #28a745;"></div>
+                    <span style="color: #1e7e34; font-weight: 600;">Completada</span>
+                </div>
+                <div class="leyenda-item leyenda-cancelada">
+                    <div class="leyenda-color" style="background-color: #6c757d;"></div>
+                    <span style="color: #545b62; font-weight: 600;">Cancelada</span>
+                </div>
+                <div class="leyenda-item leyenda-no-asistio">
+                    <div class="leyenda-color" style="background-color: #dc3545;"></div>
+                    <span style="color: #bd2130; font-weight: 600;">No Asistió</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -194,20 +220,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Obtener configuración del backend
     var config = {{ configuracion_json|safe }};
-    console.log('📋 Configuración cargada:', config);
     
-    // Calcular días ocultos (0=Domingo, 6=Sábado)
-    var todosLosDias = [0, 1, 2, 3, 4, 5, 6];
-    var diasOcultos = todosLosDias.filter(function(dia) {
-        return config.dias_atencion.indexOf(dia) === -1;
+    // ⚠️ IMPORTANTE: FullCalendar usa 0=Domingo, Python usa 0=Lunes
+    // Convertir días de Python (0=Lun,1=Mar,...,6=Dom) a FullCalendar (0=Dom,1=Lun,...,6=Sáb)
+    var diasFullCalendar = config.dias_atencion.map(function(diaPython) {
+        // Si es domingo (6 en Python), convertir a 0 en FullCalendar
+        if (diaPython === 6) return 0;
+        // Los demás días se desplazan +1: Lun(0→1), Mar(1→2), ..., Sáb(5→6)
+        return diaPython + 1;
+    });
+    
+    // Calcular días ocultos (0=Domingo, 6=Sábado en FullCalendar)
+    var todosLosDiasFC = [0, 1, 2, 3, 4, 5, 6];
+    var diasOcultos = todosLosDiasFC.filter(function(dia) {
+        return diasFullCalendar.indexOf(dia) === -1;
     });
     
     // Configurar businessHours dinámicamente
     var businessHours = [];
     
-    // Días laborables normales
-    var diasNormales = config.dias_atencion.filter(function(dia) {
-        return dia !== 5;  // Excluir sábado si tiene horario especial
+    // Días laborables normales (excluir sábado si tiene horario especial)
+    var tieneSabado = diasFullCalendar.indexOf(6) !== -1;  // 6=Sábado en FullCalendar
+    var diasNormales = diasFullCalendar.filter(function(dia) {
+        return dia !== 6;  // Excluir sábado
     });
     
     if (diasNormales.length > 0) {
@@ -219,9 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Sábado con horario especial
-    if (config.dias_atencion.indexOf(5) !== -1 && config.sabado_hora_inicio && config.sabado_hora_fin) {
+    if (tieneSabado && config.sabado_hora_inicio && config.sabado_hora_fin) {
         businessHours.push({
-            daysOfWeek: [5],  // Sábado
+            daysOfWeek: [6],  // Sábado en FullCalendar
             startTime: config.sabado_hora_inicio,
             endTime: config.sabado_hora_fin
         });
@@ -257,10 +292,15 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         
         // Configuración de horario laboral DINÁMICA
-        slotMinTime: config.horario_inicio + ':00',
-        slotMaxTime: config.horario_fin + ':00',
-        slotDuration: '00:' + config.duracion_slot + ':00',
-        slotLabelInterval: '01:00:00',
+        slotMinTime: '08:00:00',  // Empezar slots desde las 8:00 (etiquetas en punto)
+        slotMaxTime: '18:00:00',  // Hasta las 18:00
+        slotDuration: '00:30:00',  // Slots cada 30 minutos
+        slotLabelInterval: '01:00:00',  // Etiquetas solo en horas completas
+        slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
         
         // Configuración de días DINÁMICA
         weekends: true,
