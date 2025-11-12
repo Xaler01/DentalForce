@@ -165,7 +165,8 @@ class CitaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         """Procesar formulario válido"""
         # Establecer el usuario que crea la cita
-        form.instance.usuario_creacion = self.request.user
+        form.instance.uc = self.request.user
+        form.instance.um = self.request.user.id
         
         # Guardar la cita
         response = super().form_valid(form)
@@ -203,7 +204,7 @@ class CitaUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         """Procesar formulario válido"""
         # Establecer el usuario que modifica
-        form.instance.usuario_modificacion = self.request.user
+        form.instance.um = self.request.user.id
         
         response = super().form_valid(form)
         
@@ -486,6 +487,34 @@ def get_dentista_especialidades(request, dentista_id):
         return JsonResponse({
             'success': False,
             'mensaje': 'Dentista no encontrado'
+        })
+
+
+@login_required
+def get_especialidad_dentistas(request, especialidad_id):
+    """
+    Obtener los dentistas que practican una especialidad.
+    Retorna JSON con la lista de dentistas.
+    """
+    try:
+        especialidad = Especialidad.objects.prefetch_related('dentistas').get(pk=especialidad_id)
+        
+        dentistas = [{
+            'id': dentista.id,
+            'nombre': str(dentista),
+            'usuario_nombre': dentista.usuario.get_full_name() or dentista.usuario.username
+        } for dentista in especialidad.dentistas.filter(estado=True)]
+        
+        return JsonResponse({
+            'success': True,
+            'dentistas': dentistas,
+            'especialidad': especialidad.nombre
+        })
+        
+    except Especialidad.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'mensaje': 'Especialidad no encontrada'
         })
 
 

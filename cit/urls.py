@@ -36,6 +36,10 @@ urlpatterns = [
          views.get_dentista_especialidades, 
          name='ajax-dentista-especialidades'),
     
+    path('api/especialidad/<int:especialidad_id>/dentistas/', 
+         views.get_especialidad_dentistas, 
+         name='ajax-especialidad-dentistas'),
+    
     # ========================================================================
     # Calendario
     # ========================================================================

@@ -332,6 +332,7 @@ $(document).ready(function() {
         let dentistaId = $('#id_dentista').val();
         
         if (!dentistaId) {
+            // Si no hay dentista seleccionado, restaurar todas las especialidades
             return;
         }
 
@@ -369,6 +370,57 @@ $(document).ready(function() {
                     
                     $especialidadSelect.trigger('change');
                 }
+            },
+            error: function() {
+                console.error('Error al cargar especialidades del dentista');
+            }
+        });
+    }
+
+    // Función para cargar dentistas de la especialidad
+    function loadEspecialidadDentistas() {
+        let especialidadId = $('#id_especialidad').val();
+        
+        if (!especialidadId) {
+            // Si no hay especialidad seleccionada, restaurar todos los dentistas
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "cit:ajax-especialidad-dentistas" especialidad_id=0 %}'.replace('/0/', '/' + especialidadId + '/'),
+            success: function(data) {
+                if (data.success && data.dentistas.length > 0) {
+                    // Actualizar opciones de dentista
+                    let $dentistaSelect = $('#id_dentista');
+                    let currentValue = $dentistaSelect.val();
+                    
+                    // Si ya hay un dentista seleccionado y está en la lista, no hacer nada
+                    if (currentValue && data.dentistas.some(d => d.id == currentValue)) {
+                        return;
+                    }
+                    
+                    // Mantener la primera opción (vacía o "Seleccione")
+                    let firstOption = $dentistaSelect.find('option:first');
+                    $dentistaSelect.empty().append(firstOption);
+                    
+                    // Agregar dentistas de la especialidad
+                    $.each(data.dentistas, function(index, dentista) {
+                        $dentistaSelect.append(
+                            $('<option></option>')
+                                .attr('value', dentista.id)
+                                .text(dentista.nombre)
+                        );
+                    });
+                    
+                    // Si solo hay un dentista, seleccionarlo automáticamente
+                    if (data.dentistas.length === 1) {
+                        $dentistaSelect.val(data.dentistas[0].id);
+                        $dentistaSelect.trigger('change');
+                    }
+                }
+            },
+            error: function() {
+                console.error('Error al cargar dentistas de la especialidad');
             }
         });
     }
@@ -386,6 +438,10 @@ $(document).ready(function() {
     $('#id_dentista').on('change', function() {
         loadDentistaEspecialidades();
         checkDentistaDisponibilidad();
+    });
+
+    $('#id_especialidad').on('change', function() {
+        loadEspecialidadDentistas();
     });
 
     $('#id_fecha_hora, #id_duracion').on('change', function() {
