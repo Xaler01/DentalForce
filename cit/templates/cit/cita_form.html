@@ -1,0 +1,407 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-plus"></i> 
+            {% if form.instance.pk %}Editar Cita #{{ form.instance.pk }}{% else %}Nueva Cita{% endif %}
+        </h1>
+        <a href="{% url 'cit:cita-list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Cancelar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-edit"></i> Formulario de Cita
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="citaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <!-- Sección 1: Paciente -->
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-user-injured"></i> Información del Paciente
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.paciente.id_for_label }}">
+                                        {{ form.paciente.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.paciente }}
+                                    {% if form.paciente.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.paciente.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.paciente.help_text %}
+                                    <small class="form-text text-muted">{{ form.paciente.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Sección 2: Dentista y Especialidad -->
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-user-md"></i> Dentista y Especialidad
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.dentista.id_for_label }}">
+                                        {{ form.dentista.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.dentista }}
+                                    <div id="dentista-disponibilidad" class="mt-2" style="display:none;">
+                                        <small class="text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Verificando disponibilidad...
+                                        </small>
+                                    </div>
+                                    {% if form.dentista.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.dentista.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.especialidad.id_for_label }}">
+                                        {{ form.especialidad.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.especialidad }}
+                                    {% if form.especialidad.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.especialidad.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Sección 3: Fecha, Hora y Duración -->
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-calendar-alt"></i> Fecha, Hora y Duración
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_hora.id_for_label }}">
+                                        {{ form.fecha_hora.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.fecha_hora }}
+                                    {% if form.fecha_hora.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.fecha_hora.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.fecha_hora.help_text %}
+                                    <small class="form-text text-muted">{{ form.fecha_hora.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.duracion.id_for_label }}">
+                                        {{ form.duracion.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.duracion }}
+                                    {% if form.duracion.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.duracion.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.duracion.help_text %}
+                                    <small class="form-text text-muted">{{ form.duracion.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Sección 4: Cubículo -->
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-door-open"></i> Cubículo
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.cubiculo.id_for_label }}">
+                                        {{ form.cubiculo.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cubiculo }}
+                                    <div id="cubiculo-disponibilidad" class="mt-2" style="display:none;">
+                                        <small class="text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Verificando disponibilidad...
+                                        </small>
+                                    </div>
+                                    {% if form.cubiculo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.cubiculo.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Sección 5: Estado y Observaciones -->
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-sticky-note"></i> Estado y Observaciones
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.estado.id_for_label }}">
+                                        {{ form.estado.label }}
+                                    </label>
+                                    {{ form.estado }}
+                                    {% if form.estado.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.estado.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="{{ form.observaciones.id_for_label }}">
+                                        {{ form.observaciones.label }}
+                                    </label>
+                                    {{ form.observaciones }}
+                                    {% if form.observaciones.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.observaciones.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.observaciones.help_text %}
+                                    <small class="form-text text-muted">{{ form.observaciones.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <a href="{% url 'cit:cita-list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary" id="btnSubmit">
+                                    <i class="fas fa-save"></i> 
+                                    {% if form.instance.pk %}Actualizar Cita{% else %}Crear Cita{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar Select2
+    $('.select2').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        placeholder: 'Seleccione una opción'
+    });
+
+    // Variables para control de validación
+    let dentistaDisponible = true;
+    let cubiculoDisponible = true;
+    let citaId = {% if form.instance.pk %}{{ form.instance.pk }}{% else %}null{% endif %};
+
+    // Función para verificar disponibilidad del dentista
+    function checkDentistaDisponibilidad() {
+        let dentistaId = $('#id_dentista').val();
+        let fechaHora = $('#id_fecha_hora').val();
+        let duracion = $('#id_duracion').val();
+
+        if (!dentistaId || !fechaHora || !duracion) {
+            return;
+        }
+
+        $('#dentista-disponibilidad').show().html(
+            '<small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Verificando disponibilidad del dentista...</small>'
+        );
+
+        $.ajax({
+            url: '{% url "cit:ajax-dentista-disponibilidad" %}',
+            data: {
+                'dentista_id': dentistaId,
+                'fecha_hora': fechaHora,
+                'duracion': duracion,
+                'cita_id': citaId
+            },
+            success: function(data) {
+                if (data.disponible) {
+                    dentistaDisponible = true;
+                    $('#dentista-disponibilidad').html(
+                        '<small class="text-success"><i class="fas fa-check-circle"></i> ' + data.mensaje + '</small>'
+                    );
+                } else {
+                    dentistaDisponible = false;
+                    $('#dentista-disponibilidad').html(
+                        '<small class="text-danger"><i class="fas fa-times-circle"></i> ' + data.mensaje + '</small>'
+                    );
+                }
+                updateSubmitButton();
+            },
+            error: function() {
+                $('#dentista-disponibilidad').html(
+                    '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Error al verificar disponibilidad</small>'
+                );
+            }
+        });
+    }
+
+    // Función para verificar disponibilidad del cubículo
+    function checkCubiculoDisponibilidad() {
+        let cubiculoId = $('#id_cubiculo').val();
+        let fechaHora = $('#id_fecha_hora').val();
+        let duracion = $('#id_duracion').val();
+
+        if (!cubiculoId || !fechaHora || !duracion) {
+            return;
+        }
+
+        $('#cubiculo-disponibilidad').show().html(
+            '<small class="text-muted"><i class="fas fa-spinner fa-spin"></i> Verificando disponibilidad del cubículo...</small>'
+        );
+
+        $.ajax({
+            url: '{% url "cit:ajax-cubiculo-disponibilidad" %}',
+            data: {
+                'cubiculo_id': cubiculoId,
+                'fecha_hora': fechaHora,
+                'duracion': duracion,
+                'cita_id': citaId
+            },
+            success: function(data) {
+                if (data.disponible) {
+                    cubiculoDisponible = true;
+                    $('#cubiculo-disponibilidad').html(
+                        '<small class="text-success"><i class="fas fa-check-circle"></i> ' + data.mensaje + '</small>'
+                    );
+                } else {
+                    cubiculoDisponible = false;
+                    $('#cubiculo-disponibilidad').html(
+                        '<small class="text-danger"><i class="fas fa-times-circle"></i> ' + data.mensaje + '</small>'
+                    );
+                }
+                updateSubmitButton();
+            },
+            error: function() {
+                $('#cubiculo-disponibilidad').html(
+                    '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Error al verificar disponibilidad</small>'
+                );
+            }
+        });
+    }
+
+    // Función para cargar especialidades del dentista
+    function loadDentistaEspecialidades() {
+        let dentistaId = $('#id_dentista').val();
+        
+        if (!dentistaId) {
+            return;
+        }
+
+        $.ajax({
+            url: '{% url "cit:ajax-dentista-especialidades" dentista_id=0 %}'.replace('/0/', '/' + dentistaId + '/'),
+            success: function(data) {
+                if (data.success && data.especialidades.length > 0) {
+                    // Actualizar opciones de especialidad
+                    let $especialidadSelect = $('#id_especialidad');
+                    let currentValue = $especialidadSelect.val();
+                    
+                    // Mantener la primera opción (vacía o "Seleccione")
+                    let firstOption = $especialidadSelect.find('option:first');
+                    $especialidadSelect.empty().append(firstOption);
+                    
+                    // Agregar especialidades del dentista
+                    $.each(data.especialidades, function(index, esp) {
+                        $especialidadSelect.append(
+                            $('<option></option>')
+                                .attr('value', esp.id)
+                                .text(esp.nombre)
+                        );
+                    });
+                    
+                    // Si había una especialidad seleccionada y está en la lista, mantenerla
+                    if (currentValue && data.especialidades.some(e => e.id == currentValue)) {
+                        $especialidadSelect.val(currentValue);
+                    }
+                    // Si solo hay una especialidad, seleccionarla automáticamente
+                    else if (data.especialidades.length === 1) {
+                        $especialidadSelect.val(data.especialidades[0].id);
+                        // Actualizar la duración sugerida
+                        $('#id_duracion').val(data.especialidades[0].duracion_default);
+                    }
+                    
+                    $especialidadSelect.trigger('change');
+                }
+            }
+        });
+    }
+
+    // Función para habilitar/deshabilitar botón de submit
+    function updateSubmitButton() {
+        if (dentistaDisponible && cubiculoDisponible) {
+            $('#btnSubmit').prop('disabled', false).removeClass('btn-secondary').addClass('btn-primary');
+        } else {
+            $('#btnSubmit').prop('disabled', true).removeClass('btn-primary').addClass('btn-secondary');
+        }
+    }
+
+    // Event listeners
+    $('#id_dentista').on('change', function() {
+        loadDentistaEspecialidades();
+        checkDentistaDisponibilidad();
+    });
+
+    $('#id_fecha_hora, #id_duracion').on('change', function() {
+        checkDentistaDisponibilidad();
+        checkCubiculoDisponibilidad();
+    });
+
+    $('#id_cubiculo').on('change', function() {
+        checkCubiculoDisponibilidad();
+    });
+
+    // Validación inicial si estamos editando
+    {% if form.instance.pk %}
+    checkDentistaDisponibilidad();
+    checkCubiculoDisponibilidad();
+    {% endif %}
+});
+</script>
+{% endblock %}

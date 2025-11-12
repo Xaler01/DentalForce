@@ -1,0 +1,265 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-alt"></i> Gestión de Citas
+        </h1>
+        <a href="{% url 'cit:cita-create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nueva Cita
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'cit:cita-list' %}" id="filtrosForm">
+                <div class="row">
+                    <!-- Búsqueda por texto -->
+                    <div class="col-md-3 mb-3">
+                        <label for="busqueda">Buscar Paciente/Dentista</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="busqueda" 
+                               name="q" 
+                               value="{{ busqueda }}"
+                               placeholder="Nombre, apellido o cédula...">
+                    </div>
+
+                    <!-- Filtro por Estado -->
+                    <div class="col-md-2 mb-3">
+                        <label for="estado">Estado</label>
+                        <select class="form-control" id="estado" name="estado">
+                            <option value="">Todos</option>
+                            {% for codigo, nombre in estados %}
+                            <option value="{{ codigo }}" {% if estado_seleccionado == codigo %}selected{% endif %}>
+                                {{ nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro por Dentista -->
+                    <div class="col-md-3 mb-3">
+                        <label for="dentista">Dentista</label>
+                        <select class="form-control select2" id="dentista" name="dentista">
+                            <option value="">Todos</option>
+                            {% for dentista in dentistas %}
+                            <option value="{{ dentista.id }}" {% if dentista_seleccionado == dentista.id|stringformat:"s" %}selected{% endif %}>
+                                Dr./Dra. {{ dentista.usuario.first_name }} {{ dentista.usuario.last_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro por Especialidad -->
+                    <div class="col-md-2 mb-3">
+                        <label for="especialidad">Especialidad</label>
+                        <select class="form-control" id="especialidad" name="especialidad">
+                            <option value="">Todas</option>
+                            {% for esp in especialidades %}
+                            <option value="{{ esp.id }}" {% if especialidad_seleccionada == esp.id|stringformat:"s" %}selected{% endif %}>
+                                {{ esp.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro Fecha Desde -->
+                    <div class="col-md-2 mb-3">
+                        <label for="fecha_desde">Desde</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="fecha_desde" 
+                               name="fecha_desde" 
+                               value="{{ fecha_desde }}">
+                    </div>
+
+                    <!-- Filtro Fecha Hasta -->
+                    <div class="col-md-2 mb-3">
+                        <label for="fecha_hasta">Hasta</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="fecha_hasta" 
+                               name="fecha_hasta" 
+                               value="{{ fecha_hasta }}">
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="col-md-10 mb-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'cit:cita-list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Citas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> Listado de Citas
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Paciente</th>
+                            <th>Dentista</th>
+                            <th>Especialidad</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                            <th>Cubículo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cita in citas %}
+                        <tr>
+                            <td>
+                                <strong>{{ cita.fecha_hora|date:"d/m/Y" }}</strong><br>
+                                <small class="text-muted">{{ cita.fecha_hora|time:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ cita.paciente.nombres }} {{ cita.paciente.apellidos }}</strong><br>
+                                <small class="text-muted">CI: {{ cita.paciente.cedula }}</small>
+                            </td>
+                            <td>
+                                Dr./Dra. {{ cita.dentista.usuario.first_name }} {{ cita.dentista.usuario.last_name }}
+                            </td>
+                            <td>
+                                <span class="badge" style="background-color: {{ cita.especialidad.color_calendario }}; color: white;">
+                                    {{ cita.especialidad.nombre }}
+                                </span>
+                            </td>
+                            <td>{{ cita.get_duracion_display_horas }}</td>
+                            <td>
+                                {% if cita.estado == 'PEN' %}
+                                <span class="badge badge-warning">{{ cita.get_estado_display }}</span>
+                                {% elif cita.estado == 'CON' %}
+                                <span class="badge badge-info">{{ cita.get_estado_display }}</span>
+                                {% elif cita.estado == 'ATE' %}
+                                <span class="badge badge-primary">{{ cita.get_estado_display }}</span>
+                                {% elif cita.estado == 'COM' %}
+                                <span class="badge badge-success">{{ cita.get_estado_display }}</span>
+                                {% elif cita.estado == 'CAN' %}
+                                <span class="badge badge-secondary">{{ cita.get_estado_display }}</span>
+                                {% elif cita.estado == 'NAS' %}
+                                <span class="badge badge-danger">{{ cita.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ cita.cubiculo.nombre }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'cit:cita-detail' cita.pk %}" 
+                                       class="btn btn-sm btn-info" 
+                                       title="Ver Detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if cita.estado == 'PEN' or cita.estado == 'CON' %}
+                                    <a href="{% url 'cit:cita-update' cita.pk %}" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'cit:cita-cancel' cita.pk %}" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Cancelar">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                <i class="fas fa-info-circle"></i> No hay citas registradas con los filtros seleccionados
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Primera
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Siguiente
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Última
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // DataTable
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            },
+            "ordering": false,
+            "searching": false,
+            "paging": false,
+            "info": false
+        });
+    });
+</script>
+{% endblock %}
