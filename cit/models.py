@@ -620,13 +620,34 @@ class Cita(ClaseModelo):
         
         errors = {}
         
+        # Acceder a relaciones de forma segura usando _id o hasattr
+        dentista_id = self.dentista_id
+        cubiculo_id = self.cubiculo_id
+        especialidad_id = self.especialidad_id
+        
+        # Cargar objetos solo si están guardados
+        try:
+            dentista = self.dentista if dentista_id else None
+        except Cita.dentista.RelatedObjectDoesNotExist:
+            dentista = None
+            
+        try:
+            cubiculo = self.cubiculo if cubiculo_id else None
+        except Cita.cubiculo.RelatedObjectDoesNotExist:
+            cubiculo = None
+            
+        try:
+            especialidad = self.especialidad if especialidad_id else None
+        except Cita.especialidad.RelatedObjectDoesNotExist:
+            especialidad = None
+        
         # Validación 1: No solapamiento por dentista
-        if self.dentista and self.fecha_hora and self.duracion:
+        if dentista and self.fecha_hora and self.duracion:
             fecha_fin = self.fecha_hora + timedelta(minutes=self.duracion)
             
             # Buscar citas del mismo dentista que se solapen
             citas_solapadas_dentista = Cita.objects.filter(
-                dentista=self.dentista,
+                dentista=dentista,
                 fecha_hora__lt=fecha_fin,
                 estado__in=[self.ESTADO_PENDIENTE, self.ESTADO_CONFIRMADA, self.ESTADO_EN_ATENCION]
             ).exclude(pk=self.pk)
@@ -634,15 +655,15 @@ class Cita(ClaseModelo):
             for cita in citas_solapadas_dentista:
                 cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
                 if cita.fecha_hora < fecha_fin and cita_fin > self.fecha_hora:
-                    errors['dentista'] = f'El dentista {self.dentista} ya tiene una cita programada entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
+                    errors['dentista'] = f'El dentista {dentista} ya tiene una cita programada entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
                     break
         
         # Validación 2: No solapamiento por cubículo
-        if self.cubiculo and self.fecha_hora and self.duracion:
+        if cubiculo and self.fecha_hora and self.duracion:
             fecha_fin = self.fecha_hora + timedelta(minutes=self.duracion)
             
             citas_solapadas_cubiculo = Cita.objects.filter(
-                cubiculo=self.cubiculo,
+                cubiculo=cubiculo,
                 fecha_hora__lt=fecha_fin,
                 estado__in=[self.ESTADO_PENDIENTE, self.ESTADO_CONFIRMADA, self.ESTADO_EN_ATENCION]
             ).exclude(pk=self.pk)
@@ -650,18 +671,18 @@ class Cita(ClaseModelo):
             for cita in citas_solapadas_cubiculo:
                 cita_fin = cita.fecha_hora + timedelta(minutes=cita.duracion)
                 if cita.fecha_hora < fecha_fin and cita_fin > self.fecha_hora:
-                    errors['cubiculo'] = f'El cubículo {self.cubiculo} ya está ocupado entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
+                    errors['cubiculo'] = f'El cubículo {cubiculo} ya está ocupado entre {cita.fecha_hora.strftime("%H:%M")} y {cita_fin.strftime("%H:%M")}'
                     break
         
         # Validación 3: Dentista tiene la especialidad
-        if self.dentista and self.especialidad:
-            if not self.dentista.especialidades.filter(pk=self.especialidad.pk).exists():
-                errors['especialidad'] = f'El dentista {self.dentista} no tiene la especialidad {self.especialidad.nombre}'
+        if dentista and especialidad:
+            if not dentista.especialidades.filter(pk=especialidad.pk).exists():
+                errors['especialidad'] = f'El dentista {dentista} no tiene la especialidad {especialidad.nombre}'
         
         # Validación 4: Cubículo pertenece a la sucursal del dentista
-        if self.dentista and self.cubiculo:
-            if self.dentista.sucursal_principal and self.cubiculo.sucursal != self.dentista.sucursal_principal:
-                errors['cubiculo'] = f'El cubículo debe pertenecer a la sucursal {self.dentista.sucursal_principal.nombre} del dentista'
+        if dentista and cubiculo:
+            if dentista.sucursal_principal and cubiculo.sucursal != dentista.sucursal_principal:
+                errors['cubiculo'] = f'El cubículo debe pertenecer a la sucursal {dentista.sucursal_principal.nombre} del dentista'
         
         # Validación 5: Domingos requieren confirmación
         if self.fecha_hora:
