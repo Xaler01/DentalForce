@@ -107,12 +107,13 @@ class CitaForm(forms.ModelForm):
     
     def clean_fecha_hora(self):
         """Validar que la fecha y hora de la cita sea válida"""
+        from .models import ConfiguracionClinica
+        
         fecha_hora = self.cleaned_data.get('fecha_hora')
         
         if not fecha_hora:
             raise ValidationError('Debe seleccionar una fecha y hora para la cita')
         
-        # Validar que la fecha no sea en el pasado (solo para nuevas citas o si cambió la fecha)
         ahora = timezone.now()
         
         # Para ediciones, permitir si la fecha no cambió
@@ -120,25 +121,67 @@ class CitaForm(forms.ModelForm):
             if self.instance.fecha_hora == fecha_hora:
                 return fecha_hora
         
-        # Para nuevas citas o cambios de fecha, validar que sea futura
-        if fecha_hora < ahora:
-            raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
+        # Obtener configuración de la clínica
+        config = ConfiguracionClinica.objects.filter(estado=True).first()
+        
+        if not config:
+            # Si no hay configuración, usar validación por defecto
+            if fecha_hora < ahora:
+                raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
+        else:
+            # Validar citas el mismo día según configuración
+            if config.permitir_citas_mismo_dia:
+                # Validar horas de anticipación mínima
+                if config.horas_anticipacion_minima > 0:
+                    anticipacion_minima = ahora + timedelta(hours=config.horas_anticipacion_minima)
+                    if fecha_hora < anticipacion_minima:
+                        raise ValidationError(
+                            f'Debe agendar con al menos {config.horas_anticipacion_minima} hora(s) de anticipación'
+                        )
+                else:
+                    # Permitir inmediato, solo validar que no sea en el pasado
+                    if fecha_hora < ahora:
+                        raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
+            else:
+                # No se permiten citas el mismo día
+                if fecha_hora.date() <= ahora.date():
+                    raise ValidationError('No se permiten citas para el día de hoy. Debe agendar para mañana o después.')
         
         # Validar que no sea más de 6 meses en el futuro
         seis_meses = ahora + timedelta(days=180)
         if fecha_hora > seis_meses:
             raise ValidationError('La cita no puede ser programada con más de 6 meses de anticipación')
         
-        # Validar horario de atención (de 8:00 AM a 8:00 PM)
-        hora = fecha_hora.time()
-        hora_apertura = datetime.strptime('08:00', '%H:%M').time()
-        hora_cierre = datetime.strptime('20:00', '%H:%M').time()
-        
-        if hora < hora_apertura or hora >= hora_cierre:
-            raise ValidationError(
-                f'Las citas solo pueden agendarse entre {hora_apertura.strftime("%H:%M")} '
-                f'y {hora_cierre.strftime("%H:%M")}'
-            )
+        # Validar horario de atención según configuración
+        if config:
+            hora = fecha_hora.time()
+            dia_semana = fecha_hora.weekday()
+            
+            horario = config.get_horario_dia(dia_semana)
+            if not horario:
+                dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+                raise ValidationError(
+                    f'No se atiende los días {dias[dia_semana]}'
+                )
+            
+            hora_apertura, hora_cierre = horario
+            
+            if hora < hora_apertura or hora >= hora_cierre:
+                raise ValidationError(
+                    f'Las citas solo pueden agendarse entre {hora_apertura.strftime("%H:%M")} '
+                    f'y {hora_cierre.strftime("%H:%M")}'
+                )
+        else:
+            # Validación por defecto
+            hora = fecha_hora.time()
+            hora_apertura = datetime.strptime('08:00', '%H:%M').time()
+            hora_cierre = datetime.strptime('20:00', '%H:%M').time()
+            
+            if hora < hora_apertura or hora >= hora_cierre:
+                raise ValidationError(
+                    f'Las citas solo pueden agendarse entre {hora_apertura.strftime("%H:%M")} '
+                    f'y {hora_cierre.strftime("%H:%M")}'
+                )
         
         return fecha_hora
     

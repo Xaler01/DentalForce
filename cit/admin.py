@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente, Cita
+from .models import (
+    Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente, Cita,
+    ConfiguracionClinica, DisponibilidadDentista, ExcepcionDisponibilidad
+)
 
 # Register your models here.
 
@@ -305,3 +308,135 @@ class CitaAdmin(admin.ModelAdmin):
         """Optimizar consultas con select_related"""
         qs = super().get_queryset(request)
         return qs.select_related('paciente', 'dentista', 'dentista__usuario', 'especialidad', 'cubiculo', 'cubiculo__sucursal')
+
+
+# ============================================================================
+# ADMINS DE CONFIGURACIÓN Y DISPONIBILIDAD
+# ============================================================================
+
+@admin.register(ConfiguracionClinica)
+class ConfiguracionClinicaAdmin(admin.ModelAdmin):
+    """Administración de Configuración de Clínica"""
+    list_display = ('sucursal', 'horario_inicio', 'horario_fin', 'duracion_slot', 'permitir_citas_mismo_dia', 'estado')
+    list_filter = ('estado', 'permitir_citas_mismo_dia')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    
+    fieldsets = (
+        ('Sucursal', {
+            'fields': ('sucursal',)
+        }),
+        ('Horarios Generales', {
+            'fields': ('horario_inicio', 'horario_fin', 'duracion_slot')
+        }),
+        ('Días de Atención', {
+            'fields': (
+                'atiende_lunes', 'atiende_martes', 'atiende_miercoles',
+                'atiende_jueves', 'atiende_viernes', 'atiende_sabado', 'atiende_domingo'
+            )
+        }),
+        ('Horario Especial Sábado', {
+            'fields': ('sabado_hora_inicio', 'sabado_hora_fin'),
+            'classes': ('collapse',)
+        }),
+        ('Configuración de Citas', {
+            'fields': ('permitir_citas_mismo_dia', 'horas_anticipacion_minima')
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user.id
+        super().save_model(request, obj, form, change)
+
+
+class DisponibilidadDentistaInline(admin.TabularInline):
+    """Inline para mostrar disponibilidades dentro del admin de Dentista"""
+    model = DisponibilidadDentista
+    extra = 1
+    fields = ('dia_semana', 'hora_inicio', 'hora_fin', 'activo')
+
+
+@admin.register(DisponibilidadDentista)
+class DisponibilidadDentistaAdmin(admin.ModelAdmin):
+    """Administración de Disponibilidad de Dentistas"""
+    list_display = ('dentista', 'dia_semana_display', 'hora_inicio', 'hora_fin', 'activo', 'estado')
+    list_filter = ('dia_semana', 'activo', 'estado', 'dentista')
+    search_fields = ('dentista__usuario__first_name', 'dentista__usuario__last_name')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    
+    fieldsets = (
+        ('Dentista', {
+            'fields': ('dentista',)
+        }),
+        ('Disponibilidad', {
+            'fields': ('dia_semana', 'hora_inicio', 'hora_fin', 'activo')
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def dia_semana_display(self, obj):
+        """Mostrar día de semana con formato"""
+        return obj.get_dia_semana_display()
+    dia_semana_display.short_description = 'Día de la Semana'
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user.id
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ExcepcionDisponibilidad)
+class ExcepcionDisponibilidadAdmin(admin.ModelAdmin):
+    """Administración de Excepciones de Disponibilidad"""
+    list_display = ('dentista', 'tipo', 'fecha_inicio', 'fecha_fin', 'todo_el_dia', 'estado')
+    list_filter = ('tipo', 'todo_el_dia', 'estado', 'fecha_inicio')
+    search_fields = ('dentista__usuario__first_name', 'dentista__usuario__last_name', 'motivo')
+    readonly_fields = ('uc', 'fc', 'um', 'fm')
+    date_hierarchy = 'fecha_inicio'
+    
+    fieldsets = (
+        ('Dentista', {
+            'fields': ('dentista',)
+        }),
+        ('Fechas', {
+            'fields': ('fecha_inicio', 'fecha_fin')
+        }),
+        ('Tipo y Motivo', {
+            'fields': ('tipo', 'motivo')
+        }),
+        ('Horario', {
+            'fields': ('todo_el_dia', 'hora_inicio', 'hora_fin'),
+            'description': 'Si no es todo el día, especificar el rango de horas de la excepción'
+        }),
+        ('Estado', {
+            'fields': ('estado',)
+        }),
+        ('Auditoría', {
+            'fields': ('uc', 'fc', 'um', 'fm'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user.id
+        super().save_model(request, obj, form, change)

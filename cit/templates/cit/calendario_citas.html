@@ -192,6 +192,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Obtener configuración del backend
+    var config = {{ configuracion_json|safe }};
+    console.log('📋 Configuración cargada:', config);
+    
+    // Calcular días ocultos (0=Domingo, 6=Sábado)
+    var todosLosDias = [0, 1, 2, 3, 4, 5, 6];
+    var diasOcultos = todosLosDias.filter(function(dia) {
+        return config.dias_atencion.indexOf(dia) === -1;
+    });
+    
+    // Configurar businessHours dinámicamente
+    var businessHours = [];
+    
+    // Días laborables normales
+    var diasNormales = config.dias_atencion.filter(function(dia) {
+        return dia !== 5;  // Excluir sábado si tiene horario especial
+    });
+    
+    if (diasNormales.length > 0) {
+        businessHours.push({
+            daysOfWeek: diasNormales,
+            startTime: config.horario_inicio,
+            endTime: config.horario_fin
+        });
+    }
+    
+    // Sábado con horario especial
+    if (config.dias_atencion.indexOf(5) !== -1 && config.sabado_hora_inicio && config.sabado_hora_fin) {
+        businessHours.push({
+            daysOfWeek: [5],  // Sábado
+            startTime: config.sabado_hora_inicio,
+            endTime: config.sabado_hora_fin
+        });
+    }
+    
     // Inicializar FullCalendar
     var calendar = new FullCalendar.Calendar(calendarEl, {
         // Configuración básica
@@ -221,30 +256,19 @@ document.addEventListener('DOMContentLoaded', function() {
             day: 'Día'
         },
         
-        // Configuración de horario laboral
-        slotMinTime: '08:00:00',
-        slotMaxTime: '20:00:00',
-        slotDuration: '00:30:00',
+        // Configuración de horario laboral DINÁMICA
+        slotMinTime: config.horario_inicio + ':00',
+        slotMaxTime: config.horario_fin + ':00',
+        slotDuration: '00:' + config.duracion_slot + ':00',
         slotLabelInterval: '01:00:00',
         
-        // Configuración de días
+        // Configuración de días DINÁMICA
         weekends: true,
         firstDay: 1, // Lunes
-        hiddenDays: [0], // Ocultar domingos (0 = domingo)
+        hiddenDays: diasOcultos,
         
-        // Horarios personalizados por día
-        businessHours: [
-            {
-                daysOfWeek: [1, 2, 3, 4, 5], // Lunes a viernes
-                startTime: '08:00',
-                endTime: '20:00'
-            },
-            {
-                daysOfWeek: [6], // Sábado
-                startTime: '08:00',
-                endTime: '12:00' // Solo hasta mediodía
-            }
-        ],
+        // Horarios personalizados por día DINÁMICOS
+        businessHours: businessHours,
         
         // Validar horarios al mover/crear eventos
         selectConstraint: 'businessHours',

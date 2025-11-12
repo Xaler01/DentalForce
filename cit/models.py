@@ -341,6 +341,87 @@ class Dentista(ClaseModelo):
         return ", ".join([esp.nombre for esp in self.especialidades.all()])
     
     get_especialidades_nombres.short_description = 'Especialidades'
+    
+    def esta_disponible(self, fecha_hora):
+        """
+        Verifica si el dentista está disponible en una fecha/hora específica.
+        Considera:
+        1. Disponibilidades configuradas (DisponibilidadDentista)
+        2. Excepciones (ExcepcionDisponibilidad)
+        3. Horario general de la clínica si no tiene disponibilidades personalizadas
+        """
+        from datetime import datetime, time
+        
+        # Obtener día de la semana (0=Lunes, 6=Domingo)
+        dia_semana = fecha_hora.weekday()
+        hora = fecha_hora.time()
+        fecha = fecha_hora.date()
+        
+        # 1. Verificar excepciones (vacaciones, días libres, etc.)
+        excepciones = ExcepcionDisponibilidad.objects.filter(
+            dentista=self,
+            fecha_inicio__lte=fecha,
+            fecha_fin__gte=fecha,
+            estado=True
+        )
+        
+        for excepcion in excepciones:
+            if excepcion.todo_el_dia:
+                return False
+            
+            if excepcion.hora_inicio and excepcion.hora_fin:
+                if excepcion.hora_inicio <= hora < excepcion.hora_fin:
+                    return False
+        
+        # 2. Verificar disponibilidades personalizadas
+        disponibilidades = DisponibilidadDentista.objects.filter(
+            dentista=self,
+            dia_semana=dia_semana,
+            activo=True,
+            estado=True
+        )
+        
+        if disponibilidades.exists():
+            # Tiene horario personalizado, verificar si está dentro de algún rango
+            for disp in disponibilidades:
+                if disp.hora_inicio <= hora < disp.hora_fin:
+                    return True
+            return False  # No está en ningún rango de disponibilidad
+        
+        # 3. Si no tiene disponibilidades personalizadas, usar horario general
+        try:
+            config = ConfiguracionClinica.objects.filter(estado=True).first()
+            if config:
+                horario = config.get_horario_dia(dia_semana)
+                if horario:
+                    hora_inicio, hora_fin = horario
+                    return hora_inicio <= hora < hora_fin
+                return False  # No se atiende ese día
+        except:
+            pass
+        
+        # Por defecto, no disponible
+        return False
+    
+    def get_horarios_semana(self):
+        """
+        Retorna los horarios de la semana del dentista.
+        Formato: {0: [(hora_inicio, hora_fin)], 1: [...], ...}
+        """
+        horarios = {}
+        
+        disponibilidades = DisponibilidadDentista.objects.filter(
+            dentista=self,
+            activo=True,
+            estado=True
+        ).order_by('dia_semana', 'hora_inicio')
+        
+        for disp in disponibilidades:
+            if disp.dia_semana not in horarios:
+                horarios[disp.dia_semana] = []
+            horarios[disp.dia_semana].append((disp.hora_inicio, disp.hora_fin))
+        
+        return horarios
 
 
 class Paciente(ClaseModelo):
@@ -729,4 +810,297 @@ class Cita(ClaseModelo):
     def puede_iniciar_atencion(self):
         """Verifica si la cita puede iniciar atención"""
         return self.estado in [self.ESTADO_CONFIRMADA, self.ESTADO_PENDIENTE]
+
+
+# ============================================================================
+# MODELOS DE CONFIGURACIÓN Y DISPONIBILIDAD
+# ============================================================================
+
+class ConfiguracionClinica(ClaseModelo):
+    """
+    Configuración global de la clínica.
+    Solo debe existir un registro (Singleton pattern).
+    """
+    sucursal = models.OneToOneField(
+        Sucursal,
+        on_delete=models.CASCADE,
+        related_name='configuracion',
+        verbose_name='Sucursal',
+        help_text='Sucursal a la que aplica esta configuración'
+    )
+    
+    # Horarios de atención generales
+    horario_inicio = models.TimeField(
+        default='08:30:00',
+        verbose_name='Hora de Inicio',
+        help_text='Hora de inicio de atención (ej: 08:30)'
+    )
+    horario_fin = models.TimeField(
+        default='18:00:00',
+        verbose_name='Hora de Fin',
+        help_text='Hora límite para iniciar última cita (ej: 18:00)'
+    )
+    
+    # Duración de slots en el calendario
+    duracion_slot = models.PositiveIntegerField(
+        default=30,
+        verbose_name='Duración de Slot (minutos)',
+        help_text='Intervalo de tiempo en el calendario (15, 30, 60 minutos)'
+    )
+    
+    # Días laborables
+    atiende_lunes = models.BooleanField(default=True, verbose_name='Lunes')
+    atiende_martes = models.BooleanField(default=True, verbose_name='Martes')
+    atiende_miercoles = models.BooleanField(default=True, verbose_name='Miércoles')
+    atiende_jueves = models.BooleanField(default=True, verbose_name='Jueves')
+    atiende_viernes = models.BooleanField(default=True, verbose_name='Viernes')
+    atiende_sabado = models.BooleanField(default=False, verbose_name='Sábado')
+    atiende_domingo = models.BooleanField(default=False, verbose_name='Domingo')
+    
+    # Horario especial sábado
+    sabado_hora_inicio = models.TimeField(
+        default='08:30:00',
+        verbose_name='Sábado - Hora Inicio',
+        blank=True,
+        null=True
+    )
+    sabado_hora_fin = models.TimeField(
+        default='12:00:00',
+        verbose_name='Sábado - Hora Fin',
+        blank=True,
+        null=True
+    )
+    
+    # Citas el mismo día
+    permitir_citas_mismo_dia = models.BooleanField(
+        default=True,
+        verbose_name='Permitir Citas el Mismo Día',
+        help_text='Si está habilitado, se pueden agendar citas para el día actual'
+    )
+    horas_anticipacion_minima = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Horas de Anticipación Mínima',
+        help_text='Horas mínimas de anticipación para agendar (0 = inmediato)'
+    )
+    
+    class Meta:
+        verbose_name = 'Configuración de Clínica'
+        verbose_name_plural = 'Configuraciones de Clínica'
+    
+    def __str__(self):
+        return f"Configuración - {self.sucursal.nombre}"
+    
+    def clean(self):
+        """Validaciones"""
+        from django.core.exceptions import ValidationError
+        
+        if self.horario_inicio >= self.horario_fin:
+            raise ValidationError({
+                'horario_fin': 'La hora de fin debe ser posterior a la hora de inicio'
+            })
+        
+        if self.duracion_slot not in [15, 30, 60]:
+            raise ValidationError({
+                'duracion_slot': 'La duración del slot debe ser 15, 30 o 60 minutos'
+            })
+        
+        if self.atiende_sabado and self.sabado_hora_inicio and self.sabado_hora_fin:
+            if self.sabado_hora_inicio >= self.sabado_hora_fin:
+                raise ValidationError({
+                    'sabado_hora_fin': 'La hora de fin del sábado debe ser posterior a la hora de inicio'
+                })
+    
+    def get_dias_atencion(self):
+        """Retorna lista de días de la semana que se atiende (0=Lunes, 6=Domingo)"""
+        dias = []
+        if self.atiende_lunes: dias.append(0)
+        if self.atiende_martes: dias.append(1)
+        if self.atiende_miercoles: dias.append(2)
+        if self.atiende_jueves: dias.append(3)
+        if self.atiende_viernes: dias.append(4)
+        if self.atiende_sabado: dias.append(5)
+        if self.atiende_domingo: dias.append(6)
+        return dias
+    
+    def get_horario_dia(self, dia_semana):
+        """
+        Retorna el horario para un día específico.
+        dia_semana: 0=Lunes, 1=Martes, ..., 6=Domingo
+        Retorna: (hora_inicio, hora_fin) o None si no atiende
+        """
+        dias_atiende = self.get_dias_atencion()
+        
+        if dia_semana not in dias_atiende:
+            return None
+        
+        # Horario especial para sábado
+        if dia_semana == 5 and self.sabado_hora_inicio and self.sabado_hora_fin:
+            return (self.sabado_hora_inicio, self.sabado_hora_fin)
+        
+        return (self.horario_inicio, self.horario_fin)
+
+
+class DisponibilidadDentista(ClaseModelo):
+    """
+    Define la disponibilidad horaria de un dentista por día de la semana.
+    Permite horarios personalizados por dentista.
+    """
+    
+    # Opciones de días de la semana
+    DIAS_SEMANA = [
+        (0, 'Lunes'),
+        (1, 'Martes'),
+        (2, 'Miércoles'),
+        (3, 'Jueves'),
+        (4, 'Viernes'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+    
+    dentista = models.ForeignKey(
+        Dentista,
+        on_delete=models.CASCADE,
+        related_name='disponibilidades',
+        verbose_name='Dentista'
+    )
+    dia_semana = models.IntegerField(
+        choices=DIAS_SEMANA,
+        verbose_name='Día de la Semana'
+    )
+    hora_inicio = models.TimeField(
+        verbose_name='Hora de Inicio',
+        help_text='Hora de inicio de atención'
+    )
+    hora_fin = models.TimeField(
+        verbose_name='Hora de Fin',
+        help_text='Hora de fin de atención'
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, se usa este horario'
+    )
+    
+    class Meta:
+        verbose_name = 'Disponibilidad de Dentista'
+        verbose_name_plural = 'Disponibilidades de Dentistas'
+        ordering = ['dentista', 'dia_semana', 'hora_inicio']
+        unique_together = [['dentista', 'dia_semana', 'hora_inicio']]
+    
+    def __str__(self):
+        return f"{self.dentista} - {self.get_dia_semana_display()} ({self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')})"
+    
+    def clean(self):
+        """Validaciones"""
+        from django.core.exceptions import ValidationError
+        
+        if self.hora_inicio >= self.hora_fin:
+            raise ValidationError({
+                'hora_fin': 'La hora de fin debe ser posterior a la hora de inicio'
+            })
+        
+        # Validar que no se solape con otra disponibilidad del mismo dentista en el mismo día
+        if self.pk:
+            solapamientos = DisponibilidadDentista.objects.filter(
+                dentista=self.dentista,
+                dia_semana=self.dia_semana,
+                activo=True
+            ).exclude(pk=self.pk)
+        else:
+            solapamientos = DisponibilidadDentista.objects.filter(
+                dentista=self.dentista,
+                dia_semana=self.dia_semana,
+                activo=True
+            )
+        
+        for disp in solapamientos:
+            # Verificar solapamiento
+            if (self.hora_inicio < disp.hora_fin and self.hora_fin > disp.hora_inicio):
+                raise ValidationError(
+                    f'Se solapa con otra disponibilidad: {disp.hora_inicio.strftime("%H:%M")} - {disp.hora_fin.strftime("%H:%M")}'
+                )
+
+
+class ExcepcionDisponibilidad(ClaseModelo):
+    """
+    Define excepciones en la disponibilidad de un dentista.
+    Usado para vacaciones, feriados, días libres, etc.
+    """
+    
+    TIPO_CHOICES = [
+        ('VACA', 'Vacaciones'),
+        ('FERIA', 'Feriado'),
+        ('LIBRE', 'Día Libre'),
+        ('CAPAC', 'Capacitación'),
+        ('OTRO', 'Otro'),
+    ]
+    
+    dentista = models.ForeignKey(
+        Dentista,
+        on_delete=models.CASCADE,
+        related_name='excepciones',
+        verbose_name='Dentista'
+    )
+    fecha_inicio = models.DateField(
+        verbose_name='Fecha de Inicio'
+    )
+    fecha_fin = models.DateField(
+        verbose_name='Fecha de Fin'
+    )
+    tipo = models.CharField(
+        max_length=10,
+        choices=TIPO_CHOICES,
+        default='LIBRE',
+        verbose_name='Tipo'
+    )
+    motivo = models.TextField(
+        verbose_name='Motivo',
+        help_text='Descripción del motivo de la excepción',
+        blank=True
+    )
+    todo_el_dia = models.BooleanField(
+        default=True,
+        verbose_name='Todo el Día',
+        help_text='Si está marcado, no se atiende en todo el día'
+    )
+    hora_inicio = models.TimeField(
+        verbose_name='Hora de Inicio',
+        blank=True,
+        null=True,
+        help_text='Si no es todo el día, especificar hora de inicio de la excepción'
+    )
+    hora_fin = models.TimeField(
+        verbose_name='Hora de Fin',
+        blank=True,
+        null=True,
+        help_text='Si no es todo el día, especificar hora de fin de la excepción'
+    )
+    
+    class Meta:
+        verbose_name = 'Excepción de Disponibilidad'
+        verbose_name_plural = 'Excepciones de Disponibilidad'
+        ordering = ['-fecha_inicio']
+    
+    def __str__(self):
+        return f"{self.dentista} - {self.get_tipo_display()} ({self.fecha_inicio} a {self.fecha_fin})"
+    
+    def clean(self):
+        """Validaciones"""
+        from django.core.exceptions import ValidationError
+        
+        if self.fecha_inicio > self.fecha_fin:
+            raise ValidationError({
+                'fecha_fin': 'La fecha de fin debe ser posterior o igual a la fecha de inicio'
+            })
+        
+        if not self.todo_el_dia:
+            if not self.hora_inicio or not self.hora_fin:
+                raise ValidationError(
+                    'Si no es todo el día, debe especificar hora de inicio y fin'
+                )
+            
+            if self.hora_inicio >= self.hora_fin:
+                raise ValidationError({
+                    'hora_fin': 'La hora de fin debe ser posterior a la hora de inicio'
+                })
 

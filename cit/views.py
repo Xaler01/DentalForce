@@ -689,6 +689,9 @@ class CalendarioCitasView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         """Agregar datos adicionales al contexto"""
+        from .models import ConfiguracionClinica
+        import json
+        
         context = super().get_context_data(**kwargs)
         
         # Lista de dentistas para filtros
@@ -699,6 +702,38 @@ class CalendarioCitasView(LoginRequiredMixin, ListView):
         
         # Estados para filtros
         context['estados'] = Cita.ESTADOS_CHOICES
+        
+        # Obtener configuración de la clínica
+        config = ConfiguracionClinica.objects.filter(estado=True).first()
+        
+        if config:
+            # Convertir configuración a formato para JavaScript
+            config_data = {
+                'horario_inicio': config.horario_inicio.strftime('%H:%M'),
+                'horario_fin': config.horario_fin.strftime('%H:%M'),
+                'duracion_slot': config.duracion_slot,
+                'dias_atencion': config.get_dias_atencion(),
+                'sabado_hora_inicio': config.sabado_hora_inicio.strftime('%H:%M') if config.sabado_hora_inicio else None,
+                'sabado_hora_fin': config.sabado_hora_fin.strftime('%H:%M') if config.sabado_hora_fin else None,
+                'permitir_mismo_dia': config.permitir_citas_mismo_dia,
+                'horas_anticipacion': config.horas_anticipacion_minima,
+            }
+            context['configuracion'] = config
+            context['configuracion_json'] = json.dumps(config_data)
+        else:
+            # Configuración por defecto
+            config_data = {
+                'horario_inicio': '08:30',
+                'horario_fin': '18:00',
+                'duracion_slot': 30,
+                'dias_atencion': [0, 1, 2, 3, 4, 5],  # Lunes a sábado
+                'sabado_hora_inicio': '08:30',
+                'sabado_hora_fin': '12:00',
+                'permitir_mismo_dia': True,
+                'horas_anticipacion': 0,
+            }
+            context['configuracion'] = None
+            context['configuracion_json'] = json.dumps(config_data)
         
         return context
 
