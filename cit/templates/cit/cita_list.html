@@ -6,7 +6,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-calendar-alt"></i> Gestión de Citas
+            <i class="fas fa-list"></i> Lista de Citas
         </h1>
         <a href="{% url 'cit:cita-create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> Nueva Cita
@@ -72,7 +72,9 @@
                             {% endfor %}
                         </select>
                     </div>
-
+                </div>
+                
+                <div class="row">
                     <!-- Filtro Fecha Desde -->
                     <div class="col-md-2 mb-3">
                         <label for="fecha_desde">Desde</label>
@@ -93,14 +95,17 @@
                                value="{{ fecha_hasta }}">
                     </div>
 
-                    <!-- Botones -->
-                    <div class="col-md-10 mb-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Buscar
-                        </button>
-                        <a href="{% url 'cit:cita-list' %}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Limpiar
-                        </a>
+                    <!-- Espacio para empujar botones a la derecha -->
+                    <div class="col-md-8 mb-3 text-right">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{% url 'cit:cita-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
                     </div>
                 </div>
             </form>
