@@ -95,9 +95,14 @@ class CitaViewsTestCase(TestCase):
             apellidos='Pérez González',
             cedula='0987654321',
             fecha_nacimiento='1990-01-15',
+            genero='M',
             telefono='0987654324',
             email='juan@example.com',
             direccion='Calle Secundaria 789',
+            contacto_emergencia_nombre='Ana Pérez',
+            contacto_emergencia_telefono='0991234567',
+            contacto_emergencia_relacion='Madre',
+            clinica=self.clinica,
             uc=self.user,
             um=self.user.id
         )
