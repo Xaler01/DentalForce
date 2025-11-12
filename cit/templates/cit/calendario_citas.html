@@ -187,15 +187,32 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block js_page %}
 <!-- FullCalendar JS -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <!-- Idioma español -->
 <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
 
 <script>
+console.log('🔧 Script de calendario cargado');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📅 DOMContentLoaded - Iniciando FullCalendar');
+    
     var calendarEl = document.getElementById('calendar');
+    console.log('📍 Elemento calendario:', calendarEl);
+    
+    if (!calendarEl) {
+        console.error('❌ ERROR: No se encontró el elemento #calendar');
+        return;
+    }
+    
+    if (typeof FullCalendar === 'undefined') {
+        console.error('❌ ERROR: FullCalendar no está cargado');
+        return;
+    }
+    
+    console.log('✅ FullCalendar disponible, inicializando...');
     
     // Inicializar FullCalendar
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -242,14 +259,29 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'GET',
             extraParams: function() {
                 return {
-                    dentista_id: $('#filtro-dentista').val(),
-                    especialidad_id: $('#filtro-especialidad').val(),
-                    estado: $('#filtro-estado').val()
+                    dentista_id: $('#filtro-dentista').val() || '',
+                    especialidad_id: $('#filtro-especialidad').val() || '',
+                    estado: $('#filtro-estado').val() || ''
                 };
             },
-            failure: function() {
-                alert('Error al cargar las citas. Por favor, recarga la página.');
+            failure: function(error) {
+                console.error('❌ Error al cargar citas:', error);
+                showNotification('Error al cargar las citas', 'error');
             }
+        },
+        
+        // Log cuando se cargan eventos
+        loading: function(isLoading) {
+            if (isLoading) {
+                console.log('⏳ Cargando eventos del calendario...');
+            } else {
+                console.log('✅ Eventos cargados');
+            }
+        },
+        
+        eventSourceSuccess: function(content, xhr) {
+            console.log('📊 Eventos recibidos:', content);
+            return content;
         },
         
         // Evento al hacer clic en una cita
@@ -337,56 +369,93 @@ document.addEventListener('DOMContentLoaded', function() {
             var nuevaFechaHora = info.event.start;
             var duracion = info.event.extendedProps.duracion;
             
-            // Confirmar el cambio
-            if (confirm('¿Desea reprogramar esta cita a ' + 
-                       nuevaFechaHora.toLocaleDateString('es-EC', {
-                           weekday: 'long',
-                           year: 'numeric',
-                           month: 'long',
-                           day: 'numeric',
-                           hour: '2-digit',
-                           minute: '2-digit'
-                       }) + '?')) {
-                
-                // Mostrar indicador de carga
-                info.el.style.opacity = '0.5';
-                
-                // Enviar al servidor
-                $.ajax({
-                    url: `/cit/api/citas/${citaId}/mover/`,
-                    method: 'PATCH',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/json'
+            // Formatear fecha para mostrar
+            var fechaFormateada = nuevaFechaHora.toLocaleDateString('es-EC', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Confirmar con jquery-confirm (consistente con el resto del sistema)
+            $.confirm({
+                title: '¿Reprogramar cita?',
+                content: `¿Desea mover esta cita a <strong>${fechaFormateada}</strong>?`,
+                type: 'blue',
+                icon: 'fa fa-calendar',
+                buttons: {
+                    confirmar: {
+                        text: 'Sí, mover',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            // Mostrar indicador de carga
+                            info.el.style.opacity = '0.5';
+                            
+                            // Enviar al servidor
+                            $.ajax({
+                                url: `/cit/api/citas/${citaId}/mover/`,
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                    'Content-Type': 'application/json'
+                                },
+                                data: JSON.stringify({
+                                    fecha_hora: nuevaFechaHora.toISOString(),
+                                    duracion: duracion
+                                }),
+                                success: function(response) {
+                                    if (response.success) {
+                                        // Restaurar opacidad
+                                        info.el.style.opacity = '1';
+                                        
+                                        // Mostrar notificación de éxito
+                                        $.alert({
+                                            title: '¡Éxito!',
+                                            content: response.mensaje || 'Cita reprogramada exitosamente',
+                                            type: 'green',
+                                            icon: 'fa fa-check'
+                                        });
+                                        
+                                        // Recargar eventos para refrescar la vista
+                                        calendar.refetchEvents();
+                                    } else {
+                                        // Revertir cambio si hay error
+                                        info.revert();
+                                        $.alert({
+                                            title: 'Error',
+                                            content: response.mensaje || 'No se pudo reprogramar la cita',
+                                            type: 'red',
+                                        });
+                                    }
+                                },
+                                error: function(xhr) {
+                                    info.revert();
+                                    var errorMsg = 'Error al reprogramar la cita';
+                                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                                        errorMsg = xhr.responseJSON.mensaje;
+                                    }
+                                    $.alert({
+                                        title: 'Error',
+                                        content: errorMsg,
+                                        type: 'red',
+                                        icon: 'fa fa-exclamation-triangle'
+                                    });
+                                }
+                            });
+                        }
                     },
-                    data: JSON.stringify({
-                        fecha_hora: nuevaFechaHora.toISOString(),
-                        duracion: duracion
-                    }),
-                    success: function(response) {
-                        if (response.success) {
-                            // Mostrar mensaje de éxito
-                            showNotification('success', '¡Cita reprogramada exitosamente!');
-                            calendar.refetchEvents();
-                        } else {
-                            // Revertir cambio si hay error
+                    cancelar: {
+                        text: 'Cancelar',
+                        btnClass: 'btn-secondary',
+                        action: function() {
+                            // Usuario canceló, revertir el movimiento
                             info.revert();
-                            showNotification('error', response.mensaje || 'Error al reprogramar la cita');
                         }
-                    },
-                    error: function(xhr) {
-                        info.revert();
-                        var errorMsg = 'Error al reprogramar la cita';
-                        if (xhr.responseJSON && xhr.responseJSON.mensaje) {
-                            errorMsg = xhr.responseJSON.mensaje;
-                        }
-                        showNotification('error', errorMsg);
                     }
-                });
-            } else {
-                // Usuario canceló, revertir
-                info.revert();
-            }
+                }
+            });
         },
         
         // ====================================================================
@@ -401,51 +470,92 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validar duración mínima y máxima
             if (nuevaDuracion < 15) {
                 info.revert();
-                showNotification('warning', 'La duración mínima es de 15 minutos');
+                $.alert({
+                    title: 'Duración no válida',
+                    content: 'La duración mínima es de 15 minutos',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-circle'
+                });
                 return;
             }
             if (nuevaDuracion > 240) {
                 info.revert();
-                showNotification('warning', 'La duración máxima es de 4 horas (240 minutos)');
+                $.alert({
+                    title: 'Duración no válida',
+                    content: 'La duración máxima es de 4 horas (240 minutos)',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-circle'
+                });
                 return;
             }
             
-            // Confirmar el cambio
-            if (confirm(`¿Desea cambiar la duración de esta cita a ${nuevaDuracion} minutos?`)) {
-                
-                // Enviar al servidor
-                $.ajax({
-                    url: `/cit/api/citas/${citaId}/mover/`,
-                    method: 'PATCH',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/json'
+            // Confirmar el cambio con jquery-confirm
+            $.confirm({
+                title: '¿Cambiar duración?',
+                content: `¿Desea cambiar la duración de esta cita a <strong>${nuevaDuracion} minutos</strong>?`,
+                type: 'blue',
+                icon: 'fa fa-clock',
+                buttons: {
+                    confirmar: {
+                        text: 'Sí, cambiar',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            // Enviar al servidor
+                            $.ajax({
+                                url: `/cit/api/citas/${citaId}/mover/`,
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                    'Content-Type': 'application/json'
+                                },
+                                data: JSON.stringify({
+                                    fecha_hora: start.toISOString(),
+                                    duracion: nuevaDuracion
+                                }),
+                                success: function(response) {
+                                    if (response.success) {
+                                        $.alert({
+                                            title: '¡Éxito!',
+                                            content: 'Duración actualizada exitosamente',
+                                            type: 'green',
+                                            icon: 'fa fa-check'
+                                        });
+                                        calendar.refetchEvents();
+                                    } else {
+                                        info.revert();
+                                        $.alert({
+                                            title: 'Error',
+                                            content: response.mensaje || 'Error al cambiar duración',
+                                            type: 'red',
+                                            icon: 'fa fa-times'
+                                        });
+                                    }
+                                },
+                                error: function(xhr) {
+                                    info.revert();
+                                    var errorMsg = 'Error al cambiar duración';
+                                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                                        errorMsg = xhr.responseJSON.mensaje;
+                                    }
+                                    $.alert({
+                                        title: 'Error',
+                                        content: errorMsg,
+                                        type: 'red',
+                                        icon: 'fa fa-exclamation-triangle'
+                                    });
+                                }
+                            });
+                        }
                     },
-                    data: JSON.stringify({
-                        fecha_hora: start.toISOString(),
-                        duracion: nuevaDuracion
-                    }),
-                    success: function(response) {
-                        if (response.success) {
-                            showNotification('success', 'Duración actualizada exitosamente');
-                            calendar.refetchEvents();
-                        } else {
+                    cancelar: {
+                        text: 'Cancelar',
+                        btnClass: 'btn-secondary',
+                        action: function() {
                             info.revert();
-                            showNotification('error', response.mensaje || 'Error al cambiar duración');
                         }
-                    },
-                    error: function(xhr) {
-                        info.revert();
-                        var errorMsg = 'Error al cambiar duración';
-                        if (xhr.responseJSON && xhr.responseJSON.mensaje) {
-                            errorMsg = xhr.responseJSON.mensaje;
-                        }
-                        showNotification('error', errorMsg);
                     }
-                });
-            } else {
-                info.revert();
-            }
+                }
+            });
         },
         
         // Eventos de navegación
@@ -486,10 +596,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 4000);
     }
     
-    calendar.render();
+    console.log('🎨 Renderizando calendario...');
+    try {
+        calendar.render();
+        console.log('✅ Calendario renderizado exitosamente');
+    } catch (error) {
+        console.error('❌ ERROR al renderizar calendario:', error);
+    }
     
     // Aplicar filtros
     $('#btn-aplicar-filtros').on('click', function() {
+        console.log('🔄 Recargando eventos...');
         calendar.refetchEvents();
     });
     
