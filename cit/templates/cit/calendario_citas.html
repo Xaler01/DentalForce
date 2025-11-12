@@ -205,6 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
         timeZone: 'America/Guayaquil',
         height: 'auto',
         
+        // HABILITAR DRAG & DROP Y EDICIÓN
+        editable: true,
+        eventStartEditable: true,
+        eventDurationEditable: true,
+        eventResizableFromStart: false,
+        
         // Header toolbar
         headerToolbar: {
             left: 'prev,next today',
@@ -323,11 +329,162 @@ document.addEventListener('DOMContentLoaded', function() {
         allDaySlot: false,
         nowIndicator: true,
         
+        // ====================================================================
+        // DRAG & DROP: Al mover una cita
+        // ====================================================================
+        eventDrop: function(info) {
+            var citaId = info.event.id;
+            var nuevaFechaHora = info.event.start;
+            var duracion = info.event.extendedProps.duracion;
+            
+            // Confirmar el cambio
+            if (confirm('¿Desea reprogramar esta cita a ' + 
+                       nuevaFechaHora.toLocaleDateString('es-EC', {
+                           weekday: 'long',
+                           year: 'numeric',
+                           month: 'long',
+                           day: 'numeric',
+                           hour: '2-digit',
+                           minute: '2-digit'
+                       }) + '?')) {
+                
+                // Mostrar indicador de carga
+                info.el.style.opacity = '0.5';
+                
+                // Enviar al servidor
+                $.ajax({
+                    url: `/cit/api/citas/${citaId}/mover/`,
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({
+                        fecha_hora: nuevaFechaHora.toISOString(),
+                        duracion: duracion
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Mostrar mensaje de éxito
+                            showNotification('success', '¡Cita reprogramada exitosamente!');
+                            calendar.refetchEvents();
+                        } else {
+                            // Revertir cambio si hay error
+                            info.revert();
+                            showNotification('error', response.mensaje || 'Error al reprogramar la cita');
+                        }
+                    },
+                    error: function(xhr) {
+                        info.revert();
+                        var errorMsg = 'Error al reprogramar la cita';
+                        if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                            errorMsg = xhr.responseJSON.mensaje;
+                        }
+                        showNotification('error', errorMsg);
+                    }
+                });
+            } else {
+                // Usuario canceló, revertir
+                info.revert();
+            }
+        },
+        
+        // ====================================================================
+        // RESIZE: Al cambiar duración arrastrando
+        // ====================================================================
+        eventResize: function(info) {
+            var citaId = info.event.id;
+            var start = info.event.start;
+            var end = info.event.end;
+            var nuevaDuracion = Math.round((end - start) / (1000 * 60)); // Minutos
+            
+            // Validar duración mínima y máxima
+            if (nuevaDuracion < 15) {
+                info.revert();
+                showNotification('warning', 'La duración mínima es de 15 minutos');
+                return;
+            }
+            if (nuevaDuracion > 240) {
+                info.revert();
+                showNotification('warning', 'La duración máxima es de 4 horas (240 minutos)');
+                return;
+            }
+            
+            // Confirmar el cambio
+            if (confirm(`¿Desea cambiar la duración de esta cita a ${nuevaDuracion} minutos?`)) {
+                
+                // Enviar al servidor
+                $.ajax({
+                    url: `/cit/api/citas/${citaId}/mover/`,
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({
+                        fecha_hora: start.toISOString(),
+                        duracion: nuevaDuracion
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('success', 'Duración actualizada exitosamente');
+                            calendar.refetchEvents();
+                        } else {
+                            info.revert();
+                            showNotification('error', response.mensaje || 'Error al cambiar duración');
+                        }
+                    },
+                    error: function(xhr) {
+                        info.revert();
+                        var errorMsg = 'Error al cambiar duración';
+                        if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                            errorMsg = xhr.responseJSON.mensaje;
+                        }
+                        showNotification('error', errorMsg);
+                    }
+                });
+            } else {
+                info.revert();
+            }
+        },
+        
         // Eventos de navegación
         datesSet: function(info) {
             console.log('Vista cambiada a: ' + info.view.type);
         }
     });
+    
+    // Función para mostrar notificaciones
+    function showNotification(type, message) {
+        var bgColor = type === 'success' ? '#28a745' : 
+                     type === 'error' ? '#dc3545' : 
+                     type === 'warning' ? '#ffc107' : '#17a2b8';
+        var textColor = type === 'warning' ? '#000' : '#fff';
+        
+        var notification = $('<div>')
+            .css({
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                backgroundColor: bgColor,
+                color: textColor,
+                padding: '15px 20px',
+                borderRadius: '4px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+                zIndex: 10000,
+                maxWidth: '400px',
+                fontSize: '14px',
+                fontWeight: 'bold'
+            })
+            .html(`<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'exclamation-triangle'}"></i> ${message}`)
+            .appendTo('body');
+        
+        setTimeout(function() {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 4000);
+    }
     
     calendar.render();
     

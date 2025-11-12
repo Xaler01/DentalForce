@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
@@ -8,6 +9,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime, timedelta
+import json
 
 from .models import Cita, Dentista, Paciente, Especialidad, Cubiculo
 from .forms import CitaForm, CitaCancelForm
@@ -516,6 +518,161 @@ def get_especialidad_dentistas(request, especialidad_id):
             'success': False,
             'mensaje': 'Especialidad no encontrada'
         })
+
+
+@login_required
+@require_http_methods(["PATCH"])
+def mover_cita(request, pk):
+    """
+    Endpoint PATCH para reprogramar una cita (drag & drop).
+    Actualiza fecha_hora y/o duración con validaciones de disponibilidad.
+    """
+    try:
+        cita = Cita.objects.select_related(
+            'paciente', 'dentista', 'especialidad', 'cubiculo'
+        ).get(pk=pk)
+    except Cita.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'mensaje': 'Cita no encontrada'
+        }, status=404)
+    
+    # Solo permitir mover citas no canceladas ni completadas
+    if cita.estado in [Cita.ESTADO_CANCELADA, Cita.ESTADO_COMPLETADA, Cita.ESTADO_NO_ASISTIO]:
+        return JsonResponse({
+            'success': False,
+            'mensaje': f'No se puede reprogramar una cita en estado {cita.get_estado_display()}'
+        }, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        nueva_fecha_hora_str = data.get('fecha_hora')
+        nueva_duracion = data.get('duracion')
+        
+        if not nueva_fecha_hora_str:
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'Debe proporcionar la nueva fecha y hora'
+            }, status=400)
+        
+        # Parsear fecha
+        from datetime import datetime
+        nueva_fecha_hora = datetime.fromisoformat(nueva_fecha_hora_str.replace('Z', '+00:00'))
+        
+        # Usar duración actual si no se proporciona
+        if nueva_duracion is None:
+            nueva_duracion = cita.duracion
+        else:
+            nueva_duracion = int(nueva_duracion)
+        
+        # ====================================================================
+        # VALIDACIONES
+        # ====================================================================
+        
+        # 1. Validar que no sea en el pasado
+        from django.utils import timezone
+        if nueva_fecha_hora < timezone.now():
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'No se puede reprogramar una cita en el pasado'
+            }, status=400)
+        
+        # 2. Validar duración
+        if nueva_duracion < 15:
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'La duración mínima es 15 minutos'
+            }, status=400)
+        
+        if nueva_duracion > 240:
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'La duración máxima es 240 minutos (4 horas)'
+            }, status=400)
+        
+        # 3. Validar horario laboral (08:00 - 20:00)
+        hora_inicio = nueva_fecha_hora.time()
+        from datetime import time, timedelta
+        
+        if hora_inicio < time(8, 0):
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'El horario laboral inicia a las 08:00'
+            }, status=400)
+        
+        fecha_fin = nueva_fecha_hora + timedelta(minutes=nueva_duracion)
+        if fecha_fin.time() > time(20, 0):
+            return JsonResponse({
+                'success': False,
+                'mensaje': f'La cita terminaría a las {fecha_fin.strftime("%H:%M")}, después del cierre (20:00)'
+            }, status=400)
+        
+        # 4. Validar disponibilidad del dentista
+        citas_solapadas = Cita.objects.filter(
+            dentista=cita.dentista,
+            fecha_hora__lt=fecha_fin,
+            estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA, Cita.ESTADO_EN_ATENCION]
+        ).exclude(pk=cita.pk)
+        
+        for otra_cita in citas_solapadas:
+            otra_fin = otra_cita.fecha_hora + timedelta(minutes=otra_cita.duracion)
+            if otra_cita.fecha_hora < fecha_fin and otra_fin > nueva_fecha_hora:
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': f'El Dr./Dra. {cita.dentista} ya tiene una cita en ese horario ({otra_cita.fecha_hora.strftime("%H:%M")} - {otra_fin.strftime("%H:%M")})'
+                }, status=400)
+        
+        # 5. Validar disponibilidad del cubículo
+        citas_cubiculo = Cita.objects.filter(
+            cubiculo=cita.cubiculo,
+            fecha_hora__lt=fecha_fin,
+            estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA, Cita.ESTADO_EN_ATENCION]
+        ).exclude(pk=cita.pk)
+        
+        for otra_cita in citas_cubiculo:
+            otra_fin = otra_cita.fecha_hora + timedelta(minutes=otra_cita.duracion)
+            if otra_cita.fecha_hora < fecha_fin and otra_fin > nueva_fecha_hora:
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': f'El cubículo {cita.cubiculo} ya está ocupado en ese horario'
+                }, status=400)
+        
+        # ====================================================================
+        # ACTUALIZAR CITA
+        # ====================================================================
+        cita.fecha_hora = nueva_fecha_hora
+        cita.duracion = nueva_duracion
+        cita.um = request.user.id
+        cita.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Cita reprogramada exitosamente',
+            'cita': {
+                'id': cita.id,
+                'fecha_hora': cita.fecha_hora.isoformat(),
+                'duracion': cita.duracion,
+                'paciente': str(cita.paciente),
+                'dentista': str(cita.dentista),
+                'estado': cita.get_estado_display()
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'mensaje': 'Datos JSON inválidos'
+        }, status=400)
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'mensaje': f'Error en los datos: {str(e)}'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'mensaje': f'Error inesperado: {str(e)}'
+        }, status=500)
 
 
 # ============================================================================

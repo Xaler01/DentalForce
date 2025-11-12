@@ -40,6 +40,10 @@ urlpatterns = [
          views.get_especialidad_dentistas, 
          name='ajax-especialidad-dentistas'),
     
+    path('api/citas/<int:pk>/mover/', 
+         views.mover_cita, 
+         name='ajax-mover-cita'),
+    
     # ========================================================================
     # Calendario
     # ========================================================================
