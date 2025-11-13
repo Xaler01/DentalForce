@@ -413,3 +413,136 @@ class CitaCancelForm(forms.ModelForm):
             raise ValidationError('Debe proporcionar un motivo de cancelación de al menos 10 caracteres')
         
         return motivo
+
+
+class EspecialidadForm(forms.ModelForm):
+    """
+    Formulario para crear y editar especialidades odontológicas.
+    Incluye validaciones de negocio y widgets personalizados.
+    """
+    
+    class Meta:
+        model = Especialidad
+        fields = ['nombre', 'descripcion', 'duracion_default', 'color_calendario', 'estado']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Ortodoncia, Endodoncia, Periodoncia',
+                'required': True,
+                'maxlength': 100
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción detallada de la especialidad (opcional)'
+            }),
+            'duracion_default': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 15,
+                'step': 15,
+                'value': 30,
+                'required': True
+            }),
+            'color_calendario': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'required': True
+            }),
+            'estado': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'nombre': 'Nombre de la Especialidad',
+            'descripcion': 'Descripción',
+            'duracion_default': 'Duración por Defecto (minutos)',
+            'color_calendario': 'Color para Calendario',
+            'estado': 'Activa'
+        }
+        help_texts = {
+            'nombre': 'Nombre único de la especialidad',
+            'descripcion': 'Descripción detallada de los servicios que incluye',
+            'duracion_default': 'Duración estimada de una cita de esta especialidad',
+            'color_calendario': 'Color que se mostrará en el calendario para esta especialidad',
+            'estado': 'Solo las especialidades activas estarán disponibles para asignar'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Marcar campos requeridos
+        self.fields['nombre'].required = True
+        self.fields['duracion_default'].required = True
+        self.fields['color_calendario'].required = True
+        
+        # Valor por defecto para estado (solo en creación)
+        if not self.instance.pk:
+            self.fields['estado'].initial = True
+
+    def clean_nombre(self):
+        """
+        Validación del nombre: único, sin espacios excesivos, capitalizado
+        """
+        nombre = self.cleaned_data.get('nombre', '').strip()
+        
+        if not nombre:
+            raise ValidationError('El nombre es obligatorio')
+        
+        if len(nombre) < 3:
+            raise ValidationError('El nombre debe tener al menos 3 caracteres')
+        
+        # Verificar unicidad (excepto para la instancia actual en edición)
+        if self.instance.pk:
+            # Edición: excluir la instancia actual
+            existe = Especialidad.objects.filter(nombre__iexact=nombre).exclude(pk=self.instance.pk).exists()
+        else:
+            # Creación: verificar si existe
+            existe = Especialidad.objects.filter(nombre__iexact=nombre).exists()
+        
+        if existe:
+            raise ValidationError(f'Ya existe una especialidad con el nombre "{nombre}"')
+        
+        # Capitalizar primera letra de cada palabra
+        nombre = nombre.title()
+        
+        return nombre
+
+    def clean_duracion_default(self):
+        """
+        Validación de duración: debe ser múltiplo de 15 y entre 15-240 minutos
+        """
+        duracion = self.cleaned_data.get('duracion_default')
+        
+        if duracion < 15:
+            raise ValidationError('La duración mínima es de 15 minutos')
+        
+        if duracion > 240:
+            raise ValidationError('La duración máxima es de 4 horas (240 minutos)')
+        
+        if duracion % 15 != 0:
+            raise ValidationError('La duración debe ser múltiplo de 15 minutos (15, 30, 45, 60...)')
+        
+        return duracion
+
+    def clean_color_calendario(self):
+        """
+        Validación del color: formato hexadecimal válido
+        """
+        color = self.cleaned_data.get('color_calendario', '').strip()
+        
+        if not color:
+            raise ValidationError('El color es obligatorio')
+        
+        # Validar formato hexadecimal
+        if not color.startswith('#'):
+            color = '#' + color
+        
+        if len(color) != 7:
+            raise ValidationError('El color debe estar en formato hexadecimal (#RRGGBB)')
+        
+        try:
+            int(color[1:], 16)
+        except ValueError:
+            raise ValidationError('El color debe ser un valor hexadecimal válido (Ej: #3498db)')
+        
+        return color.lower()

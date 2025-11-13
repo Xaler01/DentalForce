@@ -49,4 +49,12 @@ urlpatterns = [
     # ========================================================================
     path('calendario/', views.CalendarioCitasView.as_view(), name='calendario'),
     path('api/citas.json', views.citas_json, name='citas-json'),
+    
+    # ========================================================================
+    # CRUD de Especialidades
+    # ========================================================================
+    path('especialidades/', views.EspecialidadListView.as_view(), name='especialidad-list'),
+    path('especialidades/nueva/', views.EspecialidadCreateView.as_view(), name='especialidad-create'),
+    path('especialidades/<int:pk>/editar/', views.EspecialidadUpdateView.as_view(), name='especialidad-update'),
+    path('especialidades/<int:pk>/eliminar/', views.EspecialidadDeleteView.as_view(), name='especialidad-delete'),
 ]

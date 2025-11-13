@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import json
 
 from .models import Cita, Dentista, Paciente, Especialidad, Cubiculo
-from .forms import CitaForm, CitaCancelForm
+from .forms import CitaForm, CitaCancelForm, EspecialidadForm
 
 
 # ============================================================================
@@ -825,3 +825,125 @@ def citas_json(request):
         eventos.append(evento)
     
     return JsonResponse(eventos, safe=False)
+
+
+# ==================== VISTAS DE ESPECIALIDADES ====================
+
+class EspecialidadListView(LoginRequiredMixin, ListView):
+    """
+    Vista para listar todas las especialidades.
+    Incluye búsqueda y filtrado por estado.
+    """
+    model = Especialidad
+    template_name = 'cit/especialidad_list.html'
+    context_object_name = 'especialidades'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        queryset = Especialidad.objects.all().order_by('nombre')
+        
+        # Búsqueda
+        q = self.request.GET.get('q', '')
+        if q:
+            queryset = queryset.filter(
+                Q(nombre__icontains=q) | Q(descripcion__icontains=q)
+            )
+        
+        # Filtro por estado
+        estado = self.request.GET.get('estado', '')
+        if estado == 'activas':
+            queryset = queryset.filter(estado=True)
+        elif estado == 'inactivas':
+            queryset = queryset.filter(estado=False)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET.get('q', '')
+        context['estado_filtro'] = self.request.GET.get('estado', '')
+        context['total_especialidades'] = Especialidad.objects.count()
+        context['especialidades_activas'] = Especialidad.objects.filter(estado=True).count()
+        return context
+
+
+class EspecialidadCreateView(LoginRequiredMixin, CreateView):
+    """
+    Vista para crear una nueva especialidad.
+    """
+    model = Especialidad
+    form_class = EspecialidadForm
+    template_name = 'cit/especialidad_form.html'
+    success_url = reverse_lazy('cit:especialidad-list')
+    
+    def form_valid(self, form):
+        # Asignar usuario creador
+        form.instance.uc = self.request.user
+        messages.success(
+            self.request, 
+            f'✅ Especialidad "{form.instance.nombre}" creada exitosamente'
+        )
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(
+            self.request, 
+            '❌ Error al crear la especialidad. Por favor revise los campos.'
+        )
+        return super().form_invalid(form)
+
+
+class EspecialidadUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para editar una especialidad existente.
+    """
+    model = Especialidad
+    form_class = EspecialidadForm
+    template_name = 'cit/especialidad_form.html'
+    success_url = reverse_lazy('cit:especialidad-list')
+    
+    def form_valid(self, form):
+        messages.success(
+            self.request, 
+            f'✅ Especialidad "{form.instance.nombre}" actualizada exitosamente'
+        )
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(
+            self.request, 
+            '❌ Error al actualizar la especialidad. Por favor revise los campos.'
+        )
+        return super().form_invalid(form)
+
+
+class EspecialidadDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Vista para eliminar (soft delete) una especialidad.
+    Cambia el estado a False en lugar de eliminar el registro.
+    """
+    model = Especialidad
+    template_name = 'cit/especialidad_confirm_delete.html'
+    success_url = reverse_lazy('cit:especialidad-list')
+    
+    def form_valid(self, form):
+        """Sobrescribir para hacer soft delete en lugar de eliminar"""
+        self.object = self.get_object()
+        
+        # Soft delete: cambiar estado en lugar de eliminar
+        self.object.estado = False
+        self.object.save()
+        
+        messages.success(
+            self.request, 
+            f'✅ Especialidad "{self.object.nombre}" desactivada exitosamente'
+        )
+        return redirect(self.success_url)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Verificar si hay dentistas o citas asociadas
+        context['dentistas_count'] = self.object.dentistas.count()
+        context['citas_count'] = self.object.citas.count()
+        return context
+        return context
