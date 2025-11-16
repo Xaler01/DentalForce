@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Clinica, Sucursal, Especialidad, Cubiculo, Dentista, Paciente, Cita,
-    ConfiguracionClinica, DisponibilidadDentista, ExcepcionDisponibilidad
+    ConfiguracionClinica, DisponibilidadDentista, ExcepcionDisponibilidad,
+    ComisionDentista
 )
 
 # Register your models here.
@@ -358,6 +359,19 @@ class ConfiguracionClinicaAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class ComisionDentistaInline(admin.TabularInline):
+    """Inline para mostrar comisiones dentro del admin de Dentista"""
+    model = ComisionDentista
+    extra = 0
+    fields = ('especialidad', 'tipo_comision', 'porcentaje', 'valor_fijo', 'activo')
+    readonly_fields = ()
+    
+    def get_queryset(self, request):
+        """Filtrar solo comisiones activas por defecto"""
+        qs = super().get_queryset(request)
+        return qs.select_related('especialidad')
+
+
 class DisponibilidadDentistaInline(admin.TabularInline):
     """Inline para mostrar disponibilidades dentro del admin de Dentista"""
     model = DisponibilidadDentista
@@ -440,3 +454,47 @@ class ExcepcionDisponibilidadAdmin(admin.ModelAdmin):
             obj.uc = request.user
         obj.um = request.user.id
         super().save_model(request, obj, form, change)
+
+
+
+@admin.register(ComisionDentista)
+class ComisionDentistaAdmin(admin.ModelAdmin):
+    """Administración de Comisiones de Dentistas"""
+    list_display = ("dentista", "especialidad", "tipo_comision", "get_comision_display", "activo", "estado")
+    list_filter = ("tipo_comision", "activo", "estado", "especialidad")
+    search_fields = ("dentista__usuario__first_name", "dentista__usuario__last_name", "especialidad__nombre")
+    readonly_fields = ("uc", "fc", "um", "fm")
+    autocomplete_fields = ["dentista", "especialidad"]
+    
+    fieldsets = (
+        ("Configuración de Comisión", {
+            "fields": ("dentista", "especialidad", "tipo_comision")
+        }),
+        ("Valores de Comisión", {
+            "fields": ("porcentaje", "valor_fijo"),
+            "description": "Ingresar solo el campo correspondiente al tipo seleccionado"
+        }),
+        ("Estado y Observaciones", {
+            "fields": ("activo", "observaciones", "estado")
+        }),
+        ("Auditoría", {
+            "fields": ("uc", "fc", "um", "fm"),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def get_comision_display(self, obj):
+        """Mostrar el valor de comisión según el tipo"""
+        if obj.tipo_comision == "PORCENTAJE":
+            return f"{obj.porcentaje}%"
+        else:
+            return f"${obj.valor_fijo}"
+    get_comision_display.short_description = "Comisión"
+    
+    def save_model(self, request, obj, form, change):
+        """Guardar usuario que crea/modifica"""
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user.id
+        super().save_model(request, obj, form, change)
+

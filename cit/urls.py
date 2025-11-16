@@ -57,4 +57,12 @@ urlpatterns = [
     path('especialidades/nueva/', views.EspecialidadCreateView.as_view(), name='especialidad-create'),
     path('especialidades/<int:pk>/editar/', views.EspecialidadUpdateView.as_view(), name='especialidad-update'),
     path('especialidades/<int:pk>/eliminar/', views.EspecialidadDeleteView.as_view(), name='especialidad-delete'),
+    
+    # ========================================================================
+    # CRUD de Dentistas
+    # ========================================================================
+    path('dentistas/', views.DentistaListView.as_view(), name='dentista-list'),
+    path('dentistas/nuevo/', views.DentistaCreateView.as_view(), name='dentista-create'),
+    path('dentistas/<int:pk>/editar/', views.DentistaUpdateView.as_view(), name='dentista-update'),
+    path('dentistas/<int:pk>/eliminar/', views.DentistaDeleteView.as_view(), name='dentista-delete'),
 ]

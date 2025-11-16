@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from bases.models import ClaseModelo
 
 # Create your models here.
@@ -259,6 +260,13 @@ class Dentista(ClaseModelo):
         verbose_name='Especialidades',
         help_text='Especialidades que practica el dentista'
     )
+    sucursales = models.ManyToManyField(
+        Sucursal,
+        related_name='dentistas_asignados',
+        verbose_name='Sucursales',
+        help_text='Sucursales donde el dentista puede atender',
+        blank=True
+    )
     sucursal_principal = models.ForeignKey(
         Sucursal,
         on_delete=models.SET_NULL,
@@ -422,6 +430,150 @@ class Dentista(ClaseModelo):
             horarios[disp.dia_semana].append((disp.hora_inicio, disp.hora_fin))
         
         return horarios
+
+
+class ComisionDentista(ClaseModelo):
+    """
+    Modelo para representar las comisiones que recibe un dentista por especialidad.
+    Permite configurar comisiones por porcentaje o valor fijo según la especialidad.
+    """
+    TIPO_COMISION_CHOICES = [
+        ('PORCENTAJE', 'Porcentaje (%)'),
+        ('FIJO', 'Valor Fijo ($)'),
+    ]
+    
+    dentista = models.ForeignKey(
+        Dentista,
+        on_delete=models.CASCADE,
+        related_name='comisiones',
+        verbose_name='Dentista',
+        help_text='Dentista al que se le asigna la comisión'
+    )
+    especialidad = models.ForeignKey(
+        Especialidad,
+        on_delete=models.CASCADE,
+        related_name='comisiones',
+        verbose_name='Especialidad',
+        help_text='Especialidad sobre la que se aplica la comisión'
+    )
+    tipo_comision = models.CharField(
+        max_length=10,
+        choices=TIPO_COMISION_CHOICES,
+        verbose_name='Tipo de Comisión',
+        help_text='Tipo de comisión: Porcentaje o Valor Fijo',
+        default='PORCENTAJE'
+    )
+    porcentaje = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name='Porcentaje (%)',
+        help_text='Porcentaje de comisión (Ej: 15.50 para 15.50%)',
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0.00),
+            MaxValueValidator(100.00)
+        ]
+    )
+    valor_fijo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Valor Fijo ($)',
+        help_text='Valor fijo de comisión por tratamiento (Ej: 50.00)',
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0.00)
+        ]
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Indica si esta configuración de comisión está activa'
+    )
+    observaciones = models.TextField(
+        verbose_name='Observaciones',
+        help_text='Notas adicionales sobre esta comisión',
+        blank=True
+    )
+    
+    class Meta:
+        verbose_name = 'Comisión de Dentista'
+        verbose_name_plural = 'Comisiones de Dentistas'
+        ordering = ['dentista', 'especialidad']
+        unique_together = [['dentista', 'especialidad']]
+    
+    def __str__(self):
+        if self.tipo_comision == 'PORCENTAJE':
+            return f"{self.dentista} - {self.especialidad}: {self.porcentaje}%"
+        else:
+            return f"{self.dentista} - {self.especialidad}: ${self.valor_fijo}"
+    
+    def clean(self):
+        """Validaciones personalizadas"""
+        from django.core.exceptions import ValidationError
+        
+        # Validar que la especialidad esté asignada al dentista
+        if self.dentista and self.especialidad:
+            if not self.dentista.especialidades.filter(id=self.especialidad.id).exists():
+                raise ValidationError({
+                    'especialidad': f'El dentista no tiene asignada la especialidad {self.especialidad.nombre}'
+                })
+        
+        # Validar que solo exista UNA comisión activa por dentista+especialidad
+        if self.activo and self.dentista and self.especialidad:
+            existing = ComisionDentista.objects.filter(
+                dentista=self.dentista,
+                especialidad=self.especialidad,
+                activo=True
+            ).exclude(pk=self.pk)
+            
+            if existing.exists():
+                raise ValidationError({
+                    'activo': f'Ya existe una comisión activa para {self.especialidad.nombre}. '
+                             'Debe desactivar la comisión existente antes de activar una nueva.'
+                })
+        
+        # Validar que según el tipo de comisión, solo un campo tenga valor
+        if self.tipo_comision == 'PORCENTAJE':
+            if not self.porcentaje or self.porcentaje <= 0:
+                raise ValidationError({
+                    'porcentaje': 'Debe especificar un porcentaje mayor a 0 cuando el tipo es "Porcentaje"'
+                })
+            # Limpiar valor_fijo si existe
+            self.valor_fijo = None
+        
+        elif self.tipo_comision == 'FIJO':
+            if not self.valor_fijo or self.valor_fijo <= 0:
+                raise ValidationError({
+                    'valor_fijo': 'Debe especificar un valor fijo mayor a 0 cuando el tipo es "Valor Fijo"'
+                })
+            # Limpiar porcentaje si existe
+            self.porcentaje = None
+    
+    def calcular_comision(self, monto_tratamiento):
+        """
+        Calcula el monto de comisión basado en el monto del tratamiento.
+        
+        Args:
+            monto_tratamiento (Decimal): Monto total del tratamiento
+            
+        Returns:
+            Decimal: Monto de comisión calculado
+        """
+        from decimal import Decimal
+        
+        if not self.activo:
+            return Decimal('0.00')
+        
+        if self.tipo_comision == 'PORCENTAJE':
+            if self.porcentaje:
+                return (monto_tratamiento * self.porcentaje) / Decimal('100.00')
+        elif self.tipo_comision == 'FIJO':
+            if self.valor_fijo:
+                return self.valor_fijo
+        
+        return Decimal('0.00')
 
 
 class Paciente(ClaseModelo):
@@ -963,6 +1115,15 @@ class DisponibilidadDentista(ClaseModelo):
         related_name='disponibilidades',
         verbose_name='Dentista'
     )
+    sucursal = models.ForeignKey(
+        Sucursal,
+        on_delete=models.CASCADE,
+        related_name='disponibilidades_dentistas',
+        verbose_name='Sucursal',
+        help_text='Sucursal donde atiende en este horario',
+        null=True,
+        blank=True
+    )
     dia_semana = models.IntegerField(
         choices=DIAS_SEMANA,
         verbose_name='Día de la Semana'
@@ -985,39 +1146,50 @@ class DisponibilidadDentista(ClaseModelo):
         verbose_name = 'Disponibilidad de Dentista'
         verbose_name_plural = 'Disponibilidades de Dentistas'
         ordering = ['dentista', 'dia_semana', 'hora_inicio']
-        unique_together = [['dentista', 'dia_semana', 'hora_inicio']]
+        unique_together = [['dentista', 'sucursal', 'dia_semana', 'hora_inicio']]
     
     def __str__(self):
-        return f"{self.dentista} - {self.get_dia_semana_display()} ({self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')})"
+        sucursal_str = f" - {self.sucursal.nombre}" if self.sucursal else ""
+        return f"{self.dentista} - {self.get_dia_semana_display()}{sucursal_str} ({self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')})"
     
     def clean(self):
         """Validaciones"""
         from django.core.exceptions import ValidationError
+        
+        # Validar que hora_inicio y hora_fin tengan valores
+        if not self.hora_inicio or not self.hora_fin:
+            raise ValidationError({
+                'hora_inicio': 'Debe especificar la hora de inicio' if not self.hora_inicio else '',
+                'hora_fin': 'Debe especificar la hora de fin' if not self.hora_fin else ''
+            })
         
         if self.hora_inicio >= self.hora_fin:
             raise ValidationError({
                 'hora_fin': 'La hora de fin debe ser posterior a la hora de inicio'
             })
         
-        # Validar que no se solape con otra disponibilidad del mismo dentista en el mismo día
+        # Validar que no se solape con otra disponibilidad del mismo dentista en el mismo día y sucursal
+        filtro = {
+            'dentista': self.dentista,
+            'dia_semana': self.dia_semana,
+            'activo': True
+        }
+        
+        # Si tiene sucursal asignada, validar solo para esa sucursal
+        if self.sucursal:
+            filtro['sucursal'] = self.sucursal
+        
         if self.pk:
-            solapamientos = DisponibilidadDentista.objects.filter(
-                dentista=self.dentista,
-                dia_semana=self.dia_semana,
-                activo=True
-            ).exclude(pk=self.pk)
+            solapamientos = DisponibilidadDentista.objects.filter(**filtro).exclude(pk=self.pk)
         else:
-            solapamientos = DisponibilidadDentista.objects.filter(
-                dentista=self.dentista,
-                dia_semana=self.dia_semana,
-                activo=True
-            )
+            solapamientos = DisponibilidadDentista.objects.filter(**filtro)
         
         for disp in solapamientos:
             # Verificar solapamiento
             if (self.hora_inicio < disp.hora_fin and self.hora_fin > disp.hora_inicio):
+                sucursal_msg = f" en {self.sucursal.nombre}" if self.sucursal else ""
                 raise ValidationError(
-                    f'Se solapa con otra disponibilidad: {disp.hora_inicio.strftime("%H:%M")} - {disp.hora_fin.strftime("%H:%M")}'
+                    f'Se solapa con otra disponibilidad{sucursal_msg}: {disp.hora_inicio.strftime("%H:%M")} - {disp.hora_fin.strftime("%H:%M")}'
                 )
 
 
@@ -1088,11 +1260,14 @@ class ExcepcionDisponibilidad(ClaseModelo):
         """Validaciones"""
         from django.core.exceptions import ValidationError
         
-        if self.fecha_inicio > self.fecha_fin:
-            raise ValidationError({
-                'fecha_fin': 'La fecha de fin debe ser posterior o igual a la fecha de inicio'
-            })
+        # Solo validar si ambas fechas están presentes
+        if self.fecha_inicio and self.fecha_fin:
+            if self.fecha_inicio > self.fecha_fin:
+                raise ValidationError({
+                    'fecha_fin': 'La fecha de fin debe ser posterior o igual a la fecha de inicio'
+                })
         
+        # Solo validar horas si no es todo el día
         if not self.todo_el_dia:
             if not self.hora_inicio or not self.hora_fin:
                 raise ValidationError(

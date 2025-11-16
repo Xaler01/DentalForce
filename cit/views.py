@@ -946,4 +946,460 @@ class EspecialidadDeleteView(LoginRequiredMixin, DeleteView):
         context['dentistas_count'] = self.object.dentistas.count()
         context['citas_count'] = self.object.citas.count()
         return context
+
+
+# ============================================================================
+# VISTAS CRUD DE DENTISTAS CON GESTIÓN DE HORARIOS
+# ============================================================================
+
+class DentistaListView(LoginRequiredMixin, ListView):
+    """
+    Vista para listar dentistas con búsqueda y filtros.
+    """
+    model = Dentista
+    template_name = 'cit/dentista_list.html'
+    context_object_name = 'dentistas'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        """Optimizar consultas y aplicar filtros"""
+        queryset = Dentista.objects.select_related(
+            'usuario',
+            'sucursal_principal',
+            'sucursal_principal__clinica'
+        ).prefetch_related('especialidades')
+        
+        # Filtro por especialidad
+        especialidad_id = self.request.GET.get('especialidad')
+        if especialidad_id:
+            queryset = queryset.filter(especialidades__id=especialidad_id)
+        
+        # Filtro por sucursal
+        sucursal_id = self.request.GET.get('sucursal')
+        if sucursal_id:
+            queryset = queryset.filter(sucursal_principal_id=sucursal_id)
+        
+        # Búsqueda por nombre, cédula o licencia
+        busqueda = self.request.GET.get('q')
+        if busqueda:
+            queryset = queryset.filter(
+                Q(usuario__first_name__icontains=busqueda) |
+                Q(usuario__last_name__icontains=busqueda) |
+                Q(cedula_profesional__icontains=busqueda) |
+                Q(numero_licencia__icontains=busqueda)
+            )
+        
+        return queryset.order_by('usuario__last_name', 'usuario__first_name')
+    
+    def get_context_data(self, **kwargs):
+        """Agregar datos adicionales al contexto"""
+        context = super().get_context_data(**kwargs)
+        context['especialidades'] = Especialidad.objects.filter(estado=True)
+        
+        from .models import Sucursal
+        context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+        
+        return context
+
+
+class DentistaCreateView(LoginRequiredMixin, CreateView):
+    """
+    Vista para crear un nuevo dentista con horarios.
+    Maneja el formulario principal y dos formsets inline.
+    """
+    model = Dentista
+    template_name = 'cit/dentista_form.html'
+    success_url = reverse_lazy('cit:dentista-list')
+    
+    def get_form_class(self):
+        from .forms import DentistaForm
+        return DentistaForm
+    
+    def get_context_data(self, **kwargs):
+        """Agregar formsets al contexto"""
+        context = super().get_context_data(**kwargs)
+        
+        from .models import Sucursal
+        from .forms import (
+            DisponibilidadDentistaFormSet, 
+            ExcepcionDisponibilidadFormSet,
+            ComisionDentistaFormSet
+        )
+        
+        # Determinar sucursales disponibles
+        if self.object and self.object.pk:
+            sucursales = self.object.sucursales.all()
+            if not sucursales.exists():
+                sucursales = Sucursal.objects.filter(estado=True)
+        else:
+            sucursales = Sucursal.objects.filter(estado=True)
+        
+        # Determinar especialidades disponibles para comisiones
+        if self.object and self.object.pk:
+            especialidades = self.object.especialidades.all()
+        else:
+            especialidades = None
+        
+        if self.request.POST:
+            disponibilidad_formset = DisponibilidadDentistaFormSet(
+                self.request.POST,
+                instance=self.object,
+                form_kwargs={'sucursales_queryset': sucursales}
+            )
+            excepcion_formset = ExcepcionDisponibilidadFormSet(
+                self.request.POST,
+                instance=self.object
+            )
+            comision_formset = ComisionDentistaFormSet(
+                self.request.POST,
+                instance=self.object,
+                form_kwargs={'especialidades_queryset': especialidades} if especialidades else {}
+            )
+        else:
+            disponibilidad_formset = DisponibilidadDentistaFormSet(
+                instance=self.object,
+                form_kwargs={'sucursales_queryset': sucursales}
+            )
+            excepcion_formset = ExcepcionDisponibilidadFormSet(
+                instance=self.object
+            )
+            comision_formset = ComisionDentistaFormSet(
+                instance=self.object,
+                form_kwargs={'especialidades_queryset': especialidades} if especialidades else {}
+            )
+        
+        context['disponibilidad_formset'] = disponibilidad_formset
+        context['excepcion_formset'] = excepcion_formset
+        context['comision_formset'] = comision_formset
+        
+        return context
+    
+    def form_valid(self, form):
+        """Validar y guardar formsets junto con el formulario principal"""
+        context = self.get_context_data()
+        disponibilidad_formset = context['disponibilidad_formset']
+        excepcion_formset = context['excepcion_formset']
+        comision_formset = context['comision_formset']
+        
+        # Validar todos los formsets
+        if disponibilidad_formset.is_valid() and excepcion_formset.is_valid() and comision_formset.is_valid():
+            # Guardar el dentista primero, pasando el usuario actual para uc
+            self.object = form.save(user=self.request.user)
+            
+            # Guardar los formsets, excluyendo horarios vacíos e inactivos
+            disponibilidad_formset.instance = self.object
+            disponibilidades = disponibilidad_formset.save(commit=False)
+            
+            for disponibilidad in disponibilidades:
+                # Solo guardar si tiene horarios definidos
+                if disponibilidad.hora_inicio and disponibilidad.hora_fin:
+                    # Asignar usuario creador si es nuevo
+                    if not disponibilidad.pk:
+                        disponibilidad.uc = self.request.user
+                    disponibilidad.save()
+            
+            # Eliminar los marcados para eliminar
+            for obj in disponibilidad_formset.deleted_objects:
+                obj.delete()
+            
+            # Guardar excepciones con uc asignado
+            excepcion_formset.instance = self.object
+            excepciones = excepcion_formset.save(commit=False)
+            
+            for excepcion in excepciones:
+                # Solo guardar si está activa (Aplicar marcado) y tiene datos válidos
+                if excepcion.estado and excepcion.fecha_inicio and excepcion.fecha_fin:
+                    # Asignar usuario creador si es nuevo
+                    if not excepcion.pk:
+                        excepcion.uc = self.request.user
+                    excepcion.save()
+            
+            # Eliminar excepciones marcadas para eliminar
+            for obj in excepcion_formset.deleted_objects:
+                obj.delete()
+            
+            # Guardar comisiones
+            comision_formset.instance = self.object
+            comisiones = comision_formset.save(commit=False)
+            
+            for comision in comisiones:
+                # Asignar usuario creador si es nuevo
+                if not comision.pk:
+                    comision.uc = self.request.user
+                comision.save()
+            
+            # Eliminar comisiones marcadas para eliminar
+            for obj in comision_formset.deleted_objects:
+                obj.delete()
+            
+            messages.success(
+                self.request,
+                f'✅ Dentista Dr(a). {self.object.usuario.get_full_name()} creado exitosamente'
+            )
+            return redirect(self.success_url)
+        else:
+            # Mostrar errores de los formsets de forma legible
+            error_found = False
+            
+            if not disponibilidad_formset.is_valid():
+                error_found = True
+                for form in disponibilidad_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Horarios - {field_name}: {error}')
+            
+            if not excepcion_formset.is_valid():
+                error_found = True
+                for form in excepcion_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Excepciones - {field_name}: {error}')
+            
+            if not comision_formset.is_valid():
+                error_found = True
+                for form in comision_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Comisiones - {field_name}: {error}')
+            
+            if not error_found:
+                messages.error(self.request, '❌ Error al crear el dentista. Por favor revise todos los campos.')
+            
+            return self.form_invalid(form)
+
+
+class DentistaUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para actualizar un dentista existente con sus horarios.
+    """
+    model = Dentista
+    template_name = 'cit/dentista_form.html'
+    success_url = reverse_lazy('cit:dentista-list')
+    
+    def get_form_class(self):
+        from .forms import DentistaForm
+        return DentistaForm
+    
+    def get_context_data(self, **kwargs):
+        """Agregar formsets al contexto"""
+        context = super().get_context_data(**kwargs)
+        
+        from .models import Sucursal
+        from .forms import (
+            DisponibilidadDentistaFormSet, 
+            ExcepcionDisponibilidadFormSet,
+            ComisionDentistaFormSet
+        )
+        
+        # Determinar sucursales disponibles
+        sucursales = self.object.sucursales.all()
+        if not sucursales.exists():
+            sucursales = Sucursal.objects.filter(estado=True)
+        
+        # Determinar especialidades disponibles para comisiones
+        especialidades = self.object.especialidades.all()
+        
+        if self.request.POST:
+            disponibilidad_formset = DisponibilidadDentistaFormSet(
+                self.request.POST,
+                instance=self.object,
+                form_kwargs={'sucursales_queryset': sucursales}
+            )
+            excepcion_formset = ExcepcionDisponibilidadFormSet(
+                self.request.POST,
+                instance=self.object
+            )
+            comision_formset = ComisionDentistaFormSet(
+                self.request.POST,
+                instance=self.object,
+                form_kwargs={'especialidades_queryset': especialidades}
+            )
+        else:
+            disponibilidad_formset = DisponibilidadDentistaFormSet(
+                instance=self.object,
+                form_kwargs={'sucursales_queryset': sucursales}
+            )
+            excepcion_formset = ExcepcionDisponibilidadFormSet(
+                instance=self.object
+            )
+            comision_formset = ComisionDentistaFormSet(
+                instance=self.object,
+                form_kwargs={'especialidades_queryset': especialidades}
+            )
+        
+        context['disponibilidad_formset'] = disponibilidad_formset
+        context['excepcion_formset'] = excepcion_formset
+        context['comision_formset'] = comision_formset
+        
+        return context
+    
+    def form_valid(self, form):
+        """Validar y guardar formsets junto con el formulario principal"""
+        context = self.get_context_data()
+        disponibilidad_formset = context['disponibilidad_formset']
+        excepcion_formset = context['excepcion_formset']
+        comision_formset = context['comision_formset']
+        
+        # Validar todos los formsets
+        if disponibilidad_formset.is_valid() and excepcion_formset.is_valid() and comision_formset.is_valid():
+            # Guardar el dentista primero, pasando el usuario actual
+            self.object = form.save(user=self.request.user)
+            
+            # Actualizar usuario modificador
+            self.object.um = self.request.user.id
+            self.object.save()
+            
+            # Guardar los formsets, excluyendo horarios vacíos e inactivos
+            disponibilidad_formset.instance = self.object
+            disponibilidades = disponibilidad_formset.save(commit=False)
+            
+            for disponibilidad in disponibilidades:
+                # Solo guardar si tiene horarios definidos
+                if disponibilidad.hora_inicio and disponibilidad.hora_fin:
+                    # Asignar usuario creador si es nuevo
+                    if not disponibilidad.pk:
+                        disponibilidad.uc = self.request.user
+                    else:
+                        # Actualizar usuario modificador
+                        disponibilidad.um = self.request.user.id
+                    disponibilidad.save()
+            
+            # Eliminar los marcados para eliminar
+            for obj in disponibilidad_formset.deleted_objects:
+                obj.delete()
+            
+            # Guardar excepciones con uc/um asignado
+            excepcion_formset.instance = self.object
+            excepciones = excepcion_formset.save(commit=False)
+            
+            for excepcion in excepciones:
+                # Solo guardar si está activa (Aplicar marcado) y tiene datos válidos
+                if excepcion.estado and excepcion.fecha_inicio and excepcion.fecha_fin:
+                    # Asignar usuario creador si es nuevo, modificador si es existente
+                    if not excepcion.pk:
+                        excepcion.uc = self.request.user
+                    else:
+                        excepcion.um = self.request.user.id
+                    excepcion.save()
+                elif excepcion.pk and not excepcion.estado:
+                    # Si existe en BD pero está desactivada, eliminarla
+                    excepcion.delete()
+            
+            # Eliminar excepciones marcadas para eliminar
+            for obj in excepcion_formset.deleted_objects:
+                obj.delete()
+            
+            # Guardar comisiones
+            comision_formset.instance = self.object
+            comisiones = comision_formset.save(commit=False)
+            
+            for comision in comisiones:
+                # Asignar usuario creador si es nuevo, modificador si es existente
+                if not comision.pk:
+                    comision.uc = self.request.user
+                else:
+                    comision.um = self.request.user.id
+                comision.save()
+            
+            # Eliminar comisiones marcadas para eliminar
+            for obj in comision_formset.deleted_objects:
+                obj.delete()
+            
+            messages.success(
+                self.request,
+                f'✅ Dentista Dr(a). {self.object.usuario.get_full_name()} actualizado exitosamente'
+            )
+            return redirect(self.success_url)
+        else:
+            # Mostrar errores de los formsets de forma legible
+            error_found = False
+            
+            if not disponibilidad_formset.is_valid():
+                error_found = True
+                for form in disponibilidad_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Horarios - {field_name}: {error}')
+            
+            if not excepcion_formset.is_valid():
+                error_found = True
+                for form in excepcion_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Excepciones - {field_name}: {error}')
+            
+            if not comision_formset.is_valid():
+                error_found = True
+                for form in comision_formset:
+                    if form.errors:
+                        for field, errors in form.errors.items():
+                            field_name = field.replace('_', ' ').title()
+                            for error in errors:
+                                messages.error(self.request, f'Comisiones - {field_name}: {error}')
+            
+            if not error_found:
+                messages.error(self.request, '❌ Error al actualizar el dentista. Por favor revise todos los campos.')
+            
+            return self.form_invalid(form)
+
+
+class DentistaDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Vista para eliminar (soft delete) un dentista.
+    Muestra advertencia si tiene citas programadas.
+    """
+    model = Dentista
+    template_name = 'cit/dentista_confirm_delete.html'
+    success_url = reverse_lazy('cit:dentista-list')
+    
+    def form_valid(self, form):
+        """Sobrescribir para hacer soft delete"""
+        self.object = self.get_object()
+        
+        # Verificar si tiene citas futuras
+        citas_futuras = Cita.objects.filter(
+            dentista=self.object,
+            fecha_hora__gte=timezone.now(),
+            estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA]
+        ).count()
+        
+        if citas_futuras > 0:
+            messages.warning(
+                self.request,
+                f'⚠️ El dentista tiene {citas_futuras} cita(s) programada(s). Se recomienda reasignarlas antes de desactivar.'
+            )
+        
+        # Soft delete
+        self.object.estado = False
+        self.object.save()
+        
+        messages.success(
+            self.request,
+            f'✅ Dentista Dr(a). {self.object.usuario.get_full_name()} desactivado exitosamente'
+        )
+        return redirect(self.success_url)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Información sobre impacto
+        context['citas_totales'] = self.object.citas.count()
+        context['citas_futuras'] = Cita.objects.filter(
+            dentista=self.object,
+            fecha_hora__gte=timezone.now(),
+            estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA]
+        ).count()
+        context['disponibilidades_count'] = self.object.disponibilidades.count()
+        context['excepciones_count'] = self.object.excepciones.count()
+        
         return context
