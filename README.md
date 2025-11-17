@@ -34,6 +34,7 @@ PowerDent es un sistema integral de gestión diseñado específicamente para cl�
 - **Historias Clínicas Electrónicas**: Acceso rápido al historial médico completo de pacientes
 - **Tratamientos y Procedimientos**: Registro detallado de tratamientos odontológicos
 - **Facturación Electrónica**: Generación automática de facturas y control financiero
+- **Sistema de Comisiones**: Gestión de comisiones por dentista y especialidad (porcentaje o valor fijo)
 
 ### 📦 Gestión de Inventario (INV)
 - **Categorías y Subcategorías**: Organización jerárquica de productos
