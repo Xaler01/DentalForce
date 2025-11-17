@@ -1122,7 +1122,7 @@ class ComisionDentistaForm(forms.ModelForm):
         fields = ['especialidad', 'tipo_comision', 'porcentaje', 'valor_fijo', 'activo', 'observaciones']
         widgets = {
             'especialidad': forms.Select(attrs={
-                'class': 'form-control select2-comision-especialidad'
+                'class': 'form-control select2'
                 # No usar required=True aquí - se valida en clean()
             }),
             'tipo_comision': forms.Select(attrs={
@@ -1188,11 +1188,11 @@ class ComisionDentistaForm(forms.ModelForm):
         porcentaje = cleaned_data.get('porcentaje')
         valor_fijo = cleaned_data.get('valor_fijo')
         especialidad = cleaned_data.get('especialidad')
+        activo = cleaned_data.get('activo', False)
         
         # Solo validar si la comisión está activa
-        activo = cleaned_data.get('activo', False)
         if not activo:
-            # Si está inactiva, no validar nada más
+            # Si está inactiva, no validar nada más, permitir guardarla
             return cleaned_data
         
         # Si está activa, validar que tenga especialidad
@@ -1200,28 +1200,6 @@ class ComisionDentistaForm(forms.ModelForm):
             raise ValidationError({
                 'especialidad': 'Debe seleccionar una especialidad para activar la comisión'
             })
-        
-        # Validar que no exista otra comisión activa para la misma especialidad
-        if self.instance.pk:
-            # Estamos editando una comisión existente
-            dentista = self.instance.dentista
-        else:
-            # Nueva comisión - el dentista se asignará en el view
-            dentista = None
-        
-        if dentista and especialidad:
-            from .models import ComisionDentista
-            existing = ComisionDentista.objects.filter(
-                dentista=dentista,
-                especialidad=especialidad,
-                activo=True
-            ).exclude(pk=self.instance.pk if self.instance.pk else None)
-            
-            if existing.exists():
-                raise ValidationError({
-                    'activo': f'Ya existe una comisión activa para {especialidad.nombre}. '
-                             'Debe desactivarla antes de activar esta.'
-                })
         
         if not tipo_comision:
             raise ValidationError({
@@ -1244,6 +1222,22 @@ class ComisionDentistaForm(forms.ModelForm):
                 })
             # Limpiar porcentaje
             cleaned_data['porcentaje'] = None
+        
+        # Validar que no exista otra comisión activa para la misma especialidad (solo en edición)
+        # En creación, esta validación se hace en la vista para todo el formset
+        if self.instance.pk and self.instance.dentista:
+            from .models import ComisionDentista
+            existing = ComisionDentista.objects.filter(
+                dentista=self.instance.dentista,
+                especialidad=especialidad,
+                activo=True
+            ).exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise ValidationError({
+                    'activo': f'Ya existe una comisión activa para {especialidad.nombre}. '
+                             'Debe desactivarla antes de activar esta.'
+                })
         
         return cleaned_data
 

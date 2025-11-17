@@ -501,7 +501,8 @@ class ComisionDentista(ClaseModelo):
         verbose_name = 'Comisión de Dentista'
         verbose_name_plural = 'Comisiones de Dentistas'
         ordering = ['dentista', 'especialidad']
-        unique_together = [['dentista', 'especialidad']]
+        # Removido unique_together para permitir múltiples comisiones (activas/inactivas)
+        # La validación de unicidad de comisiones ACTIVAS se maneja en el método clean()
     
     def __str__(self):
         if self.tipo_comision == 'PORCENTAJE':

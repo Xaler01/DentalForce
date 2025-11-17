@@ -1205,37 +1205,49 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
         # Determinar especialidades disponibles para comisiones
         especialidades = self.object.especialidades.all()
         
-        if self.request.POST:
-            disponibilidad_formset = DisponibilidadDentistaFormSet(
+        # Si se pasan formsets como kwargs, usarlos (para preservar errores)
+        if 'disponibilidad_formset' in kwargs:
+            context['disponibilidad_formset'] = kwargs['disponibilidad_formset']
+        elif self.request.POST:
+            context['disponibilidad_formset'] = DisponibilidadDentistaFormSet(
                 self.request.POST,
                 instance=self.object,
                 form_kwargs={'sucursales_queryset': sucursales}
             )
-            excepcion_formset = ExcepcionDisponibilidadFormSet(
+        else:
+            context['disponibilidad_formset'] = DisponibilidadDentistaFormSet(
+                instance=self.object,
+                form_kwargs={'sucursales_queryset': sucursales}
+            )
+        
+        if 'excepcion_formset' in kwargs:
+            context['excepcion_formset'] = kwargs['excepcion_formset']
+        elif self.request.POST:
+            context['excepcion_formset'] = ExcepcionDisponibilidadFormSet(
                 self.request.POST,
                 instance=self.object
             )
-            comision_formset = ComisionDentistaFormSet(
+        else:
+            context['excepcion_formset'] = ExcepcionDisponibilidadFormSet(
+                instance=self.object
+            )
+        
+        if 'comision_formset' in kwargs:
+            context['comision_formset'] = kwargs['comision_formset']
+        elif self.request.POST:
+            context['comision_formset'] = ComisionDentistaFormSet(
                 self.request.POST,
                 instance=self.object,
                 form_kwargs={'especialidades_queryset': especialidades}
             )
         else:
-            disponibilidad_formset = DisponibilidadDentistaFormSet(
-                instance=self.object,
-                form_kwargs={'sucursales_queryset': sucursales}
-            )
-            excepcion_formset = ExcepcionDisponibilidadFormSet(
-                instance=self.object
-            )
-            comision_formset = ComisionDentistaFormSet(
+            context['comision_formset'] = ComisionDentistaFormSet(
                 instance=self.object,
                 form_kwargs={'especialidades_queryset': especialidades}
             )
         
-        context['disponibilidad_formset'] = disponibilidad_formset
-        context['excepcion_formset'] = excepcion_formset
-        context['comision_formset'] = comision_formset
+        # Agregar el tab activo al contexto (por defecto 'datos')
+        context['active_tab'] = kwargs.get('active_tab', 'datos')
         
         return context
     
@@ -1248,7 +1260,48 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
         
         # Validar todos los formsets
         if disponibilidad_formset.is_valid() and excepcion_formset.is_valid() and comision_formset.is_valid():
-            # Guardar el dentista primero, pasando el usuario actual
+            
+            # VALIDACIÓN PREVIA: Verificar duplicados de especialidades activas ANTES de guardar
+            comisiones_a_guardar = []
+            for form_comision in comision_formset:
+                if form_comision.cleaned_data and not form_comision.cleaned_data.get('DELETE', False):
+                    comisiones_a_guardar.append(form_comision.cleaned_data)
+            
+            # Validar que no haya especialidades duplicadas activas
+            especialidades_activas = {}
+            has_duplicate = False
+            duplicate_especialidad = None
+            
+            for comision_data in comisiones_a_guardar:
+                activo = comision_data.get('activo', False)
+                especialidad = comision_data.get('especialidad')
+                
+                if activo and especialidad:
+                    if especialidad.id in especialidades_activas:
+                        has_duplicate = True
+                        duplicate_especialidad = especialidad.nombre
+                        break
+                    especialidades_activas[especialidad.id] = True
+            
+            # Si hay duplicados, mostrar error SIN guardar nada
+            if has_duplicate:
+                messages.error(
+                    self.request,
+                    f'❌ Ya existe una comisión activa para {duplicate_especialidad}. '
+                    f'Debe desactivar la comisión existente antes de activar esta.'
+                )
+                # No renderizar, sino usar form_invalid para mantener el estado
+                return self.render_to_response(
+                    self.get_context_data(
+                        form=form,
+                        active_tab='comisiones',
+                        disponibilidad_formset=disponibilidad_formset,
+                        excepcion_formset=excepcion_formset,
+                        comision_formset=comision_formset
+                    )
+                )
+            
+            # Si pasa la validación, AHORA sí guardar el dentista
             self.object = form.save(user=self.request.user)
             
             # Actualizar usuario modificador
@@ -1295,10 +1348,11 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
             for obj in excepcion_formset.deleted_objects:
                 obj.delete()
             
-            # Guardar comisiones
+            # Guardar comisiones (ya validadas previamente)
             comision_formset.instance = self.object
             comisiones = comision_formset.save(commit=False)
             
+            # Guardar cada comisión con usuario creador/modificador
             for comision in comisiones:
                 # Asignar usuario creador si es nuevo, modificador si es existente
                 if not comision.pk:
