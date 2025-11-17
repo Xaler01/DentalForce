@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, date
 from .models import (
     Cita, Dentista, Especialidad, Cubiculo,
     DisponibilidadDentista, ExcepcionDisponibilidad,
-    ComisionDentista
+    ComisionDentista, Clinica, Sucursal
 )
 from django.contrib.auth.models import User
 
@@ -1267,3 +1267,156 @@ ComisionDentistaFormSet = inlineformset_factory(
     extra=1,  # Mostrar 1 fila vacía inicial
     can_delete=True  # Permitir eliminar comisiones
 )
+
+
+class ClinicaForm(forms.ModelForm):
+    """Formulario para crear y editar clínicas con datos fiscales e internacionales"""
+    
+    class Meta:
+        model = Clinica
+        fields = [
+            'nombre', 'direccion', 'telefono', 'email',
+            'ruc', 'razon_social', 'representante_legal',
+            'pais', 'moneda', 'zona_horaria',
+            'logo', 'sitio_web'
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre comercial de la clínica',
+                'maxlength': '150'
+            }),
+            'direccion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa',
+                'rows': 2
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '02-XXXXXXX o 09XXXXXXXX',
+                'maxlength': '20'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'email@clinica.com',
+                'maxlength': '100'
+            }),
+            'ruc': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'RUC/NIT/CUIT según país',
+                'maxlength': '20'
+            }),
+            'razon_social': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Razón social para facturas (opcional)',
+                'maxlength': '200'
+            }),
+            'representante_legal': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del representante legal (opcional)',
+                'maxlength': '150'
+            }),
+            'pais': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'moneda': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'zona_horaria': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'America/Guayaquil',
+                'maxlength': '50'
+            }),
+            'logo': forms.FileInput(attrs={
+                'class': 'form-control-file'
+            }),
+            'sitio_web': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.clinica.com (opcional)'
+            }),
+        }
+        labels = {
+            'nombre': 'Nombre Comercial',
+            'direccion': 'Dirección',
+            'telefono': 'Teléfono',
+            'email': 'Email',
+            'ruc': 'RUC/NIT/CUIT',
+            'razon_social': 'Razón Social',
+            'representante_legal': 'Representante Legal',
+            'pais': 'País',
+            'moneda': 'Moneda',
+            'zona_horaria': 'Zona Horaria',
+            'logo': 'Logo',
+            'sitio_web': 'Sitio Web',
+        }
+        help_texts = {
+            'ruc': 'Ecuador: 13 dígitos, Perú: 11 dígitos, Colombia: 9-10 dígitos',
+            'razon_social': 'Nombre legal de la empresa (si es diferente al nombre comercial)',
+            'zona_horaria': 'Zona horaria del país donde opera la clínica',
+        }
+    
+    def clean_email(self):
+        """Validar que el email sea único"""
+        email = self.cleaned_data.get('email')
+        if email:
+            # Verificar si ya existe otra clínica con este email
+            qs = Clinica.objects.filter(email=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise ValidationError('Ya existe una clínica con este email.')
+        return email
+    
+    def clean_telefono(self):
+        """Validar formato de teléfono"""
+        telefono = self.cleaned_data.get('telefono')
+        if telefono:
+            # Remover espacios y guiones
+            telefono_limpio = telefono.replace(' ', '').replace('-', '')
+            # Validar longitud
+            if len(telefono_limpio) < 7:
+                raise ValidationError('El teléfono debe tener al menos 7 dígitos.')
+        return telefono
+    
+    def clean(self):
+        """Validaciones cruzadas"""
+        import re
+        cleaned_data = super().clean()
+        pais = cleaned_data.get('pais')
+        moneda = cleaned_data.get('moneda')
+        ruc = cleaned_data.get('ruc')
+        
+        # Validar RUC según país
+        if ruc and pais:
+            ruc_limpio = re.sub(r'[^0-9A-Z]', '', ruc.upper())
+            
+            if pais == 'EC':  # Ecuador: 13 dígitos
+                if not re.match(r'^\d{13}$', ruc_limpio):
+                    self.add_error('ruc', 'El RUC de Ecuador debe tener 13 dígitos numéricos.')
+            elif pais == 'PE':  # Perú: 11 dígitos
+                if not re.match(r'^\d{11}$', ruc_limpio):
+                    self.add_error('ruc', 'El RUC de Perú debe tener 11 dígitos numéricos.')
+            elif pais == 'CO':  # Colombia: 9-10 dígitos
+                if not re.match(r'^\d{9,10}$', ruc_limpio):
+                    self.add_error('ruc', 'El NIT de Colombia debe tener entre 9 y 10 dígitos.')
+            elif pais == 'MX':  # México: RFC 12-13 caracteres alfanuméricos
+                if not re.match(r'^[A-Z0-9]{12,13}$', ruc_limpio):
+                    self.add_error('ruc', 'El RFC de México debe tener entre 12 y 13 caracteres alfanuméricos.')
+        
+        # Sugerir moneda correcta según país
+        monedas_por_pais = {
+            'EC': 'USD',
+            'PE': 'PEN',
+            'CO': 'COP',
+            'MX': 'MXN',
+            'CL': 'CLP',
+            'AR': 'ARS',
+        }
+        
+        if pais and moneda:
+            moneda_sugerida = monedas_por_pais.get(pais)
+            if moneda != moneda_sugerida:
+                self.add_error('moneda', 
+                    f'La moneda sugerida para {dict(Clinica.PAISES_CHOICES).get(pais)} es {moneda_sugerida}')
+        
+        return cleaned_data

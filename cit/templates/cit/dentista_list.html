@@ -184,8 +184,15 @@
                                         {% endwith %}
                                     </td>
                                     <td>
-                                        <i class="fas fa-mobile-alt"></i>
-                                        {{ dentista.telefono_movil }}
+                                        <a href="javascript:void(0);" 
+                                           class="text-decoration-none whatsapp-link" 
+                                           data-telefono="{{ dentista.telefono_movil }}"
+                                           data-nombre="Dr(a). {{ dentista.usuario.get_full_name }}"
+                                           title="Click para abrir WhatsApp" 
+                                           data-toggle="tooltip">
+                                            <i class="fab fa-whatsapp text-success"></i>
+                                            {{ dentista.telefono_movil }}
+                                        </a>
                                     </td>
                                     <td class="text-center">
                                         {% if dentista.estado %}
@@ -277,6 +284,39 @@
 
 <script>
 $(document).ready(function() {
+    // Activar tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Manejar click en teléfonos para abrir WhatsApp
+    $(document).on('click', '.whatsapp-link', function(e) {
+        e.preventDefault();
+        const telefono = $(this).data('telefono');
+        const nombre = $(this).data('nombre');
+        
+        // Limpiar el número (eliminar espacios, guiones, paréntesis)
+        const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+        
+        // Si el número no tiene código de país, agregar +593 (Ecuador)
+        let numeroWhatsApp = telefonoLimpio;
+        if (!telefonoLimpio.startsWith('+') && !telefonoLimpio.startsWith('593')) {
+            // Si empieza con 0, quitarlo y agregar código de país
+            if (telefonoLimpio.startsWith('0')) {
+                numeroWhatsApp = '593' + telefonoLimpio.substring(1);
+            } else {
+                numeroWhatsApp = '593' + telefonoLimpio;
+            }
+        } else if (telefonoLimpio.startsWith('+')) {
+            numeroWhatsApp = telefonoLimpio.substring(1);
+        }
+        
+        // Mensaje predeterminado
+        const mensaje = `Hola ${nombre}, me comunico desde PowerDent`;
+        
+        // Abrir WhatsApp (web o app según el dispositivo)
+        const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+        window.open(urlWhatsApp, '_blank');
+    });
+    
     // Inicializar DataTables solo para ordenamiento y búsqueda interna
     $('#dataTable').DataTable({
         "paging": false,  // Usamos paginación de Django

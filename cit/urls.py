@@ -65,4 +65,14 @@ urlpatterns = [
     path('dentistas/nuevo/', views.DentistaCreateView.as_view(), name='dentista-create'),
     path('dentistas/<int:pk>/editar/', views.DentistaUpdateView.as_view(), name='dentista-update'),
     path('dentistas/<int:pk>/eliminar/', views.DentistaDeleteView.as_view(), name='dentista-delete'),
+    
+    # ========================================================================
+    # CRUD de Clínicas
+    # ========================================================================
+    path('clinicas/', views.ClinicaListView.as_view(), name='clinica-list'),
+    path('clinicas/nueva/', views.ClinicaCreateView.as_view(), name='clinica-create'),
+    path('clinicas/<int:pk>/', views.ClinicaDetailView.as_view(), name='clinica-detail'),
+    path('clinicas/<int:pk>/editar/', views.ClinicaUpdateView.as_view(), name='clinica-update'),
+    path('clinicas/<int:pk>/eliminar/', views.ClinicaDeleteView.as_view(), name='clinica-delete'),
+    path('clinicas/<int:pk>/activar/', views.ClinicaActivateView.as_view(), name='clinica-activate'),
 ]

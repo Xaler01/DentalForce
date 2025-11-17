@@ -9,7 +9,10 @@ class Clinica(ClaseModelo):
     """
     Modelo para representar una clínica odontológica.
     Una clínica puede tener múltiples sucursales.
+    
+    Campos preparados para arquitectura SaaS multi-tenant.
     """
+    # Campos básicos
     nombre = models.CharField(
         max_length=150,
         unique=True,
@@ -29,6 +32,84 @@ class Clinica(ClaseModelo):
         help_text='Email de contacto de la clínica'
     )
     
+    # Datos fiscales (preparación para facturación)
+    ruc = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='RUC/NIT/CUIT',
+        help_text='Número de identificación fiscal según país'
+    )
+    razon_social = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Razón Social',
+        help_text='Nombre legal de la empresa para facturas'
+    )
+    representante_legal = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name='Representante Legal',
+        help_text='Nombre completo del representante legal'
+    )
+    
+    # Internacionalización (multi-tenant)
+    PAISES_CHOICES = [
+        ('EC', 'Ecuador'),
+        ('PE', 'Perú'),
+        ('CO', 'Colombia'),
+        ('MX', 'México'),
+        ('CL', 'Chile'),
+        ('AR', 'Argentina'),
+    ]
+    
+    MONEDA_CHOICES = [
+        ('USD', 'Dólar Estadounidense'),
+        ('PEN', 'Sol Peruano'),
+        ('COP', 'Peso Colombiano'),
+        ('MXN', 'Peso Mexicano'),
+        ('CLP', 'Peso Chileno'),
+        ('ARS', 'Peso Argentino'),
+    ]
+    
+    pais = models.CharField(
+        max_length=2,
+        choices=PAISES_CHOICES,
+        default='EC',
+        verbose_name='País',
+        help_text='País donde opera la clínica'
+    )
+    moneda = models.CharField(
+        max_length=3,
+        choices=MONEDA_CHOICES,
+        default='USD',
+        verbose_name='Moneda',
+        help_text='Moneda de operación'
+    )
+    zona_horaria = models.CharField(
+        max_length=50,
+        default='America/Guayaquil',
+        verbose_name='Zona Horaria',
+        help_text='Zona horaria del país (ej: America/Guayaquil)'
+    )
+    
+    # Branding y configuración
+    logo = models.ImageField(
+        upload_to='clinicas/logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo',
+        help_text='Logo de la clínica (opcional)'
+    )
+    sitio_web = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Sitio Web',
+        help_text='URL del sitio web oficial (opcional)'
+    )
+    
     class Meta:
         verbose_name = 'Clínica'
         verbose_name_plural = 'Clínicas'
@@ -40,6 +121,7 @@ class Clinica(ClaseModelo):
     def clean(self):
         """Validaciones personalizadas"""
         from django.core.exceptions import ValidationError
+        import re
         
         # Validar que el teléfono no esté vacío
         if not self.telefono or len(self.telefono.strip()) < 7:
@@ -50,6 +132,35 @@ class Clinica(ClaseModelo):
         # Normalizar nombre (capitalize)
         if self.nombre:
             self.nombre = self.nombre.strip().title()
+        
+        # Validar RUC según país (si se proporciona)
+        if self.ruc:
+            ruc_limpio = re.sub(r'[^0-9]', '', self.ruc)
+            
+            if self.pais == 'EC':  # Ecuador: 13 dígitos
+                if len(ruc_limpio) != 13:
+                    raise ValidationError({
+                        'ruc': 'El RUC de Ecuador debe tener 13 dígitos'
+                    })
+            elif self.pais == 'PE':  # Perú: 11 dígitos
+                if len(ruc_limpio) != 11:
+                    raise ValidationError({
+                        'ruc': 'El RUC de Perú debe tener 11 dígitos'
+                    })
+            elif self.pais == 'CO':  # Colombia: 9-10 dígitos
+                if len(ruc_limpio) < 9 or len(ruc_limpio) > 10:
+                    raise ValidationError({
+                        'ruc': 'El NIT de Colombia debe tener entre 9 y 10 dígitos'
+                    })
+            elif self.pais == 'MX':  # México: 12-13 caracteres (RFC)
+                if len(self.ruc) < 12 or len(self.ruc) > 13:
+                    raise ValidationError({
+                        'ruc': 'El RFC de México debe tener entre 12 y 13 caracteres'
+                    })
+    
+    def get_nombre_completo(self):
+        """Retorna razón social si existe, sino el nombre comercial"""
+        return self.razon_social if self.razon_social else self.nombre
 
 
 class Sucursal(ClaseModelo):

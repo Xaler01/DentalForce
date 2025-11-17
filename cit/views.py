@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.http import JsonResponse
@@ -1457,3 +1457,162 @@ class DentistaDeleteView(LoginRequiredMixin, DeleteView):
         context['excepciones_count'] = self.object.excepciones.count()
         
         return context
+
+
+# ============================================================================
+# VISTAS CRUD DE CLÍNICAS
+# ============================================================================
+
+from .models import Clinica, Sucursal
+from .forms import ClinicaForm
+
+
+class ClinicaListView(LoginRequiredMixin, ListView):
+    """Vista para listar todas las clínicas"""
+    model = Clinica
+    template_name = 'cit/clinica_list.html'
+    context_object_name = 'clinicas'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        """Aplicar filtros y búsqueda"""
+        queryset = Clinica.objects.prefetch_related('sucursales').all()
+        
+        # Búsqueda por nombre, dirección o email
+        busqueda = self.request.GET.get('busqueda')
+        if busqueda:
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda) |
+                Q(direccion__icontains=busqueda) |
+                Q(email__icontains=busqueda) |
+                Q(telefono__icontains=busqueda)
+            )
+        
+        return queryset.order_by('-fc')  # Más recientes primero
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['busqueda'] = self.request.GET.get('busqueda', '')
+        context['total_clinicas'] = self.get_queryset().count()
+        return context
+
+
+class ClinicaDetailView(LoginRequiredMixin, DetailView):
+    """Vista de detalle de una clínica"""
+    model = Clinica
+    template_name = 'cit/clinica_detail.html'
+    context_object_name = 'clinica'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sucursales'] = self.object.sucursales.all().order_by('nombre')
+        context['total_sucursales'] = context['sucursales'].count()
+        return context
+
+
+class ClinicaCreateView(LoginRequiredMixin, CreateView):
+    """Vista para crear una nueva clínica"""
+    model = Clinica
+    form_class = ClinicaForm
+    template_name = 'cit/clinica_form.html'
+    success_url = reverse_lazy('cit:clinica-list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': self.request.POST,
+                'files': self.request.FILES,
+            })
+        return kwargs
+    
+    def form_valid(self, form):
+        # Asignar el usuario creador
+        form.instance.uc = self.request.user
+        messages.success(self.request, f'Clínica "{form.instance.nombre}" creada exitosamente.')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
+        return super().form_invalid(form)
+
+
+class ClinicaUpdateView(LoginRequiredMixin, UpdateView):
+    """Vista para editar una clínica existente"""
+    model = Clinica
+    form_class = ClinicaForm
+    template_name = 'cit/clinica_form.html'
+    success_url = reverse_lazy('cit:clinica-list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': self.request.POST,
+                'files': self.request.FILES,
+            })
+        return kwargs
+    
+    def form_valid(self, form):
+        # Asignar el usuario que modifica
+        form.instance.um = self.request.user.id
+        messages.success(self.request, f'Clínica "{form.instance.nombre}" actualizada exitosamente.')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
+        return super().form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_update'] = True
+        return context
+
+
+class ClinicaDeleteView(LoginRequiredMixin, DeleteView):
+    """Vista para eliminar (desactivar) una clínica"""
+    model = Clinica
+    template_name = 'cit/clinica_confirm_delete.html'
+    success_url = reverse_lazy('cit:clinica-list')
+    context_object_name = 'clinica'
+    
+    def post(self, request, *args, **kwargs):
+        """Manejar POST: validar y realizar soft delete"""
+        self.object = self.get_object()
+        
+        # Verificar si tiene sucursales activas
+        sucursales_activas = self.object.sucursales.filter(estado=True).count()
+        if sucursales_activas > 0:
+            messages.error(
+                request,
+                f'No se puede eliminar la clínica "{self.object.nombre}" porque tiene {sucursales_activas} sucursal(es) activa(s). '
+                'Primero debe desactivar todas las sucursales.'
+            )
+            return redirect('cit:clinica-detail', pk=self.object.pk)
+        
+        # Soft delete: cambiar estado en lugar de eliminar
+        self.object.estado = False
+        self.object.um = request.user.id
+        self.object.save()
+        
+        messages.success(request, f'Clínica "{self.object.nombre}" desactivada exitosamente.')
+        return redirect(self.success_url)
+
+
+class ClinicaActivateView(LoginRequiredMixin, View):
+    """Vista para reactivar una clínica desactivada"""
+    
+    def post(self, request, pk):
+        """Reactivar la clínica"""
+        clinica = get_object_or_404(Clinica, pk=pk)
+        
+        if clinica.estado:
+            messages.warning(request, f'La clínica "{clinica.nombre}" ya está activa.')
+        else:
+            clinica.estado = True
+            clinica.um = request.user.id
+            clinica.save()
+            messages.success(request, f'Clínica "{clinica.nombre}" reactivada exitosamente.')
+        
+        return redirect('cit:clinica-detail', pk=pk)
+
