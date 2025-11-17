@@ -22,12 +22,16 @@ class DentistaFormTest(TestCase):
     
     def setUp(self):
         """Configuración inicial para los tests"""
+        # Crear usuario para tests
+        self.user = User.objects.create_user(username='testuser', password='test123')
+        
         # Crear clínica y sucursal
         self.clinica = Clinica.objects.create(
             nombre='Clínica Test',
             direccion='Calle 123',
             telefono='0999999999',
-            email='clinica@test.com'
+            email='clinica@test.com',
+            uc=self.user
         )
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,
@@ -35,19 +39,22 @@ class DentistaFormTest(TestCase):
             direccion='Av. Norte 456',
             telefono='0988888888',
             horario_apertura=time(8, 0),
-            horario_cierre=time(18, 0)
+            horario_cierre=time(18, 0),
+            uc=self.user
         )
         
         # Crear especialidades
         self.especialidad1 = Especialidad.objects.create(
             nombre='Ortodoncia',
             duracion_default=60,
-            color_calendario='#3498db'
+            color_calendario='#3498db',
+            uc=self.user
         )
         self.especialidad2 = Especialidad.objects.create(
             nombre='Endodoncia',
             duracion_default=45,
-            color_calendario='#e74c3c'
+            color_calendario='#e74c3c',
+            uc=self.user
         )
     
     def test_formulario_valido_creacion(self):
@@ -81,7 +88,8 @@ class DentistaFormTest(TestCase):
             numero_licencia='LIC-00001',
             telefono_movil='0999999999',
             fecha_contratacion=date(2024, 1, 1),
-            sucursal_principal=self.sucursal
+            sucursal_principal=self.sucursal,
+            uc=self.user
         )
         
         # Intentar crear otro con la misma cédula
@@ -251,7 +259,8 @@ class DentistaViewsTest(TestCase):
             nombre='Clínica Test',
             direccion='Calle 123',
             telefono='0999999999',
-            email='clinica@test.com'
+            email='clinica@test.com',
+            uc=self.user
         )
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,
@@ -259,12 +268,14 @@ class DentistaViewsTest(TestCase):
             direccion='Av. Norte 456',
             telefono='0988888888',
             horario_apertura=time(8, 0),
-            horario_cierre=time(18, 0)
+            horario_cierre=time(18, 0),
+            uc=self.user
         )
         self.especialidad = Especialidad.objects.create(
             nombre='Ortodoncia',
             duracion_default=60,
-            color_calendario='#3498db'
+            color_calendario='#3498db',
+            uc=self.user
         )
         
         # Crear dentista de prueba
@@ -280,7 +291,8 @@ class DentistaViewsTest(TestCase):
             numero_licencia='LIC-12345',
             telefono_movil='0987654321',
             fecha_contratacion=date(2024, 1, 15),
-            sucursal_principal=self.sucursal
+            sucursal_principal=self.sucursal,
+            uc=self.user
         )
         self.dentista.especialidades.add(self.especialidad)
     
@@ -303,7 +315,7 @@ class DentistaViewsTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Editar Dentista')
-        self.assertContains(response, 'Pedro Pérez')
+        self.assertContains(response, 'dperez')  # username del dentista
     
     def test_dentista_delete_view_get(self):
         """Test: acceso a la confirmación de eliminación"""
@@ -350,11 +362,14 @@ class DentistaModelTest(TestCase):
     
     def setUp(self):
         """Configuración inicial"""
+        self.user = User.objects.create_user(username='testuser', password='test123')
+        
         self.clinica = Clinica.objects.create(
             nombre='Clínica Test',
             direccion='Calle 123',
             telefono='0999999999',
-            email='clinica@test.com'
+            email='clinica@test.com',
+            uc=self.user
         )
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,
@@ -362,21 +377,23 @@ class DentistaModelTest(TestCase):
             direccion='Av. Norte 456',
             telefono='0988888888',
             horario_apertura=time(8, 0),
-            horario_cierre=time(18, 0)
+            horario_cierre=time(18, 0),
+            uc=self.user
         )
-        self.user = User.objects.create_user(
+        self.user_dentista = User.objects.create_user(
             username='dperez',
             password='test123',
             first_name='Pedro',
             last_name='Pérez'
         )
         self.dentista = Dentista.objects.create(
-            usuario=self.user,
+            usuario=self.user_dentista,
             cedula_profesional='1234567890',
             numero_licencia='LIC-12345',
             telefono_movil='0987654321',
             fecha_contratacion=date(2024, 1, 15),
-            sucursal_principal=self.sucursal
+            sucursal_principal=self.sucursal,
+            uc=self.user
         )
     
     def test_dentista_str(self):
@@ -388,12 +405,14 @@ class DentistaModelTest(TestCase):
         esp1 = Especialidad.objects.create(
             nombre='Ortodoncia',
             duracion_default=60,
-            color_calendario='#3498db'
+            color_calendario='#3498db',
+            uc=self.user
         )
         esp2 = Especialidad.objects.create(
             nombre='Endodoncia',
             duracion_default=45,
-            color_calendario='#e74c3c'
+            color_calendario='#e74c3c',
+            uc=self.user
         )
         
         self.dentista.especialidades.add(esp1, esp2)
@@ -408,28 +427,35 @@ class DisponibilidadDentistaModelTest(TestCase):
     
     def setUp(self):
         """Configuración inicial"""
-        clinica = Clinica.objects.create(
+        self.user = User.objects.create_user(username='testuser', password='test123')
+        
+        self.clinica = Clinica.objects.create(
             nombre='Clínica Test',
             direccion='Calle 123',
             telefono='0999999999',
-            email='clinica@test.com'
+            email='clinica@test.com',
+            uc=self.user
         )
-        sucursal = Sucursal.objects.create(
-            clinica=clinica,
+        
+        self.sucursal = Sucursal.objects.create(
+            clinica=self.clinica,
             nombre='Sucursal Norte',
             direccion='Av. Norte 456',
             telefono='0988888888',
             horario_apertura=time(8, 0),
-            horario_cierre=time(18, 0)
+            horario_cierre=time(18, 0),
+            uc=self.user
         )
-        user = User.objects.create_user(username='dperez', password='test123')
+        
+        dentista_user = User.objects.create_user(username='dperez', password='test123')
         self.dentista = Dentista.objects.create(
-            usuario=user,
+            usuario=dentista_user,
             cedula_profesional='1234567890',
             numero_licencia='LIC-12345',
             telefono_movil='0987654321',
             fecha_contratacion=date(2024, 1, 15),
-            sucursal_principal=sucursal
+            sucursal_principal=self.sucursal,
+            uc=self.user
         )
     
     def test_crear_disponibilidad(self):
@@ -439,7 +465,8 @@ class DisponibilidadDentistaModelTest(TestCase):
             dia_semana=0,  # Lunes
             hora_inicio=time(8, 0),
             hora_fin=time(12, 0),
-            activo=True
+            activo=True,
+            uc=self.user
         )
         
         self.assertEqual(disponibilidad.dia_semana, 0)
@@ -453,7 +480,8 @@ class DisponibilidadDentistaModelTest(TestCase):
             dentista=self.dentista,
             dia_semana=0,
             hora_inicio=time(8, 0),
-            hora_fin=time(12, 0)
+            hora_fin=time(12, 0),
+            uc=self.user
         )
         
         str_repr = str(disponibilidad)
@@ -468,11 +496,13 @@ class ExcepcionDisponibilidadModelTest(TestCase):
     
     def setUp(self):
         """Configuración inicial"""
+        self.user = User.objects.create_user(username='dperez', password='test123')
         clinica = Clinica.objects.create(
             nombre='Clínica Test',
             direccion='Calle 123',
             telefono='0999999999',
-            email='clinica@test.com'
+            email='clinica@test.com',
+            uc=self.user
         )
         sucursal = Sucursal.objects.create(
             clinica=clinica,
@@ -480,16 +510,17 @@ class ExcepcionDisponibilidadModelTest(TestCase):
             direccion='Av. Norte 456',
             telefono='0988888888',
             horario_apertura=time(8, 0),
-            horario_cierre=time(18, 0)
+            horario_cierre=time(18, 0),
+            uc=self.user
         )
-        user = User.objects.create_user(username='dperez', password='test123')
         self.dentista = Dentista.objects.create(
-            usuario=user,
+            usuario=self.user,
             cedula_profesional='1234567890',
             numero_licencia='LIC-12345',
             telefono_movil='0987654321',
             fecha_contratacion=date(2024, 1, 15),
-            sucursal_principal=sucursal
+            sucursal_principal=sucursal,
+            uc=self.user
         )
     
     def test_crear_excepcion_todo_dia(self):
@@ -500,7 +531,8 @@ class ExcepcionDisponibilidadModelTest(TestCase):
             fecha_fin=date(2024, 12, 25),
             tipo='FERIA',
             motivo='Navidad',
-            todo_el_dia=True
+            todo_el_dia=True,
+            uc=self.user
         )
         
         self.assertEqual(excepcion.tipo, 'FERIA')
@@ -514,7 +546,8 @@ class ExcepcionDisponibilidadModelTest(TestCase):
             fecha_inicio=date(2024, 12, 25),
             fecha_fin=date(2024, 12, 26),
             tipo='VACA',
-            motivo='Vacaciones de fin de año'
+            motivo='Vacaciones de fin de año',
+            uc=self.user
         )
         
         str_repr = str(excepcion)

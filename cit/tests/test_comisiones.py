@@ -4,6 +4,7 @@ Tests para el modelo ComisionDentista y funcionalidad de comisiones.
 from decimal import Decimal
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
 from cit.models import ComisionDentista, Dentista, Especialidad, Clinica, Sucursal
 
 
@@ -12,35 +13,53 @@ class ComisionDentistaModelTest(TestCase):
     
     def setUp(self):
         """Configurar datos de prueba"""
+        # Crear usuario para tests
+        self.user = User.objects.create_user(username='testuser', password='test123')
+        
         # Crear clínica y sucursal
         self.clinica = Clinica.objects.create(
             nombre='Clínica Test',
             direccion='Av. Test 123',
             telefono='0987654321',
-            email='test@test.com'
+            email='test@test.com',
+            uc=self.user
         )
         
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,
             nombre='Sucursal Principal',
             direccion='Av. Test 123',
-            telefono='0987654321'
+            telefono='0987654321',
+            horario_apertura='08:00',
+            horario_cierre='18:00',
+            uc=self.user
         )
         
         # Crear especialidad
         self.especialidad = Especialidad.objects.create(
-            descripcion='Endodoncia'
+            nombre='Endodoncia',
+            descripcion='Endodoncia',
+            duracion_default=60,
+            color_calendario='#3498db',
+            uc=self.user
         )
         
         # Crear dentista
+        user_dentista = User.objects.create_user(
+            username='dentista',
+            password='test123',
+            first_name='Juan Carlos',
+            last_name='Pérez López',
+            email='juan.perez@test.com'
+        )
         self.dentista = Dentista.objects.create(
-            nombres='Juan Carlos',
-            apellidos='Pérez López',
-            especialidad_principal=self.especialidad,
-            telefono='0987654321',
-            email='juan.perez@test.com',
-            direccion='Av. Dentista 456',
-            sucursal_principal=self.sucursal
+            usuario=user_dentista,
+            cedula_profesional='1234567890',
+            numero_licencia='LIC-12345',
+            telefono_movil='0987654321',
+            fecha_contratacion='2024-01-01',
+            sucursal_principal=self.sucursal,
+            uc=self.user
         )
         self.dentista.especialidades.add(self.especialidad)
     
@@ -51,7 +70,8 @@ class ComisionDentistaModelTest(TestCase):
             especialidad=self.especialidad,
             tipo_comision='PORCENTAJE',
             porcentaje=Decimal('15.50'),
-            activo=True
+            activo=True,
+            uc=self.user
         )
         
         self.assertEqual(comision.dentista, self.dentista)
@@ -68,7 +88,8 @@ class ComisionDentistaModelTest(TestCase):
             especialidad=self.especialidad,
             tipo_comision='FIJO',
             valor_fijo=Decimal('50.00'),
-            activo=True
+            activo=True,
+            uc=self.user
         )
         
         self.assertEqual(comision.tipo_comision, 'FIJO')
@@ -81,7 +102,8 @@ class ComisionDentistaModelTest(TestCase):
             dentista=self.dentista,
             especialidad=self.especialidad,
             tipo_comision='PORCENTAJE',
-            porcentaje=Decimal('10.00')
+            porcentaje=Decimal('10.00'),
+            uc=self.user
         )
         
         self.assertTrue(comision.activo)
@@ -90,7 +112,11 @@ class ComisionDentistaModelTest(TestCase):
         """Test para verificar que un dentista puede tener múltiples comisiones"""
         # Crear otra especialidad
         otra_especialidad = Especialidad.objects.create(
-            descripcion='Ortodoncia'
+            nombre='Ortodoncia',
+            descripcion='Ortodoncia',
+            duracion_default=60,
+            color_calendario='#e74c3c',
+            uc=self.user
         )
         self.dentista.especialidades.add(otra_especialidad)
         
@@ -99,14 +125,16 @@ class ComisionDentistaModelTest(TestCase):
             dentista=self.dentista,
             especialidad=self.especialidad,
             tipo_comision='PORCENTAJE',
-            porcentaje=Decimal('15.00')
+            porcentaje=Decimal('15.00'),
+            uc=self.user
         )
         
         comision2 = ComisionDentista.objects.create(
             dentista=self.dentista,
             especialidad=otra_especialidad,
             tipo_comision='FIJO',
-            valor_fijo=Decimal('75.00')
+            valor_fijo=Decimal('30.00'),
+            uc=self.user
         )
         
         comisiones = self.dentista.comisiones.all()

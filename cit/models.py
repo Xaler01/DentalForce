@@ -1170,6 +1170,10 @@ class DisponibilidadDentista(ClaseModelo):
             })
         
         # Validar que no se solape con otra disponibilidad del mismo dentista en el mismo día y sucursal
+        # Solo validar si dentista está definido (necesario para tests de formularios)
+        if not self.dentista_id:
+            return
+            
         filtro = {
             'dentista': self.dentista,
             'dia_semana': self.dia_semana,

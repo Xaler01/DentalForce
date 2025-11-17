@@ -99,14 +99,14 @@
                                 <th width="20%">
                                     <i class="fas fa-user"></i> Nombre Completo
                                 </th>
-                                <th width="15%">
-                                    <i class="fas fa-id-card"></i> Cédula Prof.
-                                </th>
                                 <th width="20%">
                                     <i class="fas fa-tooth"></i> Especialidades
                                 </th>
                                 <th width="15%">
                                     <i class="fas fa-building"></i> Sucursal
+                                </th>
+                                <th width="15%">
+                                    <i class="fas fa-clock"></i> Horarios
                                 </th>
                                 <th width="10%">
                                     <i class="fas fa-phone"></i> Teléfono
@@ -143,11 +143,6 @@
                                         </small>
                                     </td>
                                     <td>
-                                        <span class="badge badge-info">{{ dentista.cedula_profesional }}</span>
-                                        <br>
-                                        <small class="text-muted">Lic: {{ dentista.numero_licencia }}</small>
-                                    </td>
-                                    <td>
                                         {% for esp in dentista.especialidades.all %}
                                             <span class="badge badge-primary mb-1" 
                                                   style="background-color: {{ esp.color_calendario }};">
@@ -164,6 +159,29 @@
                                         {% else %}
                                             <span class="text-muted">No asignada</span>
                                         {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with horarios=dentista.disponibilidades.all %}
+                                            {% if horarios %}
+                                                {% for disp in horarios|slice:":3" %}
+                                                    <div class="mb-1">
+                                                        <small>
+                                                            <span class="badge badge-secondary">{{ disp.get_dia_semana_display }}</span>
+                                                            {{ disp.hora_inicio|time:"H:i" }} - {{ disp.hora_fin|time:"H:i" }}
+                                                        </small>
+                                                    </div>
+                                                {% endfor %}
+                                                {% if horarios.count > 3 %}
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-plus"></i> {{ horarios.count|add:"-3" }} más...
+                                                    </small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fas fa-info-circle"></i> Sin horarios
+                                                </span>
+                                            {% endif %}
+                                        {% endwith %}
                                     </td>
                                     <td>
                                         <i class="fas fa-mobile-alt"></i>
