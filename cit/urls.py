@@ -75,4 +75,14 @@ urlpatterns = [
     path('clinicas/<int:pk>/editar/', views.ClinicaUpdateView.as_view(), name='clinica-update'),
     path('clinicas/<int:pk>/eliminar/', views.ClinicaDeleteView.as_view(), name='clinica-delete'),
     path('clinicas/<int:pk>/activar/', views.ClinicaActivateView.as_view(), name='clinica-activate'),
+    
+    # ========================================================================
+    # CRUD de Sucursales
+    # ========================================================================
+    path('sucursales/', views.SucursalListView.as_view(), name='sucursal-list'),
+    path('sucursales/nueva/', views.SucursalCreateView.as_view(), name='sucursal-create'),
+    path('sucursales/<int:pk>/', views.SucursalDetailView.as_view(), name='sucursal-detail'),
+    path('sucursales/<int:pk>/editar/', views.SucursalUpdateView.as_view(), name='sucursal-update'),
+    path('sucursales/<int:pk>/eliminar/', views.SucursalDeleteView.as_view(), name='sucursal-delete'),
+    path('sucursales/<int:pk>/activar/', views.SucursalActivateView.as_view(), name='sucursal-activate'),
 ]

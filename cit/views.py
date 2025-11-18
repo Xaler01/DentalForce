@@ -11,8 +11,8 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import json
 
-from .models import Cita, Dentista, Paciente, Especialidad, Cubiculo
-from .forms import CitaForm, CitaCancelForm, EspecialidadForm
+from .models import Cita, Dentista, Paciente, Especialidad, Cubiculo, Clinica, Sucursal
+from .forms import CitaForm, CitaCancelForm, EspecialidadForm, SucursalForm
 
 
 # ============================================================================
@@ -1505,8 +1505,18 @@ class ClinicaDetailView(LoginRequiredMixin, DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['sucursales'] = self.object.sucursales.all().order_by('nombre')
-        context['total_sucursales'] = context['sucursales'].count()
+        sucursales = self.object.sucursales.all().order_by('nombre')
+        
+        # Convertir días_atencion a badges legibles
+        dias_map = {'L': 'L', 'M': 'M', 'X': 'X', 'J': 'J', 'V': 'V', 'S': 'S', 'D': 'D'}
+        for sucursal in sucursales:
+            if sucursal.dias_atencion:
+                sucursal.dias_badges = [dias_map.get(d, d) for d in sucursal.dias_atencion if d in dias_map]
+            else:
+                sucursal.dias_badges = []
+        
+        context['sucursales'] = sucursales
+        context['total_sucursales'] = sucursales.count()
         return context
 
 
@@ -1615,4 +1625,184 @@ class ClinicaActivateView(LoginRequiredMixin, View):
             messages.success(request, f'Clínica "{clinica.nombre}" reactivada exitosamente.')
         
         return redirect('cit:clinica-detail', pk=pk)
+
+
+# ============================================================================
+# VISTAS CRUD DE SUCURSALES
+# ============================================================================
+
+class SucursalListView(LoginRequiredMixin, ListView):
+    """Vista para listar todas las sucursales"""
+    model = Sucursal
+    template_name = 'cit/sucursal_list.html'
+    context_object_name = 'sucursales'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = Sucursal.objects.select_related('clinica').all()
+        
+        # Filtro por clínica
+        clinica_id = self.request.GET.get('clinica')
+        if clinica_id:
+            queryset = queryset.filter(clinica_id=clinica_id)
+        
+        # Búsqueda general
+        busqueda = self.request.GET.get('busqueda')
+        if busqueda:
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda) |
+                Q(direccion__icontains=busqueda) |
+                Q(telefono__icontains=busqueda)
+            )
+        
+        return queryset.order_by('clinica__nombre', 'nombre')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Procesar días de atención para cada sucursal
+        dias_map = {'L': 'L', 'M': 'M', 'X': 'X', 'J': 'J', 'V': 'V', 'S': 'S', 'D': 'D'}
+        if 'object_list' in context:
+            for sucursal in context['object_list']:
+                if sucursal.dias_atencion:
+                    sucursal.dias_badges = [dias_map.get(d, d) for d in sucursal.dias_atencion if d in dias_map]
+                else:
+                    sucursal.dias_badges = []
+        
+        context['clinicas'] = Clinica.objects.filter(estado=True).order_by('nombre')
+        context['total_sucursales'] = self.get_queryset().count()
+        context['busqueda'] = self.request.GET.get('busqueda', '')
+        context['clinica_seleccionada'] = self.request.GET.get('clinica', '')
+        return context
+
+
+class SucursalDetailView(LoginRequiredMixin, DetailView):
+    """Vista para mostrar detalles de una sucursal"""
+    model = Sucursal
+    template_name = 'cit/sucursal_detail.html'
+    context_object_name = 'sucursal'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Convertir string "LMXJV" a lista legible
+        dias_map = {'L': 'Lunes', 'M': 'Martes', 'X': 'Miércoles', 
+                    'J': 'Jueves', 'V': 'Viernes', 'S': 'Sábado', 'D': 'Domingo'}
+        if self.object.dias_atencion:
+            context['dias_atencion_lista'] = [dias_map.get(d, d) for d in self.object.dias_atencion]
+        else:
+            context['dias_atencion_lista'] = []
+        return context
+
+
+class SucursalCreateView(LoginRequiredMixin, CreateView):
+    """Vista para crear una nueva sucursal"""
+    model = Sucursal
+    form_class = SucursalForm
+    template_name = 'cit/sucursal_form.html'
+    success_url = reverse_lazy('cit:sucursal-list')
+    
+    def get_initial(self):
+        """Pre-llenar clínica si viene del detalle de clínica"""
+        initial = super().get_initial()
+        clinica_id = self.request.GET.get('clinica')
+        if clinica_id:
+            initial['clinica'] = clinica_id
+        return initial
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': self.request.POST,
+                'files': self.request.FILES,
+            })
+        return kwargs
+    
+    def form_valid(self, form):
+        # Asignar el usuario creador
+        form.instance.uc = self.request.user
+        messages.success(self.request, 
+            f'Sucursal "{form.instance.nombre}" creada exitosamente para {form.instance.clinica.nombre}.')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
+        return super().form_invalid(form)
+
+
+class SucursalUpdateView(LoginRequiredMixin, UpdateView):
+    """Vista para editar una sucursal existente"""
+    model = Sucursal
+    form_class = SucursalForm
+    template_name = 'cit/sucursal_form.html'
+    success_url = reverse_lazy('cit:sucursal-list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': self.request.POST,
+                'files': self.request.FILES,
+            })
+        return kwargs
+    
+    def form_valid(self, form):
+        # Asignar el usuario que modifica
+        form.instance.um = self.request.user.id
+        messages.success(self.request, 
+            f'Sucursal "{form.instance.nombre}" actualizada exitosamente.')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
+        return super().form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_update'] = True
+        return context
+
+
+class SucursalDeleteView(LoginRequiredMixin, DeleteView):
+    """Vista para eliminar (desactivar) una sucursal"""
+    model = Sucursal
+    template_name = 'cit/sucursal_confirm_delete.html'
+    success_url = reverse_lazy('cit:sucursal-list')
+    context_object_name = 'sucursal'
+    
+    def form_valid(self, form):
+        """Soft delete: cambiar estado a False en lugar de eliminar"""
+        self.object = self.get_object()
+        
+        # Validar que no tenga citas futuras
+        # Las citas están asociadas a cubículos, no directamente a sucursales
+        # Por ahora omitimos esta validación y la implementaremos cuando
+        # se relacione Cubiculo con Sucursal
+        
+        # Desactivar
+        self.object.estado = False
+        self.object.um = self.request.user.id
+        self.object.save()
+        
+        messages.success(self.request, 
+            f'Sucursal "{self.object.nombre}" desactivada exitosamente.')
+        return redirect(self.success_url)
+
+
+class SucursalActivateView(LoginRequiredMixin, View):
+    """Vista para reactivar una sucursal desactivada"""
+    
+    def post(self, request, pk):
+        """Reactivar la sucursal"""
+        sucursal = get_object_or_404(Sucursal, pk=pk)
+        
+        if sucursal.estado:
+            messages.warning(request, f'La sucursal "{sucursal.nombre}" ya está activa.')
+        else:
+            sucursal.estado = True
+            sucursal.um = request.user.id
+            sucursal.save()
+            messages.success(request, f'Sucursal "{sucursal.nombre}" reactivada exitosamente.')
+        
+        return redirect('cit:sucursal-detail', pk=pk)
 

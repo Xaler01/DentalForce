@@ -202,6 +202,34 @@ class Sucursal(ClaseModelo):
         default='Lunes a Viernes'
     )
     
+    # Horarios diferenciados para sábado
+    sabado_horario_apertura = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name='Sábado - Hora de Apertura',
+        help_text='Dejar vacío para usar el horario general'
+    )
+    sabado_horario_cierre = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name='Sábado - Hora de Cierre',
+        help_text='Dejar vacío para usar el horario general'
+    )
+    
+    # Horarios diferenciados para domingo
+    domingo_horario_apertura = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name='Domingo - Hora de Apertura',
+        help_text='Dejar vacío para usar el horario general'
+    )
+    domingo_horario_cierre = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name='Domingo - Hora de Cierre',
+        help_text='Dejar vacío para usar el horario general'
+    )
+    
     class Meta:
         verbose_name = 'Sucursal'
         verbose_name_plural = 'Sucursales'
@@ -211,15 +239,63 @@ class Sucursal(ClaseModelo):
     def __str__(self):
         return f"{self.clinica.nombre} - {self.nombre}"
     
+    def get_horario_dia(self, dia):
+        """
+        Retorna el horario para un día específico
+        Args:
+            dia (str): Letra del día (L, M, X, J, V, S, D)
+        Returns:
+            dict: {'apertura': time, 'cierre': time}
+        """
+        if dia == 'S' and self.sabado_horario_apertura:
+            return {
+                'apertura': self.sabado_horario_apertura,
+                'cierre': self.sabado_horario_cierre
+            }
+        elif dia == 'D' and self.domingo_horario_apertura:
+            return {
+                'apertura': self.domingo_horario_apertura,
+                'cierre': self.domingo_horario_cierre
+            }
+        else:
+            return {
+                'apertura': self.horario_apertura,
+                'cierre': self.horario_cierre
+            }
+    
     def clean(self):
         """Validaciones personalizadas"""
         from django.core.exceptions import ValidationError
         
-        # Validar que horario de cierre sea después de apertura
+        # Validar que horario de cierre sea después de apertura (horario general)
         if self.horario_apertura and self.horario_cierre:
             if self.horario_cierre <= self.horario_apertura:
                 raise ValidationError({
                     'horario_cierre': 'La hora de cierre debe ser posterior a la hora de apertura'
+                })
+        
+        # Validar horarios de sábado
+        if self.sabado_horario_apertura or self.sabado_horario_cierre:
+            if not (self.sabado_horario_apertura and self.sabado_horario_cierre):
+                raise ValidationError({
+                    'sabado_horario_apertura': 'Debe especificar tanto apertura como cierre para sábado',
+                    'sabado_horario_cierre': 'Debe especificar tanto apertura como cierre para sábado'
+                })
+            if self.sabado_horario_cierre <= self.sabado_horario_apertura:
+                raise ValidationError({
+                    'sabado_horario_cierre': 'La hora de cierre de sábado debe ser posterior a la hora de apertura'
+                })
+        
+        # Validar horarios de domingo
+        if self.domingo_horario_apertura or self.domingo_horario_cierre:
+            if not (self.domingo_horario_apertura and self.domingo_horario_cierre):
+                raise ValidationError({
+                    'domingo_horario_apertura': 'Debe especificar tanto apertura como cierre para domingo',
+                    'domingo_horario_cierre': 'Debe especificar tanto apertura como cierre para domingo'
+                })
+            if self.domingo_horario_cierre <= self.domingo_horario_apertura:
+                raise ValidationError({
+                    'domingo_horario_cierre': 'La hora de cierre de domingo debe ser posterior a la hora de apertura'
                 })
         
         # Validar teléfono

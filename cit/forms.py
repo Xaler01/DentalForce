@@ -1420,3 +1420,220 @@ class ClinicaForm(forms.ModelForm):
                     f'La moneda sugerida para {dict(Clinica.PAISES_CHOICES).get(pais)} es {moneda_sugerida}')
         
         return cleaned_data
+
+
+# ============================================================================
+# FORMULARIO DE SUCURSALES
+# ============================================================================
+
+class SucursalForm(forms.ModelForm):
+    """Formulario para crear y editar sucursales"""
+    
+    # Choices para días de la semana
+    DIAS_CHOICES = [
+        ('L', 'Lunes'),
+        ('M', 'Martes'),
+        ('X', 'Miércoles'),
+        ('J', 'Jueves'),
+        ('V', 'Viernes'),
+        ('S', 'Sábado'),
+        ('D', 'Domingo'),
+    ]
+    
+    # Campo personalizado para días de atención con checkboxes
+    dias_atencion_checkboxes = forms.MultipleChoiceField(
+        choices=DIAS_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        }),
+        required=True,
+        label='Días de Atención',
+        help_text='Selecciona los días en que la sucursal atiende'
+    )
+    
+    class Meta:
+        model = Sucursal
+        fields = [
+            'clinica',
+            'nombre',
+            'direccion',
+            'telefono',
+            'horario_apertura',
+            'horario_cierre',
+            'sabado_horario_apertura',
+            'sabado_horario_cierre',
+            'domingo_horario_apertura',
+            'domingo_horario_cierre',
+        ]
+        widgets = {
+            'clinica': forms.Select(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Sucursal Centro, Sucursal Norte',
+                'maxlength': '150',
+                'required': True
+            }),
+            'direccion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Dirección completa de la sucursal',
+                'required': True
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: 0999-123456',
+                'maxlength': '20',
+                'required': True
+            }),
+            'horario_apertura': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 08:00)',
+                'required': True,
+                'autocomplete': 'off'
+            }),
+            'horario_cierre': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 18:00)',
+                'required': True,
+                'autocomplete': 'off'
+            }),
+            'sabado_horario_apertura': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 08:00)',
+                'autocomplete': 'off'
+            }),
+            'sabado_horario_cierre': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 13:00)',
+                'autocomplete': 'off'
+            }),
+            'domingo_horario_apertura': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 09:00)',
+                'autocomplete': 'off'
+            }),
+            'domingo_horario_cierre': forms.TextInput(attrs={
+                'class': 'form-control datetimepicker-time',
+                'placeholder': 'HH:MM (ej: 13:00)',
+                'autocomplete': 'off'
+            }),
+        }
+        labels = {
+            'clinica': 'Clínica',
+            'nombre': 'Nombre de la Sucursal',
+            'direccion': 'Dirección',
+            'telefono': 'Teléfono',
+            'horario_apertura': 'Hora de Apertura (L-V)',
+            'horario_cierre': 'Hora de Cierre (L-V)',
+            'sabado_horario_apertura': 'Apertura Sábado',
+            'sabado_horario_cierre': 'Cierre Sábado',
+            'domingo_horario_apertura': 'Apertura Domingo',
+            'domingo_horario_cierre': 'Cierre Domingo',
+        }
+        help_texts = {
+            'clinica': 'Selecciona la clínica a la que pertenece esta sucursal',
+            'nombre': 'Nombre identificador de la sucursal (debe ser único por clínica)',
+            'direccion': 'Dirección completa donde se ubica la sucursal',
+            'telefono': 'Número de teléfono de contacto de la sucursal',
+            'horario_apertura': 'Hora en que abre la sucursal de Lunes a Viernes',
+            'horario_cierre': 'Hora en que cierra la sucursal de Lunes a Viernes',
+            'sabado_horario_apertura': 'Dejar vacío para usar horario L-V',
+            'sabado_horario_cierre': 'Dejar vacío para usar horario L-V',
+            'domingo_horario_apertura': 'Dejar vacío para usar horario L-V',
+            'domingo_horario_cierre': 'Dejar vacío para usar horario L-V',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si estamos editando, cargar los días seleccionados
+        if self.instance and self.instance.pk and self.instance.dias_atencion:
+            # Convertir string "LMXJV" a lista ['L', 'M', 'X', 'J', 'V']
+            dias_list = list(self.instance.dias_atencion)
+            self.initial['dias_atencion_checkboxes'] = dias_list
+        
+        # Ordenar clínicas por nombre
+        self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+    
+    def clean_nombre(self):
+        """Validar que el nombre no esté vacío y sea único por clínica"""
+        nombre = self.cleaned_data.get('nombre', '').strip()
+        
+        if not nombre:
+            raise ValidationError('El nombre de la sucursal es requerido.')
+        
+        # Validar unicidad por clínica (solo en creación o si cambió el nombre)
+        clinica = self.cleaned_data.get('clinica')
+        if clinica:
+            qs = Sucursal.objects.filter(clinica=clinica, nombre__iexact=nombre)
+            
+            # Si estamos editando, excluir la instancia actual
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            
+            if qs.exists():
+                raise ValidationError(
+                    f'Ya existe una sucursal con el nombre "{nombre}" para la clínica {clinica.nombre}'
+                )
+        
+        return nombre
+    
+    def clean_telefono(self):
+        """Validar formato de teléfono"""
+        telefono = self.cleaned_data.get('telefono', '').strip()
+        
+        if not telefono:
+            raise ValidationError('El teléfono es requerido.')
+        
+        # Remover espacios, guiones y paréntesis para validar
+        telefono_limpio = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        
+        if len(telefono_limpio) < 7:
+            raise ValidationError('El teléfono debe tener al menos 7 dígitos.')
+        
+        return telefono
+    
+    def clean(self):
+        """Validaciones cruzadas"""
+        cleaned_data = super().clean()
+        
+        horario_apertura = cleaned_data.get('horario_apertura')
+        horario_cierre = cleaned_data.get('horario_cierre')
+        dias_checkboxes = cleaned_data.get('dias_atencion_checkboxes')
+        
+        # Validar que el horario de cierre sea posterior al de apertura
+        if horario_apertura and horario_cierre:
+            if horario_cierre <= horario_apertura:
+                self.add_error('horario_cierre', 
+                    'La hora de cierre debe ser posterior a la hora de apertura.')
+        
+        # Validar que se haya seleccionado al menos un día
+        if not dias_checkboxes:
+            self.add_error('dias_atencion_checkboxes', 
+                'Debe seleccionar al menos un día de atención.')
+        
+        # Convertir lista de días a string "LMXJV" para guardar en el modelo
+        if dias_checkboxes:
+            # Ordenar según el orden de la semana
+            orden_dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+            dias_ordenados = [dia for dia in orden_dias if dia in dias_checkboxes]
+            cleaned_data['dias_atencion'] = ''.join(dias_ordenados)
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        """Guardar con el campo dias_atencion procesado"""
+        instance = super().save(commit=False)
+        
+        # El campo dias_atencion ya está en cleaned_data por el método clean()
+        if 'dias_atencion' in self.cleaned_data:
+            instance.dias_atencion = self.cleaned_data['dias_atencion']
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
