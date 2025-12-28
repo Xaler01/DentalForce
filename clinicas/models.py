@@ -64,6 +64,7 @@ class Sucursal(ClaseModelo):
     nombre = models.CharField(max_length=150, verbose_name='Nombre de la Sucursal')
     direccion = models.TextField(verbose_name='Dirección', help_text='Dirección completa de la sucursal')
     telefono = models.CharField(max_length=20, verbose_name='Teléfono', help_text='Teléfono de contacto de la sucursal')
+    email = models.EmailField(blank=True, null=True, verbose_name='Email', help_text='Email de contacto de la sucursal')
     horario_apertura = models.TimeField(verbose_name='Hora de Apertura')
     horario_cierre = models.TimeField(verbose_name='Hora de Cierre')
     dias_atencion = models.CharField(max_length=50, default='Lunes a Viernes', verbose_name='Días de Atención')
