@@ -236,6 +236,16 @@ class Dentista(ClaseModelo):
                 raise ValidationError({
                     'fecha_contratacion': 'La fecha de contratación no puede ser futura'
                 })
+
+    def __init__(self, *args, **kwargs):
+        # Support legacy constructor kwargs used in tests: 'cedula' -> 'cedula_profesional',
+        # 'telefono' -> 'telefono_movil'. Map them before initialization so older tests
+        # that pass these names continue to work without changing DB schema.
+        if 'cedula' in kwargs and 'cedula_profesional' not in kwargs:
+            kwargs['cedula_profesional'] = kwargs.pop('cedula')
+        if 'telefono' in kwargs and 'telefono_movil' not in kwargs:
+            kwargs['telefono_movil'] = kwargs.pop('telefono')
+        super().__init__(*args, **kwargs)
     
     def get_especialidades_nombres(self):
         """Retorna una lista de nombres de especialidades"""
