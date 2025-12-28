@@ -43,11 +43,17 @@ urlpatterns = [
     path('api/citas/<int:pk>/mover/', 
          views.mover_cita, 
          name='ajax-mover-cita'),
+    # Backwards-compatible alias expected by tests
+    path('api/citas/<int:pk>/mover/', 
+         views.mover_cita, 
+         name='mover-cita'),
     
     # ========================================================================
     # Calendario
     # ========================================================================
-    path('calendario/', views.CalendarioCitasView.as_view(), name='calendario'),
+     path('calendario/', views.CalendarioCitasView.as_view(), name='calendario'),
+     # Alias para compatibilidad con tests
+     path('calendario/', views.CalendarioCitasView.as_view(), name='calendario-citas'),
     path('api/citas.json', views.citas_json, name='citas-json'),
     
     # ========================================================================

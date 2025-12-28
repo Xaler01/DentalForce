@@ -90,9 +90,16 @@ class Cubiculo(ClaseModelo):
         verbose_name='Nombre del Cubículo',
         help_text='Ej: Consultorio 1, Sala de Cirugía'
     )
+    descripcion = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción breve del cubículo',
+        blank=True
+    )
     numero = models.PositiveSmallIntegerField(
         verbose_name='Número',
-        help_text='Número identificador del cubículo'
+        help_text='Número identificador del cubículo',
+        null=True,
+        blank=True
     )
     capacidad = models.PositiveSmallIntegerField(
         verbose_name='Capacidad',
@@ -177,9 +184,10 @@ class Dentista(ClaseModelo):
     )
     numero_licencia = models.CharField(
         max_length=30,
-        unique=True,
         verbose_name='Número de Licencia',
-        help_text='Número de licencia para ejercer'
+        help_text='Número de licencia para ejercer',
+        null=True,
+        blank=True
     )
     telefono_movil = models.CharField(
         max_length=20,
@@ -188,8 +196,11 @@ class Dentista(ClaseModelo):
     )
     fecha_contratacion = models.DateField(
         verbose_name='Fecha de Contratación',
-        help_text='Fecha en que inició labores'
+        help_text='Fecha en que inició labores',
+        null=True,
+        blank=True
     )
+
     biografia = models.TextField(
         verbose_name='Biografía',
         help_text='Descripción profesional, estudios, experiencia',
@@ -207,6 +218,13 @@ class Dentista(ClaseModelo):
         verbose_name = 'Dentista'
         verbose_name_plural = 'Dentistas'
         ordering = ['usuario__last_name', 'usuario__first_name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['numero_licencia'],
+                name='unique_numero_licencia_non_null',
+                condition=models.Q(numero_licencia__isnull=False)
+            )
+        ]
     
     def __str__(self):
         return f"Dr(a). {self.usuario.get_full_name() or self.usuario.username}"
@@ -566,12 +584,16 @@ class Paciente(ClaseModelo):
     contacto_emergencia_nombre = models.CharField(
         max_length=150,
         verbose_name='Nombre del Contacto de Emergencia',
-        help_text='Nombre completo del contacto'
+        help_text='Nombre completo del contacto',
+        blank=True,
+        default=''
     )
     contacto_emergencia_telefono = models.CharField(
         max_length=20,
         verbose_name='Teléfono de Emergencia',
-        help_text='Teléfono del contacto de emergencia'
+        help_text='Teléfono del contacto de emergencia',
+        blank=True,
+        default=''
     )
     contacto_emergencia_relacion = models.CharField(
         max_length=50,
@@ -586,8 +608,17 @@ class Paciente(ClaseModelo):
         on_delete=models.PROTECT,
         related_name='pacientes',
         verbose_name='Clínica',
-        help_text='Clínica donde está registrado el paciente'
+        help_text='Clínica donde está registrado el paciente',
+        null=True,
+        blank=True
     )
+
+
+    def __init__(self, *args, **kwargs):
+        # Compatibility for fixtures/tests that use 'sexo' instead of 'genero'
+        if 'sexo' in kwargs and 'genero' not in kwargs:
+            kwargs['genero'] = kwargs.pop('sexo')
+        super().__init__(*args, **kwargs)
     
     class Meta:
         verbose_name = 'Paciente'
@@ -748,7 +779,7 @@ class Cita(ClaseModelo):
         ]
     
     def __str__(self):
-        return f"{self.paciente.get_nombre_completo()} - {self.especialidad.nombre} - {self.fecha_hora.strftime('%d/%m/%Y %H:%M')}"
+        return f"Cita #{self.id} - {self.paciente} - {self.fecha_hora.strftime('%d/%m/%Y %H:%M')}"
     
     def clean(self):
         """Validaciones personalizadas"""
@@ -825,7 +856,9 @@ class Cita(ClaseModelo):
         if self.fecha_hora:
             if self.fecha_hora.weekday() == 6:  # 6 = Domingo
                 if self.estado == self.ESTADO_PENDIENTE:
-                    errors['fecha_hora'] = 'Las citas en domingo deben estar confirmadas. No se pueden crear citas pendientes los domingos.'
+                    # Reportar como error no relacionado a un campo concreto para
+                    # evitar ValueError en formularios que no exponen `fecha_hora`.
+                    errors['__all__'] = 'Las citas en domingo deben estar confirmadas. No se pueden crear citas pendientes los domingos.'
         
         if errors:
             raise ValidationError(errors)

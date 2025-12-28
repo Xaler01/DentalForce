@@ -222,38 +222,44 @@ class CitaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cit:cita-detail', kwargs={'pk': self.object.pk})
 
 
-class CitaCancelView(LoginRequiredMixin, UpdateView):
+from .forms import CitaForm, CitaCancelForm, EspecialidadForm, SucursalForm, CitaCancelSimpleForm
+
+
+class CitaCancelView(LoginRequiredMixin, View):
     """
-    Vista para cancelar una cita (no se elimina, solo se cambia el estado).
+    Maneja GET y POST para cancelar una cita usando un formulario simple
+    que solo valida el motivo de cancelación y evita ejecutar las
+    validaciones completas del modelo.
     """
-    model = Cita
-    form_class = CitaCancelForm
     template_name = 'cit/cita_confirm_cancel.html'
-    
+
     def get_queryset(self):
-        """Solo permitir cancelar citas que estén en estado PENDIENTE o CONFIRMADA"""
         return Cita.objects.filter(
             estado__in=[Cita.ESTADO_PENDIENTE, Cita.ESTADO_CONFIRMADA]
-        ).select_related('paciente', 'dentista')
-    
-    def form_valid(self, form):
-        """Cambiar estado a CANCELADA"""
-        # Cambiar el estado a CANCELADA
-        form.instance.estado = Cita.ESTADO_CANCELADA
-        form.instance.usuario_modificacion = self.request.user
-        
-        response = super().form_valid(form)
-        
-        messages.warning(
-            self.request,
-            f'Cita cancelada. El paciente {self.object.paciente} ha sido notificado.'
-        )
-        
-        return response
-    
-    def get_success_url(self):
-        """Redireccionar a la lista de citas"""
-        return reverse('cit:cita-list')
+        ).select_related('paciente', 'dentista', 'cubiculo', 'especialidad')
+
+    def get(self, request, pk):
+        cita = get_object_or_404(self.get_queryset(), pk=pk)
+        form = CitaCancelSimpleForm(initial={'motivo_cancelacion': cita.motivo_cancelacion})
+        return render(request, self.template_name, {'form': form, 'object': cita})
+
+    def post(self, request, pk):
+        cita = get_object_or_404(self.get_queryset(), pk=pk)
+        form = CitaCancelSimpleForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form, 'object': cita})
+
+        # Actualizar la cita y guardar
+        cita.motivo_cancelacion = form.cleaned_data['motivo_cancelacion']
+        cita.estado = Cita.ESTADO_CANCELADA
+        try:
+            cita.usuario_modificacion = request.user
+        except Exception:
+            pass
+        cita.save()
+
+        messages.warning(request, f'Cita cancelada. El paciente {cita.paciente} ha sido notificado.')
+        return redirect(reverse('cit:cita-list'))
 
 
 # ============================================================================
@@ -375,7 +381,7 @@ def check_dentista_disponibilidad(request):
             if cita.fecha_hora < fecha_fin and cita_fin > fecha_hora:
                 return JsonResponse({
                     'disponible': False,
-                    'mensaje': f'El Dr./Dra. {dentista} ya tiene una cita en este horario '
+                    'mensaje': f'El dentista Dr./Dra. {dentista} ya tiene una cita en este horario '
                               f'({cita.fecha_hora.strftime("%H:%M")} - {cita_fin.strftime("%H:%M")})',
                     'citas_solapadas': [{
                         'id': cita.id,
@@ -384,10 +390,10 @@ def check_dentista_disponibilidad(request):
                         'duracion': cita.duracion
                     }]
                 })
-        
+        # Si no se encontraron solapamientos, está disponible
         return JsonResponse({
             'disponible': True,
-            'mensaje': f'Dr./Dra. {dentista} disponible en este horario'
+            'mensaje': f'Dentista {dentista} disponible en este horario'
         })
         
     except (Dentista.DoesNotExist, ValueError) as e:
@@ -619,7 +625,7 @@ def mover_cita(request, pk):
             if otra_cita.fecha_hora < fecha_fin and otra_fin > nueva_fecha_hora:
                 return JsonResponse({
                     'success': False,
-                    'mensaje': f'El Dr./Dra. {cita.dentista} ya tiene una cita en ese horario ({otra_cita.fecha_hora.strftime("%H:%M")} - {otra_fin.strftime("%H:%M")})'
+                    'mensaje': f'El dentista Dr./Dra. {cita.dentista} ya tiene una cita en ese horario ({otra_cita.fecha_hora.strftime("%H:%M")} - {otra_fin.strftime("%H:%M")})'
                 }, status=400)
         
         # 5. Validar disponibilidad del cubículo

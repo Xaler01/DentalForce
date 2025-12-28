@@ -474,6 +474,45 @@ class CitaCancelForm(forms.ModelForm):
         
         return motivo
 
+    def clean(self):
+        """
+        Evitar ejecutar la validación completa del modelo cuando solo se
+        cancela la cita. Solo validar el motivo de cancelación aquí para
+        que el formulario de cancelación no falle por validaciones de
+        negocio que involucran campos que no se están editando.
+        """
+        cleaned_data = super(forms.ModelForm, self).clean()
+
+        motivo = cleaned_data.get('motivo_cancelacion')
+        if not motivo or len(motivo.strip()) < 10:
+            raise ValidationError('Debe proporcionar un motivo de cancelación de al menos 10 caracteres')
+
+        return cleaned_data
+
+
+class CitaCancelSimpleForm(forms.Form):
+    """
+    Formulario sencillo para cancelar una cita que evita ejecutar
+    validaciones de modelo complejas. Usado por la vista de
+    cancelación para only validar el motivo de cancelación.
+    """
+    motivo_cancelacion = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Por favor, indique el motivo de la cancelación...',
+        }),
+        label='Motivo de Cancelación',
+        required=True,
+        min_length=10,
+    )
+
+    def clean_motivo_cancelacion(self):
+        motivo = self.cleaned_data.get('motivo_cancelacion', '')
+        if not motivo or len(motivo.strip()) < 10:
+            raise ValidationError('Debe proporcionar un motivo de cancelación de al menos 10 caracteres')
+        return motivo
+
 
 class EspecialidadForm(forms.ModelForm):
     """
