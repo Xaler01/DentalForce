@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'inv',
     'cmp',
     'cit',
+    'clinicas',
 ]
 
 
