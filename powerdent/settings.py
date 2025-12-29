@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'cmp',
     'cit',
     'clinicas',
+    'personal',
+    'pacientes',
+    'facturacion',
 ]
 
 
