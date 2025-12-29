@@ -1,13 +1,12 @@
-"""Add missing `email` field to Sucursal for environments with out-of-sync schema.
+"""No-op compatibility migration.
 
-This migration is a safety migration: some development databases may have
-the `clinicas_sucursal` table without the `email` column even though earlier
-migrations declared it. Creating this migration ensures the column exists.
-
-If your DB already contains the `email` column, applying this migration will
-raise an error; in that case revert and investigate schema/state.
+In the refactor branch we introduced a safeguard migration to add the
+`email` column to `clinicas_sucursal`. However, the initial migration
+already creates that column, so adding it again breaks clean database
+creation (duplicate column). To keep migration numbering consistent while
+avoiding duplicate DDL, we convert this migration into a no-op.
 """
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
@@ -16,10 +15,4 @@ class Migration(migrations.Migration):
         ('clinicas', '0002_alter_sucursal_horario_apertura_and_more'),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name='sucursal',
-            name='email',
-            field=models.EmailField(blank=True, max_length=254, null=True, verbose_name='Email', help_text='Email de contacto de la sucursal'),
-        ),
-    ]
+    operations = []
