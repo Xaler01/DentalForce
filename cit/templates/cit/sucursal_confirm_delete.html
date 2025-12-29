@@ -1,0 +1,114 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-exclamation-triangle text-danger"></i> Confirmar Eliminación
+        </h1>
+        <a href="{% url 'cit:sucursal-detail' sucursal.pk %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Cancelar
+        </a>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow border-left-danger">
+                <div class="card-header bg-danger text-white py-3">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Advertencia
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-exclamation-circle"></i> ¿Está seguro de desactivar esta sucursal?
+                        </h5>
+                        <hr>
+                        <p class="mb-0">
+                            Esta acción desactivará la sucursal <strong>"{{ sucursal.nombre }}"</strong> de la clínica <strong>"{{ sucursal.clinica.nombre }}"</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Información de la Sucursal -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Datos de la Sucursal:</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Clínica:</dt>
+                                <dd class="col-sm-8">{{ sucursal.clinica.nombre }}</dd>
+
+                                <dt class="col-sm-4">Sucursal:</dt>
+                                <dd class="col-sm-8"><strong>{{ sucursal.nombre }}</strong></dd>
+
+                                <dt class="col-sm-4">Dirección:</dt>
+                                <dd class="col-sm-8">{{ sucursal.direccion }}</dd>
+
+                                <dt class="col-sm-4">Teléfono:</dt>
+                                <dd class="col-sm-8">{{ sucursal.telefono }}</dd>
+
+                                <dt class="col-sm-4">Horario:</dt>
+                                <dd class="col-sm-8">
+                                    {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }}
+                                </dd>
+
+                                <dt class="col-sm-4">Días de Atención:</dt>
+                                <dd class="col-sm-8">
+                                    {% if sucursal.dias_atencion %}
+                                        {% for dia in sucursal.dias_atencion %}
+                                            <span class="badge badge-secondary">{{ dia }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">No especificado</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Advertencias -->
+                    <div class="alert alert-warning" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Importante:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>La sucursal se desactivará, <strong>no se eliminará permanentemente</strong></li>
+                            <li>No se pueden desactivar sucursales con <strong>citas futuras programadas</strong></li>
+                            <li>Los dentistas asignados a esta sucursal <strong>ya no podrán atender</strong> en ella</li>
+                            <li>Los datos históricos (citas pasadas) se mantendrán intactos</li>
+                            <li>Puede reactivarse posteriormente si es necesario</li>
+                        </ul>
+                    </div>
+
+                    <!-- Advertencia de Citas -->
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-calendar-check"></i> Verificación de Citas:
+                        </h6>
+                        <p class="mb-0">
+                            El sistema verificará automáticamente si existen citas futuras. 
+                            Si hay citas programadas, deberás reprogramarlas o cancelarlas antes de desactivar la sucursal.
+                        </p>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mb-0">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash"></i> Sí, Desactivar Sucursal
+                            </button>
+                            <a href="{% url 'cit:sucursal-detail' sucursal.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> No, Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

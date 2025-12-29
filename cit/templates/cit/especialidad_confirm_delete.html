@@ -1,0 +1,135 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-exclamation-triangle text-warning"></i> 
+            Confirmar Desactivación
+        </h1>
+        <a href="{% url 'cit:especialidad-list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Cancelar
+        </a>
+    </div>
+
+    <!-- Confirmación -->
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow mb-4 border-left-warning">
+                <div class="card-header py-3 bg-warning">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        Atención: Desactivar Especialidad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Información Importante
+                        </h5>
+                        <p class="mb-0">
+                            Esta acción desactivará la especialidad, pero <strong>no eliminará</strong> los registros asociados.
+                            La especialidad dejará de aparecer en listados activos y no se podrá seleccionar para nuevas citas.
+                        </p>
+                    </div>
+
+                    <!-- Detalles de la Especialidad -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-stethoscope"></i> 
+                                {{ object.nombre }}
+                            </h5>
+                            
+                            {% if object.descripcion %}
+                            <p class="card-text text-muted">
+                                {{ object.descripcion }}
+                            </p>
+                            {% endif %}
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Duración por defecto:</strong> 
+                                        <span class="badge badge-info">{{ object.duracion_default }} minutos</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Color en calendario:</strong> 
+                                        <span class="badge" style="background-color: {{ object.color_calendario }}; color: white;">
+                                            {{ object.color_calendario }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Impacto de la desactivación -->
+                    <div class="card mb-4 border-left-info">
+                        <div class="card-body">
+                            <h6 class="font-weight-bold text-info">
+                                <i class="fas fa-chart-bar"></i> Impacto de esta acción:
+                            </h6>
+                            
+                            <div class="row text-center mt-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <i class="fas fa-user-md fa-2x text-primary mb-2"></i>
+                                            <h3 class="mb-0">{{ dentistas_count }}</h3>
+                                            <small class="text-muted">
+                                                Dentista{{ dentistas_count|pluralize }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <i class="fas fa-calendar-check fa-2x text-success mb-2"></i>
+                                            <h3 class="mb-0">{{ citas_count }}</h3>
+                                            <small class="text-muted">
+                                                Cita{{ citas_count|pluralize }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-muted mt-3 mb-0">
+                                <i class="fas fa-check-circle text-success"></i> 
+                                Los registros existentes se mantendrán sin cambios.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta de confirmación -->
+                    <div class="text-center mb-4">
+                        <h5 class="text-dark">
+                            ¿Está seguro que desea desactivar la especialidad 
+                            <strong class="text-primary">"{{ object.nombre }}"</strong>?
+                        </h5>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center">
+                            <a href="{% url 'cit:especialidad-list' %}" class="btn btn-secondary btn-lg mr-3">
+                                <i class="fas fa-times"></i> No, Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-ban"></i> Sí, Desactivar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

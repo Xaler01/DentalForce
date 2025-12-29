@@ -1,0 +1,237 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-check"></i> Detalle de Cita #{{ cita.id }}
+        </h1>
+        <a href="{% url 'cit:cita-list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Listado
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Información de la Cita -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Información de la Cita
+                    </h6>
+                    {% if cita.estado == 'PEN' %}
+                    <span class="badge badge-warning badge-lg">{{ cita.get_estado_display }}</span>
+                    {% elif cita.estado == 'CON' %}
+                    <span class="badge badge-info badge-lg">{{ cita.get_estado_display }}</span>
+                    {% elif cita.estado == 'ATE' %}
+                    <span class="badge badge-primary badge-lg">{{ cita.get_estado_display }}</span>
+                    {% elif cita.estado == 'COM' %}
+                    <span class="badge badge-success badge-lg">{{ cita.get_estado_display }}</span>
+                    {% elif cita.estado == 'CAN' %}
+                    <span class="badge badge-secondary badge-lg">{{ cita.get_estado_display }}</span>
+                    {% elif cita.estado == 'NAS' %}
+                    <span class="badge badge-danger badge-lg">{{ cita.get_estado_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-calendar"></i> Fecha y Hora
+                            </h6>
+                            <p class="h5">{{ cita.fecha_hora|date:"d/m/Y" }} - {{ cita.fecha_hora|time:"H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-clock"></i> Duración
+                            </h6>
+                            <p class="h5">{{ cita.get_duracion_display_horas }}</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-user-injured"></i> Información del Paciente
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Nombre Completo:</strong><br>
+                            {{ cita.paciente.nombres }} {{ cita.paciente.apellidos }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Cédula:</strong><br>
+                            {{ cita.paciente.cedula }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Teléfono:</strong><br>
+                            {{ cita.paciente.telefono }}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-user-md"></i> Información del Dentista
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Dentista:</strong><br>
+                            Dr./Dra. {{ cita.dentista.usuario.first_name }} {{ cita.dentista.usuario.last_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Especialidad:</strong><br>
+                            <span class="badge" style="background-color: {{ cita.especialidad.color_calendario }}; color: white; font-size: 14px;">
+                                {{ cita.especialidad.nombre }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-door-open"></i> Información del Cubículo
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Cubículo:</strong><br>
+                            {{ cita.cubiculo.nombre }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Sucursal:</strong><br>
+                            {{ cita.cubiculo.sucursal.nombre }}
+                        </div>
+                    </div>
+
+                    {% if cita.observaciones %}
+                    <hr>
+                    <h6 class="text-primary mb-2">
+                        <i class="fas fa-sticky-note"></i> Observaciones
+                    </h6>
+                    <p class="text-justify">{{ cita.observaciones }}</p>
+                    {% endif %}
+
+                    {% if cita.motivo_cancelacion %}
+                    <hr>
+                    <div class="alert alert-warning" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> Motivo de Cancelación
+                        </h6>
+                        <p class="mb-0">{{ cita.motivo_cancelacion }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Acciones -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog"></i> Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if cita.estado == 'PEN' %}
+                    <a href="{% url 'cit:cita-confirmar' cita.pk %}" class="btn btn-info btn-block mb-2">
+                        <i class="fas fa-check"></i> Confirmar Cita
+                    </a>
+                    <a href="{% url 'cit:cita-update' cita.pk %}" class="btn btn-warning btn-block mb-2">
+                        <i class="fas fa-edit"></i> Editar Cita
+                    </a>
+                    <a href="{% url 'cit:cita-iniciar' cita.pk %}" class="btn btn-primary btn-block mb-2">
+                        <i class="fas fa-play"></i> Iniciar Atención
+                    </a>
+                    <a href="{% url 'cit:cita-cancel' cita.pk %}" class="btn btn-danger btn-block mb-2">
+                        <i class="fas fa-times"></i> Cancelar Cita
+                    </a>
+                    <a href="{% url 'cit:cita-no-asistio' cita.pk %}" class="btn btn-secondary btn-block">
+                        <i class="fas fa-user-times"></i> Marcar No Asistió
+                    </a>
+                    
+                    {% elif cita.estado == 'CON' %}
+                    <a href="{% url 'cit:cita-update' cita.pk %}" class="btn btn-warning btn-block mb-2">
+                        <i class="fas fa-edit"></i> Editar Cita
+                    </a>
+                    <a href="{% url 'cit:cita-iniciar' cita.pk %}" class="btn btn-primary btn-block mb-2">
+                        <i class="fas fa-play"></i> Iniciar Atención
+                    </a>
+                    <a href="{% url 'cit:cita-cancel' cita.pk %}" class="btn btn-danger btn-block mb-2">
+                        <i class="fas fa-times"></i> Cancelar Cita
+                    </a>
+                    <a href="{% url 'cit:cita-no-asistio' cita.pk %}" class="btn btn-secondary btn-block">
+                        <i class="fas fa-user-times"></i> Marcar No Asistió
+                    </a>
+                    
+                    {% elif cita.estado == 'ATE' %}
+                    <a href="{% url 'cit:cita-completar' cita.pk %}" class="btn btn-success btn-block mb-2">
+                        <i class="fas fa-check-double"></i> Completar Cita
+                    </a>
+                    <div class="alert alert-info mt-3" role="alert">
+                        <small><i class="fas fa-info-circle"></i> La cita está en atención. No se puede editar ni cancelar.</small>
+                    </div>
+                    
+                    {% elif cita.estado == 'COM' %}
+                    <div class="alert alert-success" role="alert">
+                        <i class="fas fa-check-circle"></i> Cita completada exitosamente
+                    </div>
+                    
+                    {% elif cita.estado == 'CAN' %}
+                    <div class="alert alert-secondary" role="alert">
+                        <i class="fas fa-ban"></i> Esta cita fue cancelada
+                    </div>
+                    
+                    {% elif cita.estado == 'NAS' %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-user-times"></i> El paciente no asistió a esta cita
+                    </div>
+                    {% endif %}
+
+                    <hr>
+                    <a href="{% url 'cit:cita-list' %}" class="btn btn-light btn-block">
+                        <i class="fas fa-list"></i> Ver Todas las Citas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información de Auditoría -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history"></i> Auditoría
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <small>
+                        <strong>Creado por:</strong><br>
+                        {{ cita.usuario_creacion }}<br>
+                        <span class="text-muted">{{ cita.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                    </small>
+                    {% if cita.usuario_modificacion %}
+                    <hr>
+                    <small>
+                        <strong>Última modificación:</strong><br>
+                        {{ cita.usuario_modificacion }}<br>
+                        <span class="text-muted">{{ cita.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Confirmación para acciones críticas
+    $('a[href*="cancelar"], a[href*="no-asistio"]').on('click', function(e) {
+        if (!confirm('¿Está seguro de realizar esta acción?')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

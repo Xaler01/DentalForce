@@ -1,0 +1,312 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-building"></i> 
+            {% if is_update %}Editar Sucursal{% else %}Nueva Sucursal{% endif %}
+        </h1>
+        <a href="{% url 'cit:sucursal-list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Lista
+        </a>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <!-- Sección: Datos Generales -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Datos Generales
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Clínica -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.clinica.id_for_label }}">
+                                        {{ form.clinica.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.clinica }}
+                                    {% if form.clinica.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.clinica.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Seleccione la clínica a la que pertenece esta sucursal</small>
+                                </div>
+                            </div>
+
+                            <!-- Nombre -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.nombre.id_for_label }}">
+                                        {{ form.nombre.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Nombre único dentro de la clínica (ej: "Matriz", "Norte", "Sur")</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Ubicación y Contacto -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-map-marker-alt"></i> Ubicación y Contacto
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Dirección -->
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="{{ form.direccion.id_for_label }}">
+                                        {{ form.direccion.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.direccion }}
+                                    {% if form.direccion.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.direccion.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Dirección completa de la sucursal</small>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.telefono.id_for_label }}">
+                                        {{ form.telefono.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                <i class="fab fa-whatsapp text-success"></i>
+                                            </span>
+                                        </div>
+                                        {{ form.telefono }}
+                                    </div>
+                                    {% if form.telefono.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.telefono.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Mínimo 7 dígitos. Se usará para WhatsApp.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Horarios de Atención -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-info">
+                            <i class="fas fa-clock"></i> Horarios de Atención
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Horario de Apertura -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.horario_apertura.id_for_label }}">
+                                        {{ form.horario_apertura.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.horario_apertura }}
+                                    {% if form.horario_apertura.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.horario_apertura.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de inicio de atención (ej: 08:00)</small>
+                                </div>
+                            </div>
+
+                            <!-- Horario de Cierre -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.horario_cierre.id_for_label }}">
+                                        {{ form.horario_cierre.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.horario_cierre }}
+                                    {% if form.horario_cierre.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.horario_cierre.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de fin de atención (ej: 18:00)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Días de Atención -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>
+                                        Días de Atención <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="border rounded p-3 bg-light">
+                                        {% for choice_value, choice_label in form.dias_atencion_checkboxes.field.choices %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   name="dias_atencion_checkboxes" 
+                                                   id="id_dia_{{ choice_value }}" 
+                                                   value="{{ choice_value }}"
+                                                   {% if choice_value in form.dias_atencion_checkboxes.value %}checked{% endif %}>
+                                            <label class="form-check-label" for="id_dia_{{ choice_value }}">
+                                                {{ choice_label }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.dias_atencion_checkboxes.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.dias_atencion_checkboxes.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Seleccione al menos un día de atención</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Horario Sábado (Opcional) -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-calendar-day"></i> Horario Sábado (Opcional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning" style="background-color: #fff3cd; border-color: #ffc107;">
+                            <i class="fas fa-info-circle text-warning"></i>
+                            <strong>Opcional:</strong> Si se deja vacío, se usará el horario de Lunes a Viernes.
+                        </div>
+                        <div class="row">
+                            <!-- Sábado Apertura -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.sabado_horario_apertura.id_for_label }}">
+                                        {{ form.sabado_horario_apertura.label }}
+                                    </label>
+                                    {{ form.sabado_horario_apertura }}
+                                    {% if form.sabado_horario_apertura.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.sabado_horario_apertura.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de inicio sábados (ej: 08:00)</small>
+                                </div>
+                            </div>
+
+                            <!-- Sábado Cierre -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.sabado_horario_cierre.id_for_label }}">
+                                        {{ form.sabado_horario_cierre.label }}
+                                    </label>
+                                    {{ form.sabado_horario_cierre }}
+                                    {% if form.sabado_horario_cierre.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.sabado_horario_cierre.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de cierre sábados (ej: 13:00)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Horario Domingo (Opcional) -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-calendar-day"></i> Horario Domingo (Opcional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger" style="background-color: #f8d7da; border-color: #dc3545;">
+                            <i class="fas fa-info-circle text-danger"></i>
+                            <strong>Opcional:</strong> Si se deja vacío, se usará el horario de Lunes a Viernes.
+                        </div>
+                        <div class="row">
+                            <!-- Domingo Apertura -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.domingo_horario_apertura.id_for_label }}">
+                                        {{ form.domingo_horario_apertura.label }}
+                                    </label>
+                                    {{ form.domingo_horario_apertura }}
+                                    {% if form.domingo_horario_apertura.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.domingo_horario_apertura.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de inicio domingos (ej: 09:00)</small>
+                                </div>
+                            </div>
+
+                            <!-- Domingo Cierre -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.domingo_horario_cierre.id_for_label }}">
+                                        {{ form.domingo_horario_cierre.label }}
+                                    </label>
+                                    {{ form.domingo_horario_cierre }}
+                                    {% if form.domingo_horario_cierre.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.domingo_horario_cierre.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora de cierre domingos (ej: 13:00)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="form-group mb-0">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> 
+                                {% if is_update %}Actualizar Sucursal{% else %}Guardar Sucursal{% endif %}
+                            </button>
+                            <a href="{% url 'cit:sucursal-list' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger mt-3">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        // Inicializar DateTimePicker SOLO para horas (sin calendario)
+        // Plugin: XDSoft DateTimePicker
+        $('.datetimepicker-time').datetimepicker({
+            datepicker: false,      // CRÍTICO: Deshabilitar selector de fecha
+            format: 'H:i',          // Formato 24 horas sin segundos
+            step: 15,               // Incrementos de 15 minutos
+            timepicker: true,       // Habilitar selector de hora
+            scrollInput: false,     // No cambiar con scroll del mouse
+            validateOnBlur: true,   // Validar al perder foco
+            mask: false,            // No usar máscara (permite escribir libremente)
+            allowBlank: false       // No permitir vacío
+        });
+    });
+</script>
+{% endblock %}

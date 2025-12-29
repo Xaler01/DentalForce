@@ -1,0 +1,194 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-trash-alt fa-fw text-danger"></i> Desactivar Dentista
+        </h1>
+        <a href="{% url 'cit:dentista-list' %}" class="btn btn-secondary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Volver al Listado</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <!-- Información del Dentista -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmación de Desactivación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if object.foto %}
+                            <img src="{{ object.foto.url }}" 
+                                 alt="{{ object }}" 
+                                 class="rounded-circle mb-3"
+                                 style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                                 style="width: 100px; height: 100px;">
+                                <i class="fas fa-user-md fa-3x"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <h4>Dr(a). {{ object.usuario.get_full_name }}</h4>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-id-card"></i> Cédula: {{ object.cedula_profesional }}
+                        </p>
+                        <p class="text-muted">
+                            <i class="fas fa-id-badge"></i> Licencia: {{ object.numero_licencia }}
+                        </p>
+                    </div>
+
+                    <!-- Especialidades -->
+                    <div class="mb-3">
+                        <h6 class="font-weight-bold">
+                            <i class="fas fa-tooth"></i> Especialidades:
+                        </h6>
+                        <div>
+                            {% for esp in object.especialidades.all %}
+                                <span class="badge badge-primary mr-1" 
+                                      style="background-color: {{ esp.color_calendario }};">
+                                    {{ esp.nombre }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Advertencias de Impacto -->
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> Impacto de la Desactivación
+                        </h5>
+                        <p class="mb-2">Al desactivar este dentista se verán afectados los siguientes elementos:</p>
+                        <ul class="mb-0">
+                            <li>
+                                <strong>Citas Totales:</strong> 
+                                <span class="badge badge-info">{{ citas_totales }}</span>
+                                registros históricos
+                            </li>
+                            {% if citas_futuras > 0 %}
+                                <li class="text-danger">
+                                    <strong>⚠️ Citas Futuras Programadas:</strong> 
+                                    <span class="badge badge-danger">{{ citas_futuras }}</span>
+                                    citas que deberán ser reasignadas
+                                </li>
+                            {% endif %}
+                            <li>
+                                <strong>Horarios Configurados:</strong> 
+                                <span class="badge badge-secondary">{{ disponibilidades_count }}</span>
+                                horarios semanales
+                            </li>
+                            <li>
+                                <strong>Excepciones Configuradas:</strong> 
+                                <span class="badge badge-secondary">{{ excepciones_count }}</span>
+                                excepciones (vacaciones, días libres)
+                            </li>
+                        </ul>
+                    </div>
+
+                    {% if citas_futuras > 0 %}
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-times-circle"></i> ⚠️ Advertencia Importante
+                            </h6>
+                            <p class="mb-0">
+                                Este dentista tiene <strong>{{ citas_futuras }} cita(s) programada(s)</strong> en el futuro. 
+                                Se recomienda <strong>reasignar estas citas</strong> a otro dentista antes de desactivar el perfil.
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            No hay citas futuras programadas. Es seguro desactivar este dentista.
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Nota:</strong> Esta acción realiza un "soft delete" (desactivación). 
+                        El dentista no será eliminado de la base de datos, solo se marcará como inactivo. 
+                        Podrá reactivarlo desde el administrador si es necesario.
+                    </div>
+
+                    <!-- Formulario de Confirmación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-12 text-center">
+                                <p class="text-danger font-weight-bold mb-3">
+                                    ¿Está seguro que desea desactivar a Dr(a). {{ object.usuario.get_full_name }}?
+                                </p>
+                                
+                                <a href="{% url 'cit:dentista-list' %}" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-trash-alt"></i> Sí, Desactivar Dentista
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Información Adicional
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-building"></i> Sucursal Principal:</strong><br>
+                                {% if object.sucursal_principal %}
+                                    {{ object.sucursal_principal.nombre }}
+                                {% else %}
+                                    <span class="text-muted">No asignada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-phone"></i> Teléfono:</strong><br>
+                                {{ object.telefono_movil }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-calendar-check"></i> Fecha de Contratación:</strong><br>
+                                {{ object.fecha_contratacion|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-envelope"></i> Email:</strong><br>
+                                {{ object.usuario.email }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

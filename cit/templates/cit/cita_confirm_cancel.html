@@ -1,0 +1,149 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-times-circle"></i> Cancelar Cita
+        </h1>
+        <a href="{% url 'cit:cita-detail' object.pk %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4 border-danger">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmación de Cancelación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> ¿Está seguro de cancelar esta cita?
+                        </h5>
+                        <hr>
+                        <p class="mb-0">
+                            Esta acción <strong>no se puede deshacer</strong>. El paciente será notificado de la cancelación.
+                        </p>
+                    </div>
+
+                    <!-- Información de la cita a cancelar -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <strong><i class="fas fa-info-circle"></i> Información de la Cita</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Paciente:</strong><br>
+                                    {{ object.paciente.nombres }} {{ object.paciente.apellidos }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Dentista:</strong><br>
+                                    Dr./Dra. {{ object.dentista.usuario.first_name }} {{ object.dentista.usuario.last_name }}</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Fecha y Hora:</strong><br>
+                                    {{ object.fecha_hora|date:"d/m/Y" }} a las {{ object.fecha_hora|time:"H:i" }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Especialidad:</strong><br>
+                                    {{ object.especialidad.nombre }}</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <p><strong>Cubículo:</strong><br>
+                                    {{ object.cubiculo.nombre }} - {{ object.cubiculo.sucursal.nombre }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de cancelación -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label for="{{ form.motivo_cancelacion.id_for_label }}">
+                                {{ form.motivo_cancelacion.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.motivo_cancelacion }}
+                            {% if form.motivo_cancelacion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.motivo_cancelacion.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Por favor, proporcione una explicación detallada del motivo de la cancelación (mínimo 10 caracteres).
+                            </small>
+                        </div>
+
+                        <hr>
+
+                        <div class="alert alert-info" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-bell"></i> Notificaciones
+                            </h6>
+                            <ul class="mb-0">
+                                <li>El paciente recibirá una notificación de la cancelación</li>
+                                <li>El espacio quedará disponible para otras citas</li>
+                                <li>Esta acción quedará registrada en el historial</li>
+                            </ul>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-md-12 text-right">
+                                <a href="{% url 'cit:cita-detail' object.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> No, Volver Atrás
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times-circle"></i> Sí, Cancelar Cita
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Validación adicional antes de enviar
+    $('form').on('submit', function(e) {
+        let motivo = $('#id_motivo_cancelacion').val().trim();
+        
+        if (motivo.length < 10) {
+            e.preventDefault();
+            alert('Por favor, proporcione un motivo de cancelación de al menos 10 caracteres.');
+            $('#id_motivo_cancelacion').focus();
+            return false;
+        }
+        
+        // Confirmación final
+        if (!confirm('¿Está completamente seguro de cancelar esta cita?\n\nEsta acción NO se puede deshacer.')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

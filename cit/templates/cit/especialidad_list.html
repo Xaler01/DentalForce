@@ -1,0 +1,236 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-stethoscope"></i> Especialidades Odontológicas
+        </h1>
+        <a href="{% url 'cit:especialidad-create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nueva Especialidad
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Especialidades
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_especialidades }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Especialidades Activas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ especialidades_activas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'cit:especialidad-list' %}" id="filtrosForm">
+                <div class="row">
+                    <!-- Búsqueda por texto -->
+                    <div class="col-md-6 mb-3">
+                        <label for="busqueda">Buscar</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="busqueda" 
+                               name="q" 
+                               value="{{ q }}"
+                               placeholder="Nombre o descripción...">
+                    </div>
+
+                    <!-- Filtro por Estado -->
+                    <div class="col-md-3 mb-3">
+                        <label for="estado">Estado</label>
+                        <select class="form-control" id="estado" name="estado">
+                            <option value="">Todas</option>
+                            <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>Activas</option>
+                            <option value="inactivas" {% if estado_filtro == 'inactivas' %}selected{% endif %}>Inactivas</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="col-md-3 mb-3">
+                        <label>&nbsp;</label>
+                        <div class="btn-group d-block" role="group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{% url 'cit:especialidad-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Especialidades -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-table"></i> Lista de Especialidades
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="25%">Nombre</th>
+                            <th width="35%">Descripción</th>
+                            <th width="10%" class="text-center">Duración</th>
+                            <th width="8%" class="text-center">Color</th>
+                            <th width="7%" class="text-center">Estado</th>
+                            <th width="10%" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for especialidad in especialidades %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ especialidad.nombre }}</strong>
+                            </td>
+                            <td>
+                                {% if especialidad.descripcion %}
+                                    {{ especialidad.descripcion|truncatewords:15 }}
+                                {% else %}
+                                    <span class="text-muted">Sin descripción</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-info">{{ especialidad.duracion_default }} min</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background-color: {{ especialidad.color_calendario }}; color: white;">
+                                    {{ especialidad.color_calendario }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if especialidad.estado %}
+                                    <span class="badge badge-success">Activa</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'cit:especialidad-update' especialidad.pk %}" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if especialidad.estado %}
+                                    <a href="{% url 'cit:especialidad-delete' especialidad.pk %}" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Desactivar">
+                                        <i class="fas fa-ban"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No hay especialidades registradas</p>
+                                <a href="{% url 'cit:especialidad-create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Crear Primera Especialidad
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        // DataTables con configuración en español
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            },
+            "pageLength": 10,
+            "ordering": true,
+            "searching": false,  // Usamos el formulario de búsqueda personalizado
+            "info": true,
+            "lengthChange": false
+        });
+    });
+</script>
+{% endblock %}

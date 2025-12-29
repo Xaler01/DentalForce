@@ -1,0 +1,251 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-building"></i> {{ sucursal.nombre }}
+        </h1>
+        <div>
+            <a href="{% url 'cit:sucursal-update' sucursal.pk %}" class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'cit:sucursal-list' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información General -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex align-items-center">
+                    <div>
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Información General
+                        </h6>
+                    </div>
+                    {% if sucursal.estado %}
+                        <span class="badge badge-success ml-auto">Activa</span>
+                    {% else %}
+                        <span class="badge badge-secondary ml-auto">Inactiva</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Clínica:</dt>
+                        <dd class="col-sm-7">
+                            <div class="d-flex align-items-center">
+                                {% if sucursal.clinica.logo %}
+                                    <img src="{{ sucursal.clinica.logo.url }}" 
+                                         alt="Logo {{ sucursal.clinica.nombre }}" 
+                                         class="rounded mr-2" 
+                                         style="width: 30px; height: 30px; object-fit: cover;">
+                                {% endif %}
+                                <a href="{% url 'cit:clinica-detail' sucursal.clinica.pk %}" class="text-decoration-none">
+                                    {{ sucursal.clinica.nombre }}
+                                </a>
+                            </div>
+                        </dd>
+
+                        <dt class="col-sm-5">Nombre Sucursal:</dt>
+                        <dd class="col-sm-7"><strong>{{ sucursal.nombre }}</strong></dd>
+
+                        <dt class="col-sm-5">Dirección:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-map-marker-alt text-muted"></i> {{ sucursal.direccion }}
+                        </dd>
+
+                        <dt class="col-sm-5">Teléfono:</dt>
+                        <dd class="col-sm-7">
+                            <a href="javascript:void(0);" 
+                               class="text-decoration-none whatsapp-link" 
+                               data-telefono="{{ sucursal.telefono }}"
+                               data-sucursal="{{ sucursal.nombre }}"
+                               title="Click para abrir WhatsApp">
+                                <i class="fab fa-whatsapp text-success"></i> {{ sucursal.telefono }}
+                            </a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horarios de Atención -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-clock"></i> Horarios de Atención
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-3">
+                        <dt class="col-sm-5">Horario:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-info badge-lg">
+                                {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-5">Días de Atención:</dt>
+                        <dd class="col-sm-7">
+                            {% if dias_atencion_lista %}
+                                {% for dia in dias_atencion_lista %}
+                                    <span class="badge badge-secondary mr-1 mb-1">{{ dia }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No especificado</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+
+                    <!-- Horarios detallados por día -->
+                    <div class="alert alert-light border mb-0">
+                        <small>
+                            <i class="fas fa-info-circle text-primary"></i>
+                            <strong>Horarios de atención:</strong><br>
+                            
+                            {% if dias_atencion_lista %}
+                                <!-- Lunes a Viernes -->
+                                <strong>Lunes a Viernes:</strong> {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }}<br>
+                                
+                                <!-- Sábado (si tiene horario diferenciado) -->
+                                {% if sucursal.sabado_horario_apertura %}
+                                    <strong>Sábado:</strong> {{ sucursal.sabado_horario_apertura|time:"H:i" }} - {{ sucursal.sabado_horario_cierre|time:"H:i" }}<br>
+                                {% elif 'S' in sucursal.dias_atencion %}
+                                    <strong>Sábado:</strong> {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }} <span class="text-muted">(mismo horario L-V)</span><br>
+                                {% endif %}
+                                
+                                <!-- Domingo (si tiene horario diferenciado) -->
+                                {% if sucursal.domingo_horario_apertura %}
+                                    <strong>Domingo:</strong> {{ sucursal.domingo_horario_apertura|time:"H:i" }} - {{ sucursal.domingo_horario_cierre|time:"H:i" }}<br>
+                                {% elif 'D' in sucursal.dias_atencion %}
+                                    <strong>Domingo:</strong> {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }} <span class="text-muted">(mismo horario L-V)</span><br>
+                                {% endif %}
+                            {% else %}
+                                Horarios no definidos
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Metadatos del Sistema -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-database"></i> Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 col-lg-2">ID:</dt>
+                        <dd class="col-sm-3 col-lg-2"><code>{{ sucursal.id }}</code></dd>
+
+                        <dt class="col-sm-3 col-lg-2">Creada el:</dt>
+                        <dd class="col-sm-3 col-lg-2">{{ sucursal.fc|date:"d/m/Y H:i" }}</dd>
+
+                        <dt class="col-sm-3 col-lg-2">Modificada el:</dt>
+                        <dd class="col-sm-3 col-lg-2">{{ sucursal.fm|date:"d/m/Y H:i" }}</dd>
+
+                        <dt class="col-sm-3 col-lg-2">Estado:</dt>
+                        <dd class="col-sm-3 col-lg-2">
+                            {% if sucursal.estado %}
+                                <span class="badge badge-success">Activa</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Inactiva</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    {% if sucursal.estado %}
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow border-left-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-danger mb-1"><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h6>
+                            <small class="text-muted">Las acciones en esta sección son irreversibles</small>
+                        </div>
+                        <a href="{% url 'cit:sucursal-delete' sucursal.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Desactivar Sucursal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow border-left-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-success mb-1"><i class="fas fa-check-circle"></i> Sucursal Inactiva</h6>
+                            <small class="text-muted">Puedes reactivar esta sucursal si es necesario</small>
+                        </div>
+                        <form method="post" action="{% url 'cit:sucursal-activate' sucursal.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Reactivar Sucursal
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        // Integración WhatsApp
+        $(document).on('click', '.whatsapp-link', function(e) {
+            e.preventDefault();
+            
+            const telefono = $(this).data('telefono');
+            const sucursal = $(this).data('sucursal');
+            
+            // Limpiar el número (eliminar espacios, guiones, paréntesis)
+            const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+            
+            // Si el número no tiene código de país, agregar +593 (Ecuador)
+            let numeroWhatsApp = telefonoLimpio;
+            if (!telefonoLimpio.startsWith('+') && !telefonoLimpio.startsWith('593')) {
+                if (telefonoLimpio.startsWith('0')) {
+                    numeroWhatsApp = '593' + telefonoLimpio.substring(1);
+                } else {
+                    numeroWhatsApp = '593' + telefonoLimpio;
+                }
+            } else if (telefonoLimpio.startsWith('+')) {
+                numeroWhatsApp = telefonoLimpio.substring(1);
+            }
+            
+            // Mensaje predeterminado
+            const mensaje = `Hola, me comunico con la sucursal ${sucursal}`;
+            
+            // Abrir WhatsApp
+            const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWhatsApp, '_blank');
+        });
+    });
+</script>
+{% endblock %}

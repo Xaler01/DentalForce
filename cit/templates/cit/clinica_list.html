@@ -1,0 +1,269 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-hospital-alt"></i> Lista de Clínicas
+        </h1>
+        <a href="{% url 'cit:clinica-create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nueva Clínica
+        </a>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'cit:clinica-list' %}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="busqueda">Buscar</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="busqueda" 
+                               name="busqueda" 
+                               value="{{ busqueda }}"
+                               placeholder="Buscar por nombre, dirección, email o teléfono">
+                    </div>
+                    <div class="col-md-6 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mr-2">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'cit:clinica-list' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Clínicas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> Clínicas Registradas 
+                <span class="badge badge-primary">{{ total_clinicas }}</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width: 35%">Clínica</th>
+                            <th style="width: 25%">Dirección</th>
+                            <th style="width: 15%">Teléfono</th>
+                            <th style="width: 10%" class="text-center">Sucursales</th>
+                            <th style="width: 10%" class="text-center">Estado</th>
+                            <th style="width: 5%" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for clinica in clinicas %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if clinica.logo %}
+                                        <img src="{{ clinica.logo.url }}" alt="Logo {{ clinica.nombre }}" 
+                                             class="rounded" style="width: 50px; height: 50px; object-fit: cover; margin-right: 12px;">
+                                    {% else %}
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center" 
+                                             style="width: 50px; height: 50px; margin-right: 12px;">
+                                            <i class="fas fa-hospital text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <a href="{% url 'cit:clinica-detail' clinica.pk %}" class="text-decoration-none">
+                                            <strong>{{ clinica.nombre }}</strong>
+                                        </a>
+                                        {% if clinica.razon_social %}
+                                            <br><small class="text-muted">{{ clinica.razon_social }}</small>
+                                        {% endif %}
+                                        {% if clinica.email %}
+                                            <br>
+                                            <a href="mailto:{{ clinica.email }}" class="small text-muted" 
+                                               title="{{ clinica.email }}" data-toggle="tooltip">
+                                                <i class="fas fa-envelope"></i> {{ clinica.email|truncatechars:25 }}
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <i class="fas fa-map-marker-alt text-muted"></i>
+                                <span title="{{ clinica.direccion }}" data-toggle="tooltip">
+                                    {{ clinica.direccion|truncatechars:40 }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="javascript:void(0);" 
+                                   class="text-decoration-none whatsapp-link" 
+                                   data-telefono="{{ clinica.telefono }}"
+                                   data-clinica="{{ clinica.nombre }}"
+                                   title="Click para abrir WhatsApp" 
+                                   data-toggle="tooltip">
+                                    <i class="fab fa-whatsapp text-success"></i> {{ clinica.telefono }}
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-info">
+                                    {{ clinica.sucursales.count }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if clinica.estado %}
+                                    <span class="badge badge-success">Activa</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'cit:clinica-detail' clinica.pk %}" 
+                                       class="btn btn-info"
+                                       title="Ver Detalle"
+                                       data-toggle="tooltip">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'cit:clinica-update' clinica.pk %}" 
+                                       class="btn btn-warning"
+                                       title="Editar"
+                                       data-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if clinica.estado %}
+                                    <a href="{% url 'cit:clinica-delete' clinica.pk %}" 
+                                       class="btn btn-danger"
+                                       title="Eliminar"
+                                       data-toggle="tooltip">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% else %}
+                                    <form method="post" action="{% url 'cit:clinica-activate' clinica.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="btn btn-success"
+                                                title="Reactivar"
+                                                data-toggle="tooltip">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No hay clínicas registradas</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        console.log('Script cargado');
+        
+        // Activar tooltips de Bootstrap
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Contar cuántos enlaces hay
+        console.log('Enlaces WhatsApp encontrados:', $('.whatsapp-link').length);
+        
+        // Usar delegación de eventos para elementos dinámicos
+        $(document).on('click', '.whatsapp-link', function(e) {
+            e.preventDefault();
+            console.log('Click en WhatsApp detectado');
+            
+            const telefono = $(this).data('telefono');
+            const clinica = $(this).data('clinica');
+            
+            console.log('Teléfono:', telefono);
+            console.log('Clínica:', clinica);
+            
+            // Limpiar el número (eliminar espacios, guiones, paréntesis)
+            const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+            
+            // Si el número no tiene código de país, agregar +593 (Ecuador)
+            let numeroWhatsApp = telefonoLimpio;
+            if (!telefonoLimpio.startsWith('+') && !telefonoLimpio.startsWith('593')) {
+                // Si empieza con 0, quitarlo y agregar código de país
+                if (telefonoLimpio.startsWith('0')) {
+                    numeroWhatsApp = '593' + telefonoLimpio.substring(1);
+                } else {
+                    numeroWhatsApp = '593' + telefonoLimpio;
+                }
+            } else if (telefonoLimpio.startsWith('+')) {
+                numeroWhatsApp = telefonoLimpio.substring(1);
+            }
+            
+            console.log('Número WhatsApp:', numeroWhatsApp);
+            
+            // Mensaje predeterminado
+            const mensaje = `Hola, me comunico de ${clinica}`;
+            
+            // Abrir WhatsApp (web o app según el dispositivo)
+            const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+            console.log('URL WhatsApp:', urlWhatsApp);
+            
+            window.open(urlWhatsApp, '_blank');
+        });
+    });
+</script>
+{% endblock %}

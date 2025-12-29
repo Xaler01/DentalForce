@@ -1,0 +1,333 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-md fa-fw text-primary"></i> Gestión de Dentistas
+        </h1>
+        <a href="{% url 'cit:dentista-create' %}" class="btn btn-primary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-plus"></i>
+            </span>
+            <span class="text">Nuevo Dentista</span>
+        </a>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filter-form">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="q"><i class="fas fa-search"></i> Búsqueda General</label>
+                            <input type="text" 
+                                   name="q" 
+                                   id="q" 
+                                   class="form-control" 
+                                   placeholder="Nombre, cédula, licencia..."
+                                   value="{{ request.GET.q }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="especialidad"><i class="fas fa-tooth"></i> Especialidad</label>
+                            <select name="especialidad" id="especialidad" class="form-control">
+                                <option value="">Todas las especialidades</option>
+                                {% for esp in especialidades %}
+                                    <option value="{{ esp.id }}" 
+                                            {% if request.GET.especialidad == esp.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ esp.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="sucursal"><i class="fas fa-building"></i> Sucursal</label>
+                            <select name="sucursal" id="sucursal" class="form-control">
+                                <option value="">Todas las sucursales</option>
+                                {% for suc in sucursales %}
+                                    <option value="{{ suc.id }}" 
+                                            {% if request.GET.sucursal == suc.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ suc.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'cit:dentista-list' %}" class="btn btn-secondary btn-block mt-2">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Dentistas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> Lista de Dentistas
+                <span class="badge badge-primary ml-2">{{ page_obj.paginator.count }} dentista{{ page_obj.paginator.count|pluralize }}</span>
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if dentistas %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered" id="dataTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="5%">
+                                    <i class="fas fa-camera"></i>
+                                </th>
+                                <th width="20%">
+                                    <i class="fas fa-user"></i> Nombre Completo
+                                </th>
+                                <th width="20%">
+                                    <i class="fas fa-tooth"></i> Especialidades
+                                </th>
+                                <th width="15%">
+                                    <i class="fas fa-building"></i> Sucursal
+                                </th>
+                                <th width="15%">
+                                    <i class="fas fa-clock"></i> Horarios
+                                </th>
+                                <th width="10%">
+                                    <i class="fas fa-phone"></i> Teléfono
+                                </th>
+                                <th width="5%" class="text-center">
+                                    <i class="fas fa-check-circle"></i>
+                                </th>
+                                <th width="10%" class="text-center">
+                                    <i class="fas fa-cogs"></i> Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dentista in dentistas %}
+                                <tr>
+                                    <td class="text-center">
+                                        {% if dentista.foto %}
+                                            <img src="{{ dentista.foto.url }}" 
+                                                 alt="{{ dentista }}" 
+                                                 class="rounded-circle"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px; margin: 0 auto;">
+                                                <i class="fas fa-user-md"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>Dr(a). {{ dentista.usuario.get_full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ dentista.usuario.username }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% for esp in dentista.especialidades.all %}
+                                            <span class="badge badge-primary mb-1" 
+                                                  style="background-color: {{ esp.color_calendario }};">
+                                                {{ esp.nombre }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-muted">Sin especialidades</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% if dentista.sucursal_principal %}
+                                            <i class="fas fa-map-marker-alt text-danger"></i>
+                                            {{ dentista.sucursal_principal.nombre }}
+                                        {% else %}
+                                            <span class="text-muted">No asignada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with horarios=dentista.disponibilidades.all %}
+                                            {% if horarios %}
+                                                {% for disp in horarios|slice:":3" %}
+                                                    <div class="mb-1">
+                                                        <small>
+                                                            <span class="badge badge-secondary">{{ disp.get_dia_semana_display }}</span>
+                                                            {{ disp.hora_inicio|time:"H:i" }} - {{ disp.hora_fin|time:"H:i" }}
+                                                        </small>
+                                                    </div>
+                                                {% endfor %}
+                                                {% if horarios.count > 3 %}
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-plus"></i> {{ horarios.count|add:"-3" }} más...
+                                                    </small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fas fa-info-circle"></i> Sin horarios
+                                                </span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <a href="javascript:void(0);" 
+                                           class="text-decoration-none whatsapp-link" 
+                                           data-telefono="{{ dentista.telefono_movil }}"
+                                           data-nombre="Dr(a). {{ dentista.usuario.get_full_name }}"
+                                           title="Click para abrir WhatsApp" 
+                                           data-toggle="tooltip">
+                                            <i class="fab fa-whatsapp text-success"></i>
+                                            {{ dentista.telefono_movil }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if dentista.estado %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> Activo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">
+                                                <i class="fas fa-times"></i> Inactivo
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'cit:dentista-update' dentista.pk %}" 
+                                               class="btn btn-sm btn-warning"
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'cit:dentista-delete' dentista.pk %}" 
+                                               class="btn btn-sm btn-danger"
+                                               title="Desactivar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.especialidad %}&especialidad={{ request.GET.especialidad }}{% endif %}{% if request.GET.sucursal %}&sucursal={{ request.GET.sucursal }}{% endif %}">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.especialidad %}&especialidad={{ request.GET.especialidad }}{% endif %}{% if request.GET.sucursal %}&sucursal={{ request.GET.sucursal }}{% endif %}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.especialidad %}&especialidad={{ request.GET.especialidad }}{% endif %}{% if request.GET.sucursal %}&sucursal={{ request.GET.sucursal }}{% endif %}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.especialidad %}&especialidad={{ request.GET.especialidad }}{% endif %}{% if request.GET.sucursal %}&sucursal={{ request.GET.sucursal }}{% endif %}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-3x mb-3"></i>
+                    <h5>No hay dentistas registrados</h5>
+                    <p class="mb-0">Comienza agregando el primer dentista haciendo clic en "Nuevo Dentista"</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<!-- DataTables CSS & JS -->
+<link href="{% static 'base/vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<script src="{% static 'base/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'base/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // Activar tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Manejar click en teléfonos para abrir WhatsApp
+    $(document).on('click', '.whatsapp-link', function(e) {
+        e.preventDefault();
+        const telefono = $(this).data('telefono');
+        const nombre = $(this).data('nombre');
+        
+        // Limpiar el número (eliminar espacios, guiones, paréntesis)
+        const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+        
+        // Si el número no tiene código de país, agregar +593 (Ecuador)
+        let numeroWhatsApp = telefonoLimpio;
+        if (!telefonoLimpio.startsWith('+') && !telefonoLimpio.startsWith('593')) {
+            // Si empieza con 0, quitarlo y agregar código de país
+            if (telefonoLimpio.startsWith('0')) {
+                numeroWhatsApp = '593' + telefonoLimpio.substring(1);
+            } else {
+                numeroWhatsApp = '593' + telefonoLimpio;
+            }
+        } else if (telefonoLimpio.startsWith('+')) {
+            numeroWhatsApp = telefonoLimpio.substring(1);
+        }
+        
+        // Mensaje predeterminado
+        const mensaje = `Hola ${nombre}, me comunico desde PowerDent`;
+        
+        // Abrir WhatsApp (web o app según el dispositivo)
+        const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+        window.open(urlWhatsApp, '_blank');
+    });
+    
+    // Inicializar DataTables solo para ordenamiento y búsqueda interna
+    $('#dataTable').DataTable({
+        "paging": false,  // Usamos paginación de Django
+        "searching": false,  // Usamos búsqueda personalizada
+        "ordering": true,
+        "info": false,
+        "language": {
+            "emptyTable": "No hay datos disponibles",
+            "zeroRecords": "No se encontraron coincidencias"
+        }
+    });
+});
+</script>
+{% endblock %}

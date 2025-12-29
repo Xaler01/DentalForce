@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from powerdent.views import inicio, inicio2
 
 # from powerdent import inicio, inicio2
@@ -25,9 +27,14 @@ urlpatterns = [
     path('', include(('bases.urls', 'bases'), namespace='bases')),
     path('inv/', include(('inv.urls', 'inv'), namespace='inv')),
     path('cmp/', include(('cmp.urls', 'cmp'), namespace='cmp')),
+    path('cit/', include(('cit.urls', 'cit'), namespace='cit')),
 
     path('admin/', admin.site.urls),
     # path('', inicio, name='Inicio'),  # La ruta raíz ahora renderiza el index.html
     # path('Inicio/', inicio),
     # path('Iniciored/', inicio2),
 ]
+
+# Servir archivos de medios en desarrollo
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

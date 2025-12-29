@@ -1,0 +1,320 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-hospital-alt"></i> {{ clinica.nombre }}
+        </h1>
+        <div>
+            <a href="{% url 'cit:clinica-update' clinica.pk %}" class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'cit:clinica-list' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información General -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-building"></i> Información General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if clinica.logo %}
+                        <div class="text-center mb-3">
+                            <img src="{{ clinica.logo.url }}" alt="Logo {{ clinica.nombre }}" 
+                                 class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                        </div>
+                    {% endif %}
+                    
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Nombre Comercial:</dt>
+                        <dd class="col-sm-7">{{ clinica.nombre }}</dd>
+
+                        {% if clinica.razon_social %}
+                        <dt class="col-sm-5">Razón Social:</dt>
+                        <dd class="col-sm-7">{{ clinica.razon_social }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-5">Dirección:</dt>
+                        <dd class="col-sm-7">{{ clinica.direccion }}</dd>
+
+                        <dt class="col-sm-5">Teléfono:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-phone"></i> {{ clinica.telefono }}
+                        </dd>
+
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-envelope"></i> {{ clinica.email }}
+                        </dd>
+
+                        {% if clinica.sitio_web %}
+                        <dt class="col-sm-5">Sitio Web:</dt>
+                        <dd class="col-sm-7">
+                            <a href="{{ clinica.sitio_web }}" target="_blank">
+                                <i class="fas fa-external-link-alt"></i> Visitar
+                            </a>
+                        </dd>
+                        {% endif %}
+
+                        <dt class="col-sm-5">Estado:</dt>
+                        <dd class="col-sm-7">
+                            {% if clinica.estado %}
+                                <span class="badge badge-success">Activa</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Inactiva</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Fiscales e Internacionales -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-globe"></i> Datos Fiscales e Internacionales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">País:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-flag"></i> {{ clinica.get_pais_display }}
+                        </dd>
+
+                        <dt class="col-sm-5">Moneda:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-money-bill"></i> {{ clinica.get_moneda_display }} ({{ clinica.moneda }})
+                        </dd>
+
+                        <dt class="col-sm-5">Zona Horaria:</dt>
+                        <dd class="col-sm-7">{{ clinica.zona_horaria }}</dd>
+
+                        {% if clinica.ruc %}
+                        <dt class="col-sm-5">RUC/NIT:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-id-card"></i> {{ clinica.ruc }}
+                        </dd>
+                        {% endif %}
+
+                        {% if clinica.representante_legal %}
+                        <dt class="col-sm-5">Representante Legal:</dt>
+                        <dd class="col-sm-7">{{ clinica.representante_legal }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-5">Fecha Creación:</dt>
+                        <dd class="col-sm-7">{{ clinica.fc|date:"d/m/Y H:i" }}</dd>
+
+                        <dt class="col-sm-5">Última Modificación:</dt>
+                        <dd class="col-sm-7">{{ clinica.fm|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sucursales -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-building"></i> Sucursales 
+                        <span class="badge badge-primary">{{ total_sucursales }}</span>
+                    </h6>
+                    {% if clinica.estado %}
+                    <a href="{% url 'cit:sucursal-create' %}?clinica={{ clinica.pk }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Sucursal
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if sucursales %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Dirección</th>
+                                        <th>Teléfono</th>
+                                        <th>Horario</th>
+                                        <th>Días</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sucursal in sucursales %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ sucursal.nombre }}</strong>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-map-marker-alt text-muted"></i>
+                                            <span title="{{ sucursal.direccion }}" data-toggle="tooltip">
+                                                {{ sucursal.direccion|truncatechars:40 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="javascript:void(0);" 
+                                               class="text-decoration-none whatsapp-link" 
+                                               data-telefono="{{ sucursal.telefono }}"
+                                               data-sucursal="{{ sucursal.nombre }}"
+                                               title="Click para WhatsApp">
+                                                <i class="fab fa-whatsapp text-success"></i> {{ sucursal.telefono }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <i class="far fa-clock text-muted"></i>
+                                                {{ sucursal.horario_apertura|time:"H:i" }} - {{ sucursal.horario_cierre|time:"H:i" }}
+                                                {% if sucursal.sabado_horario_apertura or sucursal.domingo_horario_apertura %}
+                                                    <br><span class="badge badge-warning badge-sm mt-1" 
+                                                              title="Horarios diferenciados" 
+                                                              data-toggle="tooltip">
+                                                        <i class="fas fa-calendar-week"></i>
+                                                    </span>
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if sucursal.dias_badges %}
+                                                {% for dia in sucursal.dias_badges %}
+                                                    <span class="badge badge-secondary badge-sm">{{ dia }}</span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if sucursal.estado %}
+                                                <span class="badge badge-success">Activa</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Inactiva</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'cit:sucursal-detail' sucursal.pk %}" 
+                                                   class="btn btn-info btn-sm"
+                                                   title="Ver Detalle"
+                                                   data-toggle="tooltip">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'cit:sucursal-update' sucursal.pk %}" 
+                                                   class="btn btn-warning btn-sm"
+                                                   title="Editar"
+                                                   data-toggle="tooltip">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-3">No hay sucursales registradas para esta clínica.</p>
+                            {% if clinica.estado %}
+                            <a href="{% url 'cit:sucursal-create' %}?clinica={{ clinica.pk }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Sucursal
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="row">
+        <div class="col-12">
+            {% if clinica.estado %}
+            <div class="card shadow border-left-danger">
+                <div class="card-body">
+                    <h6 class="text-danger font-weight-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Zona de Peligro
+                    </h6>
+                    <p class="mb-2">La desactivación de la clínica afectará el registro de todas sus sucursales.</p>
+                    <a href="{% url 'cit:clinica-delete' clinica.pk %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash"></i> Desactivar Clínica
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow border-left-success">
+                <div class="card-body">
+                    <h6 class="text-warning font-weight-bold">
+                        <i class="fas fa-info-circle"></i> Clínica Inactiva
+                    </h6>
+                    <p class="mb-2">Esta clínica está desactivada. Puede reactivarla para volver a utilizarla en el sistema.</p>
+                    <form method="post" action="{% url 'cit:clinica-activate' clinica.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-check-circle"></i> Reactivar Clínica
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        // Activar tooltips de Bootstrap
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Integración WhatsApp para sucursales
+        $(document).on('click', '.whatsapp-link', function(e) {
+            e.preventDefault();
+            
+            const telefono = $(this).data('telefono');
+            const sucursal = $(this).data('sucursal');
+            
+            // Limpiar el número (eliminar espacios, guiones, paréntesis)
+            const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+            
+            // Si el número no tiene código de país, agregar +593 (Ecuador)
+            let numeroWhatsApp = telefonoLimpio;
+            if (!telefonoLimpio.startsWith('+') && !telefonoLimpio.startsWith('593')) {
+                if (telefonoLimpio.startsWith('0')) {
+                    numeroWhatsApp = '593' + telefonoLimpio.substring(1);
+                } else {
+                    numeroWhatsApp = '593' + telefonoLimpio;
+                }
+            } else if (telefonoLimpio.startsWith('+')) {
+                numeroWhatsApp = telefonoLimpio.substring(1);
+            }
+            
+            // Mensaje predeterminado
+            const mensaje = `Hola, me comunico con la sucursal ${sucursal}`;
+            
+            // Abrir WhatsApp
+            const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWhatsApp, '_blank');
+        });
+    });
+</script>
+{% endblock %}

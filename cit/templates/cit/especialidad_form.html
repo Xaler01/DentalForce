@@ -1,0 +1,219 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-stethoscope"></i> 
+            {% if object %}
+                Editar Especialidad
+            {% else %}
+                Nueva Especialidad
+            {% endif %}
+        </h1>
+        <a href="{% url 'cit:especialidad-list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Lista
+        </a>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-edit"></i> 
+                        {% if object %}
+                            Datos de la Especialidad
+                        {% else %}
+                            Datos de la Nueva Especialidad
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Mensajes de error generales -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong>
+                            {{ form.non_field_errors }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Nombre -->
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}" class="font-weight-bold">
+                                {{ form.nombre.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.help_text %}
+                            <small class="form-text text-muted">{{ form.nombre.help_text }}</small>
+                            {% endif %}
+                            {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nombre.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}" class="font-weight-bold">
+                                {{ form.descripcion.label }}
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.help_text %}
+                            <small class="form-text text-muted">{{ form.descripcion.help_text }}</small>
+                            {% endif %}
+                            {% if form.descripcion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.descripcion.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <!-- Duración por Defecto -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.duracion_default.id_for_label }}" class="font-weight-bold">
+                                        {{ form.duracion_default.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.duracion_default }}
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">minutos</span>
+                                        </div>
+                                    </div>
+                                    {% if form.duracion_default.help_text %}
+                                    <small class="form-text text-muted">{{ form.duracion_default.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.duracion_default.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.duracion_default.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Color para Calendario -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.color_calendario.id_for_label }}" class="font-weight-bold">
+                                        {{ form.color_calendario.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="d-flex align-items-center">
+                                        {{ form.color_calendario }}
+                                        <span id="color-preview" class="ml-2 badge badge-lg" style="background-color: {{ form.color_calendario.value|default:'#3498db' }}; color: white; padding: 10px 20px;">
+                                            Vista Previa
+                                        </span>
+                                    </div>
+                                    {% if form.color_calendario.help_text %}
+                                    <small class="form-text text-muted">{{ form.color_calendario.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.color_calendario.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.color_calendario.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" 
+                                       class="custom-control-input" 
+                                       id="{{ form.estado.id_for_label }}" 
+                                       name="estado" 
+                                       value="True"
+                                       {% if form.instance.pk %}
+                                           {% if form.instance.estado %}checked{% endif %}
+                                       {% else %}
+                                           checked
+                                       {% endif %}>
+                                <label class="custom-control-label font-weight-bold" for="{{ form.estado.id_for_label }}">
+                                    {{ form.estado.label }}
+                                </label>
+                            </div>
+                            {% if form.estado.help_text %}
+                            <small class="form-text text-muted">{{ form.estado.help_text }}</small>
+                            {% endif %}
+                            {% if form.estado.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.estado.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones -->
+                        <div class="form-group text-right">
+                            <a href="{% url 'cit:especialidad-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if object %}
+                                    Guardar Cambios
+                                {% else %}
+                                    Crear Especialidad
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        // Preview del color en tiempo real
+        $('#{{ form.color_calendario.id_for_label }}').on('input change', function() {
+            var color = $(this).val();
+            $('#color-preview').css('background-color', color);
+        });
+
+        // Validación del formulario
+        $('form').on('submit', function(e) {
+            var duracion = parseInt($('#{{ form.duracion_default.id_for_label }}').val());
+            var $duracionField = $('#{{ form.duracion_default.id_for_label }}');
+            
+            // Limpiar errores previos
+            $duracionField.removeClass('is-invalid');
+            $duracionField.siblings('.invalid-feedback').remove();
+            
+            // Validar duración múltiplo de 15
+            if (duracion % 15 !== 0) {
+                e.preventDefault();
+                
+                // Agregar clase de error de Bootstrap
+                $duracionField.addClass('is-invalid');
+                
+                // Agregar mensaje de error
+                $duracionField.parent().append(
+                    '<div class="invalid-feedback d-block">' +
+                    'La duración debe ser múltiplo de 15 minutos (15, 30, 45, 60...)' +
+                    '</div>'
+                );
+                
+                $duracionField.focus();
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

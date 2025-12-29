@@ -1,0 +1,776 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .fc-event {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .fc-event:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 1000 !important;
+    }
+    
+    /* Estilos para el modal de detalles de cita */
+    .cita-detail-modal {
+        font-size: 14px;
+    }
+    
+    .cita-detail-modal .row {
+        padding: 4px 0;
+    }
+    
+    .cita-detail-modal strong {
+        color: #495057;
+    }
+    
+    .cita-detail-modal .badge {
+        font-size: 12px;
+    }
+    
+    /* Filtros */
+    .filtros-card {
+        margin-bottom: 20px;
+    }
+    
+    .leyenda-estados {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 6px 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .leyenda-estados strong {
+        font-size: 12px;
+        margin-right: 5px;
+        color: #495057;
+    }
+    
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .leyenda-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+    }
+    
+    /* Colores para el texto de la leyenda */
+    .leyenda-item span {
+        font-weight: 600;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    
+    .leyenda-pendiente span { color: #d39e00 !important; }   /* Pendiente - amarillo oscuro */
+    .leyenda-confirmada span { color: #138496 !important; }  /* Confirmada - cyan oscuro */
+    .leyenda-atencion span { color: #0056b3 !important; }    /* En Atención - azul oscuro */
+    .leyenda-completada span { color: #1e7e34 !important; }  /* Completada - verde oscuro */
+    .leyenda-cancelada span { color: #545b62 !important; }   /* Cancelada - gris oscuro */
+    .leyenda-no-asistio span { color: #bd2130 !important; }  /* No Asistió - rojo oscuro */
+
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-alt"></i> Calendario de Citas
+        </h1>
+        <div>
+            <a href="{% url 'cit:cita-create' %}" class="btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-plus"></i> Nueva Cita
+            </a>
+            <a href="{% url 'cit:cita-list' %}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-list"></i> Ver Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4 filtros-card">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="filtro-dentista">Dentista</label>
+                    <select class="form-control" id="filtro-dentista">
+                        <option value="">Todos</option>
+                        {% for dentista in dentistas %}
+                        <option value="{{ dentista.id }}">
+                            Dr./Dra. {{ dentista.usuario.first_name }} {{ dentista.usuario.last_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filtro-especialidad">Especialidad</label>
+                    <select class="form-control" id="filtro-especialidad">
+                        <option value="">Todas</option>
+                        {% for esp in especialidades %}
+                        <option value="{{ esp.id }}">{{ esp.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="filtro-estado">Estado</label>
+                    <select class="form-control" id="filtro-estado">
+                        <option value="">Todos</option>
+                        {% for codigo, nombre in estados %}
+                        <option value="{{ codigo }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button class="btn btn-primary btn-block" id="btn-aplicar-filtros">
+                            <i class="fas fa-search"></i> Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+    
+    <!-- Leyenda de Estados (debajo del calendario) -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="leyenda-estados">
+                <strong>Leyenda:</strong>
+                <div class="leyenda-item leyenda-pendiente">
+                    <div class="leyenda-color" style="background-color: #ffc107;"></div>
+                    <span style="color: #d39e00; font-weight: 600;">Pendiente</span>
+                </div>
+                <div class="leyenda-item leyenda-confirmada">
+                    <div class="leyenda-color" style="background-color: #17a2b8;"></div>
+                    <span style="color: #138496; font-weight: 600;">Confirmada</span>
+                </div>
+                <div class="leyenda-item leyenda-atencion">
+                    <div class="leyenda-color" style="background-color: #007bff;"></div>
+                    <span style="color: #0056b3; font-weight: 600;">En Atención</span>
+                </div>
+                <div class="leyenda-item leyenda-completada">
+                    <div class="leyenda-color" style="background-color: #28a745;"></div>
+                    <span style="color: #1e7e34; font-weight: 600;">Completada</span>
+                </div>
+                <div class="leyenda-item leyenda-cancelada">
+                    <div class="leyenda-color" style="background-color: #6c757d;"></div>
+                    <span style="color: #545b62; font-weight: 600;">Cancelada</span>
+                </div>
+                <div class="leyenda-item leyenda-no-asistio">
+                    <div class="leyenda-color" style="background-color: #dc3545;"></div>
+                    <span style="color: #bd2130; font-weight: 600;">No Asistió</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js_page %}
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<!-- Idioma español -->
+<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    
+    if (!calendarEl) {
+        console.error('❌ ERROR: No se encontró el elemento #calendar');
+        return;
+    }
+    
+    if (typeof FullCalendar === 'undefined') {
+        console.error('❌ ERROR: FullCalendar no está cargado');
+        return;
+    }
+    
+    // Obtener configuración del backend
+    var config = {{ configuracion_json|safe }};
+    
+    // ⚠️ IMPORTANTE: FullCalendar usa 0=Domingo, Python usa 0=Lunes
+    // Convertir días de Python (0=Lun,1=Mar,...,6=Dom) a FullCalendar (0=Dom,1=Lun,...,6=Sáb)
+    var diasFullCalendar = config.dias_atencion.map(function(diaPython) {
+        // Si es domingo (6 en Python), convertir a 0 en FullCalendar
+        if (diaPython === 6) return 0;
+        // Los demás días se desplazan +1: Lun(0→1), Mar(1→2), ..., Sáb(5→6)
+        return diaPython + 1;
+    });
+    
+    // Calcular días ocultos (0=Domingo, 6=Sábado en FullCalendar)
+    var todosLosDiasFC = [0, 1, 2, 3, 4, 5, 6];
+    var diasOcultos = todosLosDiasFC.filter(function(dia) {
+        return diasFullCalendar.indexOf(dia) === -1;
+    });
+    
+    // Configurar businessHours dinámicamente
+    var businessHours = [];
+    
+    // Días laborables normales (excluir sábado si tiene horario especial)
+    var tieneSabado = diasFullCalendar.indexOf(6) !== -1;  // 6=Sábado en FullCalendar
+    var diasNormales = diasFullCalendar.filter(function(dia) {
+        return dia !== 6;  // Excluir sábado
+    });
+    
+    if (diasNormales.length > 0) {
+        businessHours.push({
+            daysOfWeek: diasNormales,
+            startTime: config.horario_inicio,
+            endTime: config.horario_fin
+        });
+    }
+    
+    // Sábado con horario especial
+    if (tieneSabado && config.sabado_hora_inicio && config.sabado_hora_fin) {
+        businessHours.push({
+            daysOfWeek: [6],  // Sábado en FullCalendar
+            startTime: config.sabado_hora_inicio,
+            endTime: config.sabado_hora_fin
+        });
+    }
+    
+    // Inicializar FullCalendar
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        // Configuración básica
+        initialView: 'timeGridWeek',
+        locale: 'es',
+        timeZone: 'America/Guayaquil',
+        height: 'auto',
+        
+        // HABILITAR DRAG & DROP Y EDICIÓN
+        editable: true,
+        eventStartEditable: true,
+        eventDurationEditable: true,
+        eventResizableFromStart: false,
+        
+        // Header toolbar
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        
+        // Botones personalizados
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día'
+        },
+        
+        // Configuración de horario laboral DINÁMICA
+        slotMinTime: '08:00:00',  // Empezar slots desde las 8:00 (etiquetas en punto)
+        slotMaxTime: '18:00:00',  // Hasta las 18:00
+        slotDuration: '00:30:00',  // Slots cada 30 minutos
+        slotLabelInterval: '01:00:00',  // Etiquetas solo en horas completas
+        slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+        
+        // Configuración de días DINÁMICA
+        weekends: true,
+        firstDay: 1, // Lunes
+        hiddenDays: diasOcultos,
+        
+        // Horarios personalizados por día DINÁMICOS
+        businessHours: businessHours,
+        
+        // Validar horarios al mover/crear eventos
+        selectConstraint: 'businessHours',
+        eventConstraint: 'businessHours',
+        
+        // Configuración de eventos
+        events: {
+            url: '{% url "cit:citas-json" %}',
+            method: 'GET',
+            extraParams: function() {
+                return {
+                    dentista_id: $('#filtro-dentista').val() || '',
+                    especialidad_id: $('#filtro-especialidad').val() || '',
+                    estado: $('#filtro-estado').val() || ''
+                };
+            },
+            failure: function(error) {
+                console.error('❌ Error al cargar citas:', error);
+                showNotification('Error al cargar las citas', 'error');
+            }
+        },
+        
+        
+        // ====================================================================
+        // CLIC EN CITA: Mostrar modal con detalles
+        // ====================================================================
+        eventClick: function(info) {
+            // Prevenir navegación por defecto
+            info.jsEvent.preventDefault();
+            
+            var props = info.event.extendedProps;
+            var estadoColor = info.event.backgroundColor;
+            var estadoBadgeClass = props.estado_codigo === 'PEN' ? 'warning' :
+                                   props.estado_codigo === 'CON' ? 'info' :
+                                   props.estado_codigo === 'ATE' ? 'primary' :
+                                   props.estado_codigo === 'COM' ? 'success' :
+                                   props.estado_codigo === 'CAN' ? 'secondary' : 'danger';
+            
+            // Formatear fecha usando la fecha del evento directamente (viene del backend en formato correcto)
+            var fechaEvento = new Date(info.event.startStr);
+            var diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            
+            var diaSemana = diasSemana[fechaEvento.getUTCDay()];
+            var dia = fechaEvento.getUTCDate();
+            var mes = meses[fechaEvento.getUTCMonth()];
+            var anio = fechaEvento.getUTCFullYear();
+            var horas = fechaEvento.getUTCHours().toString().padStart(2, '0');
+            var minutos = fechaEvento.getUTCMinutes().toString().padStart(2, '0');
+            
+            var fechaFormateada = `${diaSemana}, ${dia} de ${mes} de ${anio}, ${horas}:${minutos}`;
+            
+            // Crear modal con jquery-confirm
+            $.dialog({
+                title: '<i class="fas fa-calendar-check"></i> Detalles de la Cita',
+                content: `
+                    <div class="cita-detail-modal">
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h5 class="mb-0">${info.event.title}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> 
+                                    ${fechaFormateada}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-id-card"></i> Cédula:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.paciente_cedula}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-user-md"></i> Dentista:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.dentista}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-tooth"></i> Especialidad:</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge" style="background-color: ${props.especialidad_color};">
+                                    ${props.especialidad}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-door-open"></i> Cubículo:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.cubiculo}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-hourglass-half"></i> Duración:</strong>
+                            </div>
+                            <div class="col-6">
+                                ${props.duracion_display}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <strong><i class="fas fa-info-circle"></i> Estado:</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge badge-${estadoBadgeClass}">${props.estado}</span>
+                            </div>
+                        </div>
+                        
+                        ${props.observaciones ? `
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong><i class="fas fa-comment"></i> Observaciones:</strong>
+                                <p class="mb-0 mt-1 text-muted small">${props.observaciones}</p>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `,
+                columnClass: 'col-md-6 col-md-offset-3',
+                type: 'blue',
+                buttons: {
+                    verDetalle: {
+                        text: '<i class="fas fa-eye"></i> Ver Detalle Completo',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            window.location.href = '{% url "cit:cita-detail" 0 %}'.replace('0', info.event.id);
+                        }
+                    },
+                    cerrar: {
+                        text: 'Cerrar',
+                        btnClass: 'btn-secondary'
+                    }
+                },
+                escapeKey: true,
+                backgroundDismiss: true
+            });
+        },
+        
+        
+        // ====================================================================
+        // TOOLTIP SIMPLE: Mostrar info básica al hacer hover
+        // ====================================================================
+        eventDidMount: function(info) {
+            // Agregar título HTML nativo para tooltip simple al hacer hover
+            var props = info.event.extendedProps;
+            var tooltipText = `${info.event.title}\n` +
+                            `${info.event.start.toLocaleString('es-EC', { 
+                                weekday: 'short', 
+                                day: 'numeric', 
+                                month: 'short', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })}\n` +
+                            `${props.dentista} - ${props.especialidad}`;
+            
+            info.el.setAttribute('title', tooltipText);
+        },
+        
+        // Configuración de vista
+        allDaySlot: false,
+        nowIndicator: true,
+        
+        // ====================================================================
+        // DRAG & DROP: Al mover una cita
+        // ====================================================================
+        eventDrop: function(info) {
+            var citaId = info.event.id;
+            var nuevaFechaHora = info.event.start;
+            var duracion = info.event.extendedProps.duracion;
+            
+            // Validar día domingo
+            if (nuevaFechaHora.getDay() === 0) {
+                info.revert();
+                $.alert({
+                    title: 'Día no permitido',
+                    content: 'No se pueden agendar citas los domingos',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-triangle'
+                });
+                return;
+            }
+            
+            // Validar sábado después de las 12:00
+            if (nuevaFechaHora.getDay() === 6) {
+                var hora = nuevaFechaHora.getHours();
+                var minutos = nuevaFechaHora.getMinutes();
+                var horaDecimal = hora + (minutos / 60);
+                
+                if (horaDecimal >= 12) {
+                    info.revert();
+                    $.alert({
+                        title: 'Horario no disponible',
+                        content: 'Los sábados solo se atiende hasta las 12:00 del mediodía',
+                        type: 'orange',
+                        icon: 'fa fa-clock'
+                    });
+                    return;
+                }
+            }
+            
+            // Formatear fecha para mostrar
+            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            var meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            
+            // Usar getUTC* para obtener los valores exactos sin conversiones de timezone
+            var diaSemana = dias[nuevaFechaHora.getUTCDay()];
+            var dia = nuevaFechaHora.getUTCDate();
+            var mes = meses[nuevaFechaHora.getUTCMonth()];
+            var año = nuevaFechaHora.getUTCFullYear();
+            var hora = nuevaFechaHora.getUTCHours().toString().padStart(2, '0');
+            var minuto = nuevaFechaHora.getUTCMinutes().toString().padStart(2, '0');
+            
+            var fechaFormateada = `${diaSemana}, ${dia} de ${mes} de ${año}, ${hora}:${minuto}`;
+            
+            // Confirmar con jquery-confirm (consistente con el resto del sistema)
+            $.confirm({
+                title: '¿Reprogramar cita?',
+                content: `¿Desea mover esta cita a <strong>${fechaFormateada}</strong>?`,
+                type: 'blue',
+                icon: 'fa fa-calendar',
+                buttons: {
+                    confirmar: {
+                        text: 'Sí, mover',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            // Mostrar indicador de carga
+                            info.el.style.opacity = '0.5';
+                            
+                            // Enviar fecha en formato ISO (Django la convertirá automáticamente)
+                            var fechaHoraISO = nuevaFechaHora.toISOString();
+                            
+                            // Enviar al servidor
+                            $.ajax({
+                                url: `/cit/api/citas/${citaId}/mover/`,
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                    'Content-Type': 'application/json'
+                                },
+                                data: JSON.stringify({
+                                    fecha_hora: fechaHoraISO,
+                                    duracion: duracion
+                                }),
+                                success: function(response) {
+                                    if (response.success) {
+                                        // Restaurar opacidad
+                                        info.el.style.opacity = '1';
+                                        
+                                        // Mostrar notificación de éxito
+                                        $.alert({
+                                            title: '¡Éxito!',
+                                            content: response.mensaje || 'Cita reprogramada exitosamente',
+                                            type: 'green',
+                                            icon: 'fa fa-check'
+                                        });
+                                        
+                                        // Recargar eventos para refrescar la vista
+                                        calendar.refetchEvents();
+                                    } else {
+                                        // Revertir cambio si hay error
+                                        info.revert();
+                                        $.alert({
+                                            title: 'Error',
+                                            content: response.mensaje || 'No se pudo reprogramar la cita',
+                                            type: 'red',
+                                        });
+                                    }
+                                },
+                                error: function(xhr) {
+                                    info.revert();
+                                    var errorMsg = 'Error al reprogramar la cita';
+                                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                                        errorMsg = xhr.responseJSON.mensaje;
+                                    }
+                                    $.alert({
+                                        title: 'Error',
+                                        content: errorMsg,
+                                        type: 'red',
+                                        icon: 'fa fa-exclamation-triangle'
+                                    });
+                                }
+                            });
+                        }
+                    },
+                    cancelar: {
+                        text: 'Cancelar',
+                        btnClass: 'btn-secondary',
+                        action: function() {
+                            // Usuario canceló, revertir el movimiento
+                            info.revert();
+                        }
+                    }
+                }
+            });
+        },
+        
+        // ====================================================================
+        // RESIZE: Al cambiar duración arrastrando
+        // ====================================================================
+        eventResize: function(info) {
+            var citaId = info.event.id;
+            var start = info.event.start;
+            var end = info.event.end;
+            var nuevaDuracion = Math.round((end - start) / (1000 * 60)); // Minutos
+            
+            // Validar duración mínima y máxima
+            if (nuevaDuracion < 15) {
+                info.revert();
+                $.alert({
+                    title: 'Duración no válida',
+                    content: 'La duración mínima es de 15 minutos',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-circle'
+                });
+                return;
+            }
+            if (nuevaDuracion > 240) {
+                info.revert();
+                $.alert({
+                    title: 'Duración no válida',
+                    content: 'La duración máxima es de 4 horas (240 minutos)',
+                    type: 'orange',
+                    icon: 'fa fa-exclamation-circle'
+                });
+                return;
+            }
+            
+            // Confirmar el cambio con jquery-confirm
+            $.confirm({
+                title: '¿Cambiar duración?',
+                content: `¿Desea cambiar la duración de esta cita a <strong>${nuevaDuracion} minutos</strong>?`,
+                type: 'blue',
+                icon: 'fa fa-clock',
+                buttons: {
+                    confirmar: {
+                        text: 'Sí, cambiar',
+                        btnClass: 'btn-primary',
+                        action: function() {
+                            // Enviar fecha en formato ISO (Django la convertirá automáticamente)
+                            var fechaHoraISO = start.toISOString();
+                            
+                            // Enviar al servidor
+                            $.ajax({
+                                url: `/cit/api/citas/${citaId}/mover/`,
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                    'Content-Type': 'application/json'
+                                },
+                                data: JSON.stringify({
+                                    fecha_hora: fechaHoraISO,
+                                    duracion: nuevaDuracion
+                                }),
+                                success: function(response) {
+                                    if (response.success) {
+                                        $.alert({
+                                            title: '¡Éxito!',
+                                            content: 'Duración actualizada exitosamente',
+                                            type: 'green',
+                                            icon: 'fa fa-check'
+                                        });
+                                        calendar.refetchEvents();
+                                    } else {
+                                        info.revert();
+                                        $.alert({
+                                            title: 'Error',
+                                            content: response.mensaje || 'Error al cambiar duración',
+                                            type: 'red',
+                                            icon: 'fa fa-times'
+                                        });
+                                    }
+                                },
+                                error: function(xhr) {
+                                    info.revert();
+                                    var errorMsg = 'Error al cambiar duración';
+                                    if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                                        errorMsg = xhr.responseJSON.mensaje;
+                                    }
+                                    $.alert({
+                                        title: 'Error',
+                                        content: errorMsg,
+                                        type: 'red',
+                                        icon: 'fa fa-exclamation-triangle'
+                                    });
+                                }
+                            });
+                        }
+                    },
+                    cancelar: {
+                        text: 'Cancelar',
+                        btnClass: 'btn-secondary',
+                        action: function() {
+                            info.revert();
+                        }
+                    }
+                }
+            });
+        }
+    });
+    
+    // Función para mostrar notificaciones
+    function showNotification(type, message) {
+        var bgColor = type === 'success' ? '#28a745' : 
+                     type === 'error' ? '#dc3545' : 
+                     type === 'warning' ? '#ffc107' : '#17a2b8';
+        var textColor = type === 'warning' ? '#000' : '#fff';
+        
+        var notification = $('<div>')
+            .css({
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                backgroundColor: bgColor,
+                color: textColor,
+                padding: '15px 20px',
+                borderRadius: '4px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+                zIndex: 10000,
+                maxWidth: '400px',
+                fontSize: '14px',
+                fontWeight: 'bold'
+            })
+            .html(`<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'exclamation-triangle'}"></i> ${message}`)
+            .appendTo('body');
+        
+        setTimeout(function() {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 4000);
+    }
+    
+    try {
+        calendar.render();
+    } catch (error) {
+        console.error('❌ ERROR al renderizar calendario:', error);
+    }
+    
+    // Aplicar filtros
+    $('#btn-aplicar-filtros').on('click', function() {
+        calendar.refetchEvents();
+    });
+    
+    // Aplicar filtros al cambiar los selectores
+    $('#filtro-dentista, #filtro-especialidad, #filtro-estado').on('change', function() {
+        calendar.refetchEvents();
+    });
+});
+</script>
+{% endblock %}

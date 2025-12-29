@@ -1,0 +1,53 @@
+[
+    {
+        "model": "cit.clinica",
+        "pk": 1,
+        "fields": {
+            "nombre": "PowerDent Clínica Odontológica",
+            "direccion": "Av. Principal 123, Centro Comercial Plaza, Piso 3",
+            "telefono": "02-1234567",
+            "email": "contacto@example.com",
+            "estado": true,
+            "uc": 1,
+            "fc": "2025-11-11T12:00:00Z",
+            "um": 1,
+            "fm": "2025-11-11T12:00:00Z"
+        }
+    },
+    {
+        "model": "cit.sucursal",
+        "pk": 1,
+        "fields": {
+            "clinica": 1,
+            "nombre": "Sucursal Norte",
+            "direccion": "Av. Norte 456, Edificio Médico Norte, Consultorio 201",
+            "telefono": "02-9876543",
+            "horario_apertura": "08:00:00",
+            "horario_cierre": "18:00:00",
+            "dias_atencion": "Lunes a Viernes",
+            "estado": true,
+            "uc": 1,
+            "fc": "2025-11-11T12:00:00Z",
+            "um": 1,
+            "fm": "2025-11-11T12:00:00Z"
+        }
+    },
+    {
+        "model": "cit.sucursal",
+        "pk": 2,
+        "fields": {
+            "clinica": 1,
+            "nombre": "Sucursal Sur",
+            "direccion": "Av. Sur 789, Centro Médico Sur, Piso 2, Oficina 5",
+            "telefono": "02-5551234",
+            "horario_apertura": "09:00:00",
+            "horario_cierre": "19:00:00",
+            "dias_atencion": "Lunes a Sábado",
+            "estado": true,
+            "uc": 1,
+            "fc": "2025-11-11T12:00:00Z",
+            "um": 1,
+            "fm": "2025-11-11T12:00:00Z"
+        }
+    }
+]
