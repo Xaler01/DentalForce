@@ -21,4 +21,7 @@ urlpatterns = [
     
     # Eliminar (desactivar) paciente
     path('<int:pk>/eliminar/', views.PacienteDeleteView.as_view(), name='paciente-delete'),
+
+    # Reactivar paciente desactivado
+    path('<int:pk>/reactivar/', views.PacienteReactivateView.as_view(), name='paciente-reactivate'),
 ]

@@ -111,6 +111,15 @@ class Paciente(ClaseModelo):
         blank=True
     )
     
+    # Foto del Paciente
+    foto = models.ImageField(
+        upload_to='pacientes/fotos/',
+        verbose_name='Fotografía',
+        help_text='Foto del paciente (opcional)',
+        blank=True,
+        null=True
+    )
+    
     # Relación con Clínica
     clinica = models.ForeignKey(
         Clinica,

@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import (
     ListView, CreateView, UpdateView, DetailView, DeleteView
 )
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.db.models import Q
@@ -26,7 +27,8 @@ class PacienteListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         """Filtrar pacientes según búsqueda"""
-        qs = Paciente.objects.all().order_by('apellidos', 'nombres')
+        incluir_inactivos = self.request.GET.get('incluir_inactivos') == '1'
+        qs = Paciente.objects.all().order_by('apellidos', 'nombres') if incluir_inactivos else Paciente.objects.filter(estado=True).order_by('apellidos', 'nombres')
         
         form = PacienteBuscarForm(self.request.GET)
         if form.is_valid():
@@ -55,6 +57,7 @@ class PacienteListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['form'] = PacienteBuscarForm(self.request.GET)
         context['title'] = 'Lista de Pacientes'
+        context['incluir_inactivos'] = self.request.GET.get('incluir_inactivos') == '1'
         return context
 
 
@@ -105,6 +108,10 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         context['button_text'] = 'Actualizar Paciente'
         return context
 
+    def get_queryset(self):
+        """Operar solo sobre pacientes activos"""
+        return Paciente.objects.filter(estado=True)
+
 
 class PacienteDetailView(LoginRequiredMixin, DetailView):
     """Detalle de paciente con historial de citas"""
@@ -113,6 +120,9 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
     template_name = 'pacientes/paciente_detail.html'
     context_object_name = 'paciente'
     login_url = 'login'
+
+    def get_queryset(self):
+        return Paciente.objects.filter(estado=True)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -138,19 +148,27 @@ class PacienteDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'pacientes/paciente_confirm_delete.html'
     success_url = reverse_lazy('pacientes:paciente-list')
     login_url = 'login'
+
+    def get_queryset(self):
+        return Paciente.objects.filter(estado=True)
     
     def delete(self, request, *args, **kwargs):
         """Realizar soft delete (desactivar)"""
         self.object = self.get_object()
         nombre = self.object.get_nombre_completo()
-        
-        # Soft delete: desactivar en lugar de eliminar
-        self.object.estado = False
-        self.object.um = request.user.id
-        self.object.save()
-        
+
+        # Soft delete garantizado vía update (evita delete accidental)
+        Paciente.objects.filter(pk=self.object.pk).update(
+            estado=False,
+            um=request.user.id
+        )
+
         messages.success(request, f'Paciente {nombre} desactivado exitosamente')
         return redirect(self.success_url)
+
+    def post(self, request, *args, **kwargs):
+        """Evitar llamada al delete de la superclase que elimina el registro"""
+        return self.delete(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -163,3 +181,16 @@ class PacienteDeleteView(LoginRequiredMixin, DeleteView):
         if citas_activas > 0:
             context['warning'] = f'Este paciente tiene {citas_activas} cita(s) activa(s)'
         return context
+
+
+class PacienteReactivateView(LoginRequiredMixin, View):
+    """Reactivar un paciente desactivado"""
+    login_url = 'login'
+
+    def post(self, request, pk):
+        paciente = get_object_or_404(Paciente, pk=pk, estado=False)
+        paciente.estado = True
+        paciente.um = request.user.id
+        paciente.save()
+        messages.success(request, f'Paciente {paciente.get_nombre_completo()} reactivado exitosamente')
+        return redirect(reverse_lazy('pacientes:paciente-list') + '?incluir_inactivos=1')

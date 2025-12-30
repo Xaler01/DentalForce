@@ -10,6 +10,18 @@ from .models import Paciente
 class PacienteForm(forms.ModelForm):
     """Formulario para crear/editar pacientes"""
     
+    fecha_nacimiento = forms.DateField(
+        widget=forms.DateInput(
+            attrs={
+                'class': 'form-control',
+                'type': 'date'
+            },
+            format='%Y-%m-%d'
+        ),
+        input_formats=['%Y-%m-%d'],
+        label='Fecha de Nacimiento'
+    )
+    
     foto = forms.ImageField(
         required=False,
         widget=forms.FileInput(attrs={
@@ -41,10 +53,6 @@ class PacienteForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Ej: 1234567890 o 1234567890-0',
                 'maxlength': '20'
-            }),
-            'fecha_nacimiento': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
             }),
             'genero': forms.Select(attrs={
                 'class': 'form-control'
@@ -127,12 +135,19 @@ class PacienteForm(forms.ModelForm):
         cedula_sin_guiones = cedula.replace('-', '')
         
         # Verificar que sea única (excepto en edición)
-        qs = Paciente.objects.filter(cedula=cedula)
+        qs_activos = Paciente.objects.filter(cedula=cedula, estado=True)
         if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
+            qs_activos = qs_activos.exclude(pk=self.instance.pk)
         
-        if qs.exists():
-            raise ValidationError('Ya existe un paciente con esta cédula')
+        if qs_activos.exists():
+            raise ValidationError('Ya existe un paciente activo con esta cédula')
+        
+        # Detectar duplicados inactivos para guiar a reactivación
+        qs_inactivos = Paciente.objects.filter(cedula=cedula, estado=False)
+        if self.instance.pk:
+            qs_inactivos = qs_inactivos.exclude(pk=self.instance.pk)
+        if qs_inactivos.exists():
+            raise ValidationError('Existe un paciente desactivado con esta cédula. Incluye inactivos en la lista y reactívalo.')
         
         return cedula
     
@@ -141,12 +156,18 @@ class PacienteForm(forms.ModelForm):
         email = self.cleaned_data.get('email', '').strip()
         
         if email:
-            qs = Paciente.objects.filter(email=email)
+            qs_activos = Paciente.objects.filter(email=email, estado=True)
             if self.instance.pk:
-                qs = qs.exclude(pk=self.instance.pk)
+                qs_activos = qs_activos.exclude(pk=self.instance.pk)
             
-            if qs.exists():
-                raise ValidationError('Ya existe un paciente con este email')
+            if qs_activos.exists():
+                raise ValidationError('Ya existe un paciente activo con este email')
+            
+            qs_inactivos = Paciente.objects.filter(email=email, estado=False)
+            if self.instance.pk:
+                qs_inactivos = qs_inactivos.exclude(pk=self.instance.pk)
+            if qs_inactivos.exists():
+                raise ValidationError('Existe un paciente desactivado con este email. Incluye inactivos en la lista y reactívalo.')
         
         return email
     

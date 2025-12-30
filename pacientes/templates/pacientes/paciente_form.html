@@ -3,7 +3,7 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-md-8">
@@ -18,7 +18,7 @@
 
     <div class="card">
         <div class="card-body">
-            <form method="post" novalidate class="needs-validation">
+                <form method="post" enctype="multipart/form-data" novalidate class="needs-validation">
                 {% csrf_token %}
                 
                 <!-- Información Personal -->
@@ -97,12 +97,19 @@
                         <label for="{{ form.foto.id_for_label }}" class="form-label">
                             {{ form.foto.label }}
                         </label>
+                            {% if form.instance.foto %}
+                                <div class="mb-2">
+                                    <img src="{{ form.instance.foto.url }}" alt="Foto actual" class="img-thumbnail" style="max-width: 150px;">
+                                    <p class="text-muted small mt-1">Foto actual - Selecciona una nueva para reemplazarla</p>
+                                </div>
+                            {% endif %}
                         {{ form.foto }}
                         {% if form.foto.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.foto.errors.0 }}
                             </div>
                         {% endif %}
+                            <small class="form-text text-muted">{{ form.foto.help_text }}</small>
                     </div>
                 </div>
 
@@ -191,26 +198,38 @@
                 <!-- Contacto de Emergencia -->
                 <h5 class="mb-3 border-bottom pb-2">Contacto de Emergencia</h5>
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.nombre_contacto_emergencia.id_for_label }}" class="form-label">
-                            {{ form.nombre_contacto_emergencia.label }}
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.contacto_emergencia_nombre.id_for_label }}" class="form-label">
+                            {{ form.contacto_emergencia_nombre.label }}
                         </label>
-                        {{ form.nombre_contacto_emergencia }}
-                        {% if form.nombre_contacto_emergencia.errors %}
+                        {{ form.contacto_emergencia_nombre }}
+                        {% if form.contacto_emergencia_nombre.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.nombre_contacto_emergencia.errors.0 }}
+                                {{ form.contacto_emergencia_nombre.errors.0 }}
                             </div>
                         {% endif %}
                     </div>
                     
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.telefono_contacto_emergencia.id_for_label }}" class="form-label">
-                            {{ form.telefono_contacto_emergencia.label }}
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.contacto_emergencia_telefono.id_for_label }}" class="form-label">
+                            {{ form.contacto_emergencia_telefono.label }}
                         </label>
-                        {{ form.telefono_contacto_emergencia }}
-                        {% if form.telefono_contacto_emergencia.errors %}
+                        {{ form.contacto_emergencia_telefono }}
+                        {% if form.contacto_emergencia_telefono.errors %}
                             <div class="invalid-feedback d-block">
-                                {{ form.telefono_contacto_emergencia.errors.0 }}
+                                {{ form.contacto_emergencia_telefono.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.contacto_emergencia_relacion.id_for_label }}" class="form-label">
+                            {{ form.contacto_emergencia_relacion.label }}
+                        </label>
+                        {{ form.contacto_emergencia_relacion }}
+                        {% if form.contacto_emergencia_relacion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.contacto_emergencia_relacion.errors.0 }}
                             </div>
                         {% endif %}
                     </div>
