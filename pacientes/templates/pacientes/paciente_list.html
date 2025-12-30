@@ -1,0 +1,168 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">{{ title }}</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'pacientes:paciente-create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nuevo Paciente
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulario de búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="buscar" class="form-label">Buscar</label>
+                    <input 
+                        type="text" 
+                        class="form-control form-control-sm" 
+                        id="buscar"
+                        name="buscar"
+                        placeholder="Nombre, cédula o teléfono"
+                        value="{{ form.buscar.value|default:'' }}"
+                    >
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="genero" class="form-label">Género</label>
+                    <select class="form-select form-select-sm" id="genero" name="genero">
+                        <option value="">Todos</option>
+                        <option value="M" {% if form.genero.value == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if form.genero.value == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="tipo_sangre" class="form-label">Tipo de Sangre</label>
+                    <select class="form-select form-select-sm" id="tipo_sangre" name="tipo_sangre">
+                        <option value="">Todos</option>
+                        <option value="O+" {% if form.tipo_sangre.value == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if form.tipo_sangre.value == 'O-' %}selected{% endif %}>O-</option>
+                        <option value="A+" {% if form.tipo_sangre.value == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if form.tipo_sangre.value == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if form.tipo_sangre.value == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if form.tipo_sangre.value == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if form.tipo_sangre.value == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if form.tipo_sangre.value == 'AB-' %}selected{% endif %}>AB-</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de pacientes -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 10%">Cédula</th>
+                        <th style="width: 30%">Nombre</th>
+                        <th style="width: 15%">Teléfono</th>
+                        <th style="width: 15%">Email</th>
+                        <th style="width: 10%">Género</th>
+                        <th style="width: 20%" class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if pacientes %}
+                        {% for paciente in pacientes %}
+                            <tr>
+                                <td><strong>{{ paciente.cedula }}</strong></td>
+                                <td>
+                                    <a href="{% url 'pacientes:paciente-detail' paciente.pk %}" class="text-decoration-none">
+                                        {{ paciente.get_nombre_completo }}
+                                    </a>
+                                </td>
+                                <td>{{ paciente.telefono|default:"-" }}</td>
+                                <td>{{ paciente.email|default:"-" }}</td>
+                                <td>
+                                    {% if paciente.genero == 'M' %}
+                                        <span class="badge bg-info">M</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">F</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'pacientes:paciente-detail' paciente.pk %}" 
+                                           class="btn btn-outline-info" title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'pacientes:paciente-update' paciente.pk %}" 
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'pacientes:paciente-delete' paciente.pk %}" 
+                                           class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No se encontraron pacientes
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if form.buscar.value %}&buscar={{ form.buscar.value }}{% endif %}">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if form.buscar.value %}&buscar={{ form.buscar.value }}{% endif %}">Anterior</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Primera</span></li>
+                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if form.buscar.value %}&buscar={{ form.buscar.value }}{% endif %}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if form.buscar.value %}&buscar={{ form.buscar.value }}{% endif %}">Última</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                    <li class="page-item disabled"><span class="page-link">Última</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

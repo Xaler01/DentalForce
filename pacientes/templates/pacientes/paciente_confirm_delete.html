@@ -1,0 +1,83 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Paciente{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Eliminar Paciente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-3">
+                        ¿Está seguro de que desea desactivar al paciente?
+                    </p>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> Información del Paciente
+                        </h6>
+                        <ul class="mb-0">
+                            <li><strong>Nombre:</strong> {{ object.get_nombre_completo }}</li>
+                            <li><strong>Cédula:</strong> {{ object.cedula }}</li>
+                            <li><strong>Teléfono:</strong> {{ object.telefono }}</li>
+                            <li><strong>Email:</strong> {{ object.email }}</li>
+                        </ul>
+                    </div>
+
+                    {% if warning %}
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-circle"></i> ⚠️ Advertencia
+                            </h6>
+                            <p class="mb-0">{{ warning }}</p>
+                            <p class="mb-0 small mt-2">Se recomienda contactar al paciente antes de desactivar su cuenta.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-0">
+                            <strong>Nota:</strong> Esta acción solo desactiva al paciente. El registro permanecerá en la base de datos 
+                            con fines de auditoría y podrá ser reactivado posteriormente si es necesario.
+                        </p>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-check"></i> Sí, Desactivar
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'pacientes:paciente-detail' object.pk %}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <p class="mb-2 text-muted small">
+                        <i class="fas fa-shield-alt"></i> Información de Seguridad
+                    </p>
+                    <p class="mb-0 small text-muted">
+                        La desactivación de un paciente es una operación segura. Se registrarán todos los cambios 
+                        en el historial de auditoría del sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

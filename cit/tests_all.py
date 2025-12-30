@@ -16,6 +16,8 @@ from datetime import datetime, timedelta, time
 import json
 import os
 
+TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'testpass123')
+
 from .models import (
     Clinica, Sucursal, Dentista, Especialidad, 
     Cubiculo, Paciente, Cita
@@ -30,7 +32,7 @@ class CitaModelTest(TestCase):
         # Usuario de auditoría
         self.user = User.objects.create_user(
             username='testuser',
-            password=os.environ.get('TEST_PASSWORD'),
+            password=TEST_PASSWORD,
             email='test@test.com'
         )
         
@@ -60,7 +62,7 @@ class CitaModelTest(TestCase):
         # Dentista
         self.dentista_user = User.objects.create_user(
             username='dentista1',
-            password=os.environ.get('TEST_PASSWORD'),
+            password=TEST_PASSWORD,
             first_name='Juan',
             last_name='Pérez'
         )
@@ -176,10 +178,10 @@ class MoverCitaEndpointTest(TestCase):
         # Usuario autenticado
         self.user = User.objects.create_user(
             username='admin',
-            password=os.environ.get('TEST_PASSWORD'),
+            password=TEST_PASSWORD,
             email='admin@test.com'
         )
-        self.client.login(username='admin', password=os.environ.get('TEST_PASSWORD'))
+        self.client.login(username='admin', password=TEST_PASSWORD)
         
         # Crear entidades necesarias
         self.clinica = Clinica.objects.create(
