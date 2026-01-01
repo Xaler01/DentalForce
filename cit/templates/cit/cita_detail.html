@@ -207,15 +207,23 @@
                 <div class="card-body">
                     <small>
                         <strong>Creado por:</strong><br>
-                        {{ cita.usuario_creacion }}<br>
-                        <span class="text-muted">{{ cita.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        {% if cita.uc %}
+                            {{ cita.uc.get_full_name|default:cita.uc.username }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}<br>
+                        <span class="text-muted">{{ cita.fc|date:"d/m/Y H:i" }}</span>
                     </small>
-                    {% if cita.usuario_modificacion %}
+                    {% if cita.fm != cita.fc %}
                     <hr>
                     <small>
                         <strong>Última modificación:</strong><br>
-                        {{ cita.usuario_modificacion }}<br>
-                        <span class="text-muted">{{ cita.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                        {% if usuario_modificacion %}
+                            {{ usuario_modificacion.get_full_name|default:usuario_modificacion.username }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}<br>
+                        <span class="text-muted">{{ cita.fm|date:"d/m/Y H:i" }}</span>
                     </small>
                     {% endif %}
                 </div>

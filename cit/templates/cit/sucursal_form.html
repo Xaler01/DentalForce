@@ -265,6 +265,119 @@
                     </div>
                 </div>
 
+                <!-- Sección: Cubículos -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-secondary">
+                            <i class="fas fa-procedures"></i> Cubículos de la Sucursal
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-cubiculo-row">
+                            <i class="fas fa-plus-circle"></i> Agregar cubículo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% if cubiculo_formset.non_form_errors %}
+                            <div class="alert alert-danger">{{ cubiculo_formset.non_form_errors }}</div>
+                        {% endif %}
+
+                        {{ cubiculo_formset.management_form }}
+                        <!-- Plantilla oculta para nuevas filas -->
+                        <div id="cubiculo-empty-form" class="d-none">
+                            {% with form=cubiculo_formset.empty_form %}
+                            <div class="border rounded p-3 mb-3 cubiculo-row">
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label>Nombre</label>
+                                        {{ form.nombre }}
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label>Número</label>
+                                        {{ form.numero }}
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label>Capacidad</label>
+                                        {{ form.capacidad }}
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label>Activo</label><br>
+                                        {{ form.estado }}
+                                    </div>
+                                    <div class="form-group col-md-2 text-right align-self-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-cubiculo-row">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label>Descripción</label>
+                                        {{ form.descripcion }}
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Equipamiento</label>
+                                        {{ form.equipamiento }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        </div>
+
+                        <div id="cubiculo-formset-rows">
+                            {% for form in cubiculo_formset %}
+                                <div class="border rounded p-3 mb-3 cubiculo-row">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Nombre</label>
+                                            {{ form.nombre }}
+                                            {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Número</label>
+                                            {{ form.numero }}
+                                            {% if form.numero.errors %}<div class="invalid-feedback d-block">{{ form.numero.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label>Capacidad</label>
+                                            {{ form.capacidad }}
+                                            {% if form.capacidad.errors %}<div class="invalid-feedback d-block">{{ form.capacidad.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-2 d-flex align-items-center" style="margin-top: 32px;">
+                                            <div class="form-check mb-0">
+                                                {{ form.estado }}
+                                                <label class="form-check-label" for="{{ form.estado.id_for_label }}">Activo</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-md-2 text-right align-self-center">
+                                            {% if form.instance.pk %}
+                                                <div class="form-check">
+                                                    <label class="form-check-label text-danger">
+                                                        {{ form.DELETE }} Eliminar
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger remove-cubiculo-row">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Descripción</label>
+                                            {{ form.descripcion }}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Equipamiento</label>
+                                            {{ form.equipamiento }}
+                                        </div>
+                                    </div>
+                                    {{ form.id }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Botones de acción -->
                 <div class="card shadow mb-4">
                     <div class="card-body">
@@ -293,6 +406,21 @@
 {% endblock %}
 
 {% block js_page %}
+<style>
+    #cubiculo-formset-rows input[type="text"],
+    #cubiculo-formset-rows input[type="number"],
+    #cubiculo-formset-rows textarea {
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        padding: .375rem .75rem;
+        background-color: #fff;
+        color: #495057;
+    }
+    #cubiculo-formset-rows input[type="checkbox"] {
+        transform: scale(1.1);
+    }
+</style>
 <script>
     $(document).ready(function() {
         // Inicializar DateTimePicker SOLO para horas (sin calendario)
@@ -306,6 +434,48 @@
             validateOnBlur: true,   // Validar al perder foco
             mask: false,            // No usar máscara (permite escribir libremente)
             allowBlank: false       // No permitir vacío
+        });
+
+        // ====================================================================
+        // Formset de cubículos
+        // ====================================================================
+        $('#add-cubiculo-row').on('click', function(e) {
+            e.preventDefault();
+            const formsetRows = $('#cubiculo-formset-rows');
+            const totalForms = $('#id_cubiculo_set-TOTAL_FORMS');
+            const index = parseInt(totalForms.val(), 10);
+            const template = $('#cubiculo-empty-form .cubiculo-row').first().clone(true);
+
+            template.find('input, textarea').each(function() {
+                const name = $(this).attr('name');
+                const id = $(this).attr('id');
+                if (name) $(this).attr('name', name.replace('__prefix__', index));
+                if (id) $(this).attr('id', id.replace('__prefix__', index));
+
+                if ($(this).is(':checkbox')) {
+                    $(this).prop('checked', true);
+                } else {
+                    $(this).val('');
+                }
+            });
+
+            template.find('label').each(function() {
+                const forAttr = $(this).attr('for');
+                if (forAttr) $(this).attr('for', forAttr.replace('__prefix__', index));
+            });
+
+            formsetRows.append(template);
+            totalForms.val(index + 1);
+        });
+
+        $(document).on('click', '.remove-cubiculo-row', function(e) {
+            e.preventDefault();
+            const row = $(this).closest('.cubiculo-row');
+            const totalForms = $('#id_cubiculo_set-TOTAL_FORMS');
+            if ($('#cubiculo-formset-rows .cubiculo-row').length > 1) {
+                row.remove();
+                totalForms.val(parseInt(totalForms.val(), 10) - 1);
+            }
         });
     });
 </script>

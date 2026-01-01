@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.forms import inlineformset_factory
 from datetime import datetime, timedelta, date
 from .models import (
-    Cita, Dentista, Especialidad, Cubiculo,
+    Cita, Dentista, Especialidad, Cubiculo, Paciente,
     DisponibilidadDentista, ExcepcionDisponibilidad,
     ComisionDentista, Clinica, Sucursal
 )
@@ -150,6 +150,20 @@ class CitaForm(forms.ModelForm):
         
         # Configurar formato de entrada para datetime-local
         self.fields['fecha_hora'].input_formats = ['%Y-%m-%dT%H:%M']
+
+        # Filtrar catálogos para mostrar solo registros activos
+        self.fields['paciente'].queryset = Paciente.objects.filter(estado=True).order_by('apellidos', 'nombres')
+        self.fields['dentista'].queryset = Dentista.objects.filter(estado=True).select_related('usuario').order_by('usuario__last_name', 'usuario__first_name')
+        
+        # Si hay un dentista seleccionado, mostrar solo sus especialidades
+        dentista = self.instance.dentista if self.instance.pk else None
+        if dentista:
+            self.fields['especialidad'].queryset = dentista.especialidades.filter(estado=True).order_by('nombre')
+        else:
+            # Si no hay dentista, mostrar todas las especialidades activas
+            self.fields['especialidad'].queryset = Especialidad.objects.filter(estado=True).order_by('nombre')
+        
+        self.fields['cubiculo'].queryset = Cubiculo.objects.filter(estado=True).select_related('sucursal').order_by('sucursal__nombre', 'nombre')
         
         # Si es edición, deshabilitar campos según el estado
         if self.instance.pk:
@@ -203,9 +217,15 @@ class CitaForm(forms.ModelForm):
                     if fecha_hora < ahora:
                         raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
             else:
-                # No se permiten citas el mismo día
-                if fecha_hora.date() <= ahora.date():
-                    raise ValidationError('No se permiten citas para el día de hoy. Debe agendar para mañana o después.')
+                # No se permiten citas el mismo día - validar fecha y hora completas
+                # Si la fecha es anterior a hoy, rechazar
+                if fecha_hora.date() < ahora.date():
+                    raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
+                # Si es el mismo día, validar la hora
+                elif fecha_hora.date() == ahora.date():
+                    if fecha_hora < ahora:
+                        raise ValidationError('La fecha y hora de la cita no puede ser en el pasado')
+                # Si es una fecha futura, permitir
         
         # Validar que no sea más de 6 meses en el futuro
         seis_meses = ahora + timedelta(days=180)
@@ -1219,6 +1239,10 @@ class ComisionDentistaForm(forms.ModelForm):
         # Configurar el campo activo con valor inicial False para nuevas comisiones
         if not self.instance.pk:
             self.fields['activo'].initial = False
+            if 'porcentaje' not in self.initial:
+                self.fields['porcentaje'].initial = 20
+            if 'tipo_comision' not in self.initial:
+                self.fields['tipo_comision'].initial = 'PORCENTAJE'
     
     def clean(self):
         """Validaciones personalizadas del formulario"""
@@ -1288,6 +1312,46 @@ DisponibilidadDentistaFormSet = inlineformset_factory(
     form=DisponibilidadDentistaForm,
     extra=7,  # 7 días de la semana
     max_num=14,  # Permitir hasta 2 horarios por día
+    can_delete=True
+)
+
+
+# =========================================================================
+# FORMULARIOS DE CUBÍCULOS POR SUCURSAL
+# =========================================================================
+
+class CubiculoForm(forms.ModelForm):
+    class Meta:
+        model = Cubiculo
+        fields = ['nombre', 'numero', 'capacidad', 'descripcion', 'equipamiento', 'estado']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Consultorio 1'}),
+            'numero': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'capacidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Uso, ubicación, notas'}),
+            'equipamiento': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Sillón, RX, etc.'}),
+            'estado': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'nombre': 'Nombre',
+            'numero': 'Número',
+            'capacidad': 'Capacidad',
+            'descripcion': 'Descripción',
+            'equipamiento': 'Equipamiento',
+            'estado': 'Activo',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['estado'].initial = True
+
+
+CubiculoFormSet = inlineformset_factory(
+    Sucursal,
+    Cubiculo,
+    form=CubiculoForm,
+    extra=1,
     can_delete=True
 )
 

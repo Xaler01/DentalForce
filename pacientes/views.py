@@ -127,8 +127,14 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Obtener citas del paciente ordenadas por fecha descendente
+        # Usar select_related para cargar dentista, especialidad y usuario del dentista en una sola consulta
         context['citas'] = Cita.objects.filter(
             paciente=self.object
+        ).select_related(
+            'dentista',
+            'dentista__usuario',
+            'especialidad',
+            'cubiculo'
         ).order_by('-fecha_hora')[:10]  # Últimas 10 citas
         
         # Estadísticas

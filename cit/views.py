@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from datetime import datetime, timedelta
 import json
 
@@ -127,8 +128,27 @@ class CitaDetailView(LoginRequiredMixin, DetailView):
             'dentista__usuario',
             'especialidad',
             'cubiculo',
-            'cubiculo__sucursal'
+            'cubiculo__sucursal',
+            'uc'  # Agregar relación al usuario de creación
         )
+    
+    def get_context_data(self, **kwargs):
+        """Agregar usuario de modificación al contexto"""
+        context = super().get_context_data(**kwargs)
+        cita = self.get_object()
+        
+        # Obtener el usuario que modificó la cita si existe
+        if cita.um:
+            from django.contrib.auth.models import User
+            try:
+                usuario_modificacion = User.objects.get(id=cita.um)
+                context['usuario_modificacion'] = usuario_modificacion
+            except User.DoesNotExist:
+                context['usuario_modificacion'] = None
+        else:
+            context['usuario_modificacion'] = None
+        
+        return context
 
 
 class CitaCreateView(LoginRequiredMixin, CreateView):
@@ -157,6 +177,29 @@ class CitaCreateView(LoginRequiredMixin, CreateView):
             try:
                 initial['dentista'] = Dentista.objects.get(pk=dentista_id)
             except Dentista.DoesNotExist:
+                pass
+
+        # Preseleccionar fecha/hora si viene desde el calendario
+        start_param = self.request.GET.get('start')
+        if start_param:
+            parsed_start = parse_datetime(start_param)
+            if parsed_start:
+                if timezone.is_naive(parsed_start):
+                    parsed_start = timezone.make_aware(parsed_start, timezone.get_current_timezone())
+                # Guardar la fecha en zona local para que el widget datetime-local muestre la hora correcta
+                initial['fecha_hora'] = timezone.localtime(parsed_start)
+
+        # Preseleccionar duración si viene desde el calendario
+        duration_param = self.request.GET.get('duration')
+        if duration_param:
+            try:
+                duration_int = int(duration_param)
+                # Obtener las opciones permitidas del widget del formulario
+                duracion_widget = self.form_class().fields['duracion'].widget
+                allowed_durations = [choice[0] for choice in duracion_widget.choices]
+                if duration_int in allowed_durations:
+                    initial['duracion'] = duration_int
+            except (ValueError, TypeError, AttributeError):
                 pass
         
         # Estado inicial: PENDIENTE
@@ -332,6 +375,80 @@ def marcar_no_asistio(request, pk):
     
     messages.warning(request, f'Cita marcada como NO ASISTIÓ')
     return redirect('cit:cita-detail', pk=pk)
+
+
+@login_required
+@require_http_methods(["POST"])
+def cambiar_estado_cita_ajax(request, pk):
+    """
+    Endpoint AJAX para cambiar el estado de una cita.
+    Retorna JSON con el nuevo estado.
+    """
+    try:
+        cita = get_object_or_404(Cita, pk=pk)
+        nuevo_estado = request.POST.get('estado')
+        
+        # Estados permitidos
+        estados_validos = [
+            Cita.ESTADO_PENDIENTE,
+            Cita.ESTADO_CONFIRMADA,
+            Cita.ESTADO_CANCELADA,
+            Cita.ESTADO_EN_ATENCION,
+            Cita.ESTADO_COMPLETADA,
+            Cita.ESTADO_NO_ASISTIO,
+        ]
+        
+        if nuevo_estado not in estados_validos:
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'Estado no válido'
+            }, status=400)
+        
+        # Validar transiciones de estado permitidas
+        estado_actual = cita.estado
+        
+        # Citas canceladas no se pueden modificar
+        if estado_actual == Cita.ESTADO_CANCELADA:
+            return JsonResponse({
+                'success': False,
+                'mensaje': 'No se pueden modificar citas canceladas'
+            }, status=400)
+        
+        # Citas completadas solo pueden pasar a canceladas
+        if estado_actual == Cita.ESTADO_COMPLETADA:
+            if nuevo_estado != Cita.ESTADO_CANCELADA:
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Las citas completadas solo pueden ser canceladas'
+                }, status=400)
+        
+        # Citas en atención pueden completarse, cancelarse o no asistir
+        if estado_actual == Cita.ESTADO_EN_ATENCION:
+            if nuevo_estado not in [Cita.ESTADO_COMPLETADA, Cita.ESTADO_CANCELADA, Cita.ESTADO_NO_ASISTIO]:
+                return JsonResponse({
+                    'success': False,
+                    'mensaje': 'Estado de transición no permitido'
+                }, status=400)
+        
+        # Pendiente/Confirmada pueden ir a cualquier lado
+        
+        # Actualizar la cita
+        cita.estado = nuevo_estado
+        cita.um = request.user.id
+        cita.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Estado actualizado a {cita.get_estado_display()}',
+            'nuevo_estado': nuevo_estado,
+            'nuevo_estado_display': cita.get_estado_display(),
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'mensaje': f'Error: {str(e)}'
+        }, status=500)
 
 
 # ============================================================================
@@ -833,6 +950,59 @@ def citas_json(request):
     return JsonResponse(eventos, safe=False)
 
 
+@login_required
+@login_required
+@require_http_methods(["GET"])
+def buscar_pacientes(request):
+    """
+    Endpoint AJAX para buscar pacientes.
+    Retorna JSON con lista de pacientes que coinciden con la búsqueda.
+    Compatible con Select2.
+    """
+    query = request.GET.get('q', '').strip()
+    page = int(request.GET.get('page', 1))
+    
+    from pacientes.models import Paciente
+    
+    if not query or len(query) < 1:
+        # Mostrar pacientes recientes si no hay búsqueda
+        pacientes = Paciente.objects.filter(
+            estado=True
+        ).order_by('-id')[:10]
+    else:
+        # Buscar en nombre, apellido o cédula
+        pacientes = Paciente.objects.filter(
+            Q(nombres__icontains=query) |
+            Q(apellidos__icontains=query) |
+            Q(cedula__icontains=query),
+            estado=True
+        ).order_by('apellidos', 'nombres')
+    
+    # Paginación
+    per_page = 10
+    start = (page - 1) * per_page
+    end = start + per_page
+    total_count = len(pacientes)
+    pacientes_page = pacientes[start:end]
+    
+    results = [{
+        'id': p.id,
+        'text': f"{p.nombres} {p.apellidos}",
+        'cedula': p.cedula,
+        'nombres': p.nombres,
+        'apellidos': p.apellidos
+    } for p in pacientes_page]
+    
+    return JsonResponse({
+        'results': results,
+        'total_count': total_count,
+        'pagination': {
+            'more': (page * per_page) < total_count
+        }
+    })
+
+
+
 # ==================== VISTAS DE ESPECIALIDADES ====================
 
 class EspecialidadListView(LoginRequiredMixin, ListView):
@@ -1025,7 +1195,7 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
         """Agregar formsets al contexto"""
         context = super().get_context_data(**kwargs)
         
-        from .models import Sucursal
+        from .models import Sucursal, ConfiguracionClinica
         from .forms import (
             DisponibilidadDentistaFormSet, 
             ExcepcionDisponibilidadFormSet,
@@ -1062,9 +1232,44 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
                 form_kwargs={'especialidades_queryset': especialidades} if especialidades else {}
             )
         else:
+            default_sucursal = sucursales.first() if sucursales.exists() else None
+
+            # Prefill weekly schedule using clinic hours (Mon-Fri by default)
+            initial_disponibilidades = []
+            try:
+                config = ConfiguracionClinica.objects.filter(estado=True).first()
+            except Exception:
+                config = None
+
+            if config:
+                dias_atiende = config.get_dias_atencion()
+                for dia in dias_atiende:
+                    horario = config.get_horario_dia(dia)
+                    if horario:
+                        initial_disponibilidades.append({
+                            'dia_semana': dia,
+                            'hora_inicio': horario[0],
+                            'hora_fin': horario[1],
+                            'activo': True,
+                            'sucursal': default_sucursal
+                        })
+
+            if not initial_disponibilidades:
+                default_inicio = datetime.strptime('08:30', '%H:%M').time()
+                default_fin = datetime.strptime('18:00', '%H:%M').time()
+                for dia in range(5):  # Lunes a Viernes
+                    initial_disponibilidades.append({
+                        'dia_semana': dia,
+                        'hora_inicio': default_inicio,
+                        'hora_fin': default_fin,
+                        'activo': True,
+                        'sucursal': default_sucursal
+                    })
+
             disponibilidad_formset = DisponibilidadDentistaFormSet(
                 instance=self.object,
-                form_kwargs={'sucursales_queryset': sucursales}
+                form_kwargs={'sucursales_queryset': sucursales},
+                initial=initial_disponibilidades
             )
             excepcion_formset = ExcepcionDisponibilidadFormSet(
                 instance=self.object
@@ -1724,16 +1929,45 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
             })
         return kwargs
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .forms import CubiculoFormSet
+        if self.request.POST:
+            context['cubiculo_formset'] = CubiculoFormSet(self.request.POST)
+        else:
+            context['cubiculo_formset'] = CubiculoFormSet()
+        return context
+
     def form_valid(self, form):
-        # Asignar el usuario creador
-        form.instance.uc = self.request.user
-        messages.success(self.request, 
-            f'Sucursal "{form.instance.nombre}" creada exitosamente para {form.instance.clinica.nombre}.')
-        return super().form_valid(form)
-    
+        from .forms import CubiculoFormSet
+        context = self.get_context_data()
+        cubiculo_formset = context['cubiculo_formset']
+
+        if cubiculo_formset.is_valid():
+            form.instance.uc = self.request.user
+            self.object = form.save()
+
+            cubiculo_formset.instance = self.object
+            cubiculos = cubiculo_formset.save(commit=False)
+            for cubiculo in cubiculos:
+                cubiculo.uc = self.request.user
+                cubiculo.save()
+            for obj in cubiculo_formset.deleted_objects:
+                obj.delete()
+
+            messages.success(
+                self.request,
+                f'Sucursal "{self.object.nombre}" creada exitosamente para {self.object.clinica.nombre}.'
+            )
+            return redirect(self.success_url)
+        messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
+        return self.form_invalid(form)
+
     def form_invalid(self, form):
-        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
-        return super().form_invalid(form)
+        from .forms import CubiculoFormSet
+        cubiculo_formset = CubiculoFormSet(self.request.POST)
+        messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
+        return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 
 
 class SucursalUpdateView(LoginRequiredMixin, UpdateView):
@@ -1752,21 +1986,45 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
             })
         return kwargs
     
-    def form_valid(self, form):
-        # Asignar el usuario que modifica
-        form.instance.um = self.request.user.id
-        messages.success(self.request, 
-            f'Sucursal "{form.instance.nombre}" actualizada exitosamente.')
-        return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, 'Por favor corrija los errores en el formulario.')
-        return super().form_invalid(form)
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import CubiculoFormSet
+        if self.request.POST:
+            context['cubiculo_formset'] = CubiculoFormSet(self.request.POST, instance=self.object)
+        else:
+            context['cubiculo_formset'] = CubiculoFormSet(instance=self.object)
         context['is_update'] = True
         return context
+
+    def form_valid(self, form):
+        from .forms import CubiculoFormSet
+        context = self.get_context_data()
+        cubiculo_formset = context['cubiculo_formset']
+
+        if cubiculo_formset.is_valid():
+            form.instance.um = self.request.user.id
+            self.object = form.save()
+
+            cubiculo_formset.instance = self.object
+            cubiculos = cubiculo_formset.save(commit=False)
+            for cubiculo in cubiculos:
+                if not cubiculo.pk:
+                    cubiculo.uc = self.request.user
+                cubiculo.save()
+            for obj in cubiculo_formset.deleted_objects:
+                obj.delete()
+
+            messages.success(self.request, f'Sucursal "{self.object.nombre}" actualizada exitosamente.')
+            return redirect(self.success_url)
+
+        messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
+        return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        from .forms import CubiculoFormSet
+        cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+        messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
+        return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 
 
 class SucursalDeleteView(LoginRequiredMixin, DeleteView):

@@ -9,17 +9,17 @@
             <h1 class="h3 mb-0 text-gray-800">
                 <i class="fas fa-user-md fa-fw text-primary"></i>
                 {% if form.instance.pk %}
-                    Editar Dentista
+                    Editar Dentista {{ form.instance.usuario.get_full_name|default:form.instance.usuario.username }}
                 {% else %}
                     Nuevo Dentista
                 {% endif %}
             </h1>
-            {% if form.instance.pk and form.instance.user %}
+            {% if form.instance.pk and form.instance.usuario %}
                 <p class="text-muted mb-0 mt-1" style="font-size: 0.9rem; margin-left: 2.2rem;">
                     <i class="fas fa-user-circle"></i>
-                    {{ form.instance.user.get_full_name }}
-                    {% if form.instance.cedula %}
-                        <span class="text-secondary">| CI: {{ form.instance.cedula }}</span>
+                    {{ form.instance.usuario.get_full_name }}
+                    {% if form.instance.cedula_profesional %}
+                        <span class="text-secondary">| CI: {{ form.instance.cedula_profesional }}</span>
                     {% endif %}
                 </p>
             {% endif %}
@@ -420,6 +420,13 @@
                                     </div>
                                 </div>
                             {% endfor %}
+                        </div>
+
+                        <!-- Botón para agregar más horarios -->
+                        <div class="text-center mb-3">
+                            <button type="button" id="add-disponibilidad" class="btn btn-outline-primary">
+                                <i class="fas fa-plus-circle"></i> Agregar otro horario
+                            </button>
                         </div>
 
                     </div>
@@ -876,6 +883,77 @@ $(document).ready(function() {
     });
 
     // ========================================================================
+    // AGREGAR NUEVOS HORARIOS SEMANALES
+    // ========================================================================
+    $('#add-disponibilidad').click(function() {
+        const formset = $('#disponibilidad-formset');
+        const firstInput = formset.find(':input[name*="-0-"]').first();
+        if (!firstInput.length) {
+            return;
+        }
+
+        const prefix = firstInput.attr('name').split('-')[0];
+        const totalFormsInput = $(`input[name="${prefix}-TOTAL_FORMS"]`);
+        const formIdx = parseInt(totalFormsInput.val(), 10);
+
+        const templateRow = formset.find('.formset-row').last().clone(false);
+
+        // Limpiar artefactos de Select2 si se clonaron
+        templateRow.find('span.select2').remove();
+        templateRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id');
+        templateRow.find('select option').removeAttr('data-select2-id');
+
+        templateRow.find(':input').each(function() {
+            const name = $(this).attr('name');
+            const id = $(this).attr('id');
+
+            if (name) {
+                $(this).attr('name', name.replace(/-\d+-/, '-' + formIdx + '-'));
+            }
+            if (id) {
+                $(this).attr('id', id.replace(/-\d+-/, '-' + formIdx + '-'));
+            }
+
+            if ($(this).is(':checkbox')) {
+                $(this).prop('checked', $(this).attr('name').includes('activo'));
+            } else if ($(this).attr('type') !== 'hidden') {
+                $(this).val('');
+            }
+        });
+
+        templateRow.find('label').each(function() {
+            const forAttr = $(this).attr('for');
+            if (forAttr) {
+                $(this).attr('for', forAttr.replace(/-\d+-/, '-' + formIdx + '-'));
+            }
+        });
+
+        formset.append(templateRow);
+        totalFormsInput.val(formIdx + 1);
+
+        // Reaplicar Select2 al nuevo select de sucursal
+        try {
+            templateRow.find('.select2-sucursal-disponibilidad').select2({
+                placeholder: 'Seleccione sucursal...',
+                allowClear: true,
+                width: '100%',
+                theme: 'default',
+                language: {
+                    noResults: function() {
+                        return "No se encontraron sucursales";
+                    }
+                }
+            });
+        } catch (error) {
+            // Silencioso si Select2 no está disponible
+        }
+
+        $('html, body').animate({
+            scrollTop: templateRow.offset().top - 100
+        }, 500);
+    });
+
+    // ========================================================================
     // TAB COMISIONES - Toggle entre Porcentaje y Valor Fijo
     // ========================================================================
     
@@ -964,8 +1042,9 @@ $(document).ready(function() {
             }
         });
         
-        // Establecer tipo por defecto a PORCENTAJE
+        // Establecer tipo por defecto a PORCENTAJE y porcentaje 20
         newRow.find('.tipo-comision-select').val('PORCENTAJE');
+        newRow.find('.campo-porcentaje').val('20');
         
         // Agregar la nueva fila al formset
         formsetBody.append(newRow);

@@ -1,9 +1,10 @@
 """
-Signals para el modelo Cita
+Signals para el modelo Cita y Dentista
 """
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.dispatch import receiver
 from .models import Cita
+from personal.models import Dentista
 
 
 @receiver(pre_save, sender=Cita)
@@ -48,9 +49,43 @@ def cita_post_save(sender, instance, created, **kwargs):
                 elif instance.estado == Cita.ESTADO_CANCELADA:
                     # TODO: Enviar notificación de cancelación
                     pass
-                elif instance.estado == Cita.ESTADO_COMPLETADA:
-                    # TODO: Enviar encuesta de satisfacción
-                    pass
-                elif instance.estado == Cita.ESTADO_NO_ASISTIO:
-                    # TODO: Registrar inasistencia en historial del paciente
-                    pass
+
+
+@receiver(post_save, sender=Dentista)
+def dentista_post_save(sender, instance, created, **kwargs):
+    """
+    Signal que se ejecuta después de guardar un dentista.
+    Asigna automáticamente "Odontología General" y "Diagnóstico" al nuevo dentista.
+    """
+    if created:
+        try:
+            from .models import Especialidad
+            # Obtener o crear la especialidad "Odontología General"
+            odontologia_general, _ = Especialidad.objects.get_or_create(
+                nombre='Odontología General',
+                defaults={
+                    'descripcion': 'Odontología General - Servicios básicos de odontología, resinas y tratamientos de emergencia',
+                    'duracion_default': 30,
+                    'color_calendario': '#2ecc71',  # Verde
+                    'estado': True
+                }
+            )
+
+            # Obtener o crear la especialidad "Diagnóstico"
+            diagnostico, _ = Especialidad.objects.get_or_create(
+                nombre='Diagnóstico',
+                defaults={
+                    'descripcion': 'Evaluación diagnóstica inicial y seguimiento clínico',
+                    'duracion_default': 30,
+                    'color_calendario': '#8e44ad',  # Morado
+                    'estado': True
+                }
+            )
+
+            # Asignar especialidades obligatorias al dentista si no las tiene
+            for esp in (odontologia_general, diagnostico):
+                if not instance.especialidades.filter(pk=esp.pk).exists():
+                    instance.especialidades.add(esp)
+        except Exception as e:
+            # Evitar que el error en el signal afecte la creación del dentista
+            print(f"Error asignando especialidades base al dentista: {e}")

@@ -27,11 +27,15 @@ class Paciente(ClaseModelo):
         max_length=20,
         unique=True,
         verbose_name='Cédula/DNI',
-        help_text='Número de identificación único'
+        help_text='Número de identificación único',
+        null=True,
+        blank=True
     )
     fecha_nacimiento = models.DateField(
         verbose_name='Fecha de Nacimiento',
-        help_text='Fecha de nacimiento del paciente'
+        help_text='Fecha de nacimiento del paciente',
+        null=True,
+        blank=True
     )
     
     GENERO_CHOICES = [
@@ -42,14 +46,18 @@ class Paciente(ClaseModelo):
     genero = models.CharField(
         max_length=1,
         choices=GENERO_CHOICES,
-        verbose_name='Género'
+        verbose_name='Género',
+        null=True,
+        blank=True
     )
     
     # Información de Contacto
     telefono = models.CharField(
         max_length=20,
         verbose_name='Teléfono',
-        help_text='Número de teléfono principal'
+        help_text='Número de teléfono principal',
+        null=True,
+        blank=True
     )
     email = models.EmailField(
         verbose_name='Email',
@@ -58,7 +66,9 @@ class Paciente(ClaseModelo):
     )
     direccion = models.TextField(
         verbose_name='Dirección',
-        help_text='Dirección de domicilio'
+        help_text='Dirección de domicilio',
+        null=True,
+        blank=True
     )
     
     # Información Médica

@@ -20,6 +20,7 @@ urlpatterns = [
     path('citas/<int:pk>/iniciar/', views.iniciar_atencion_cita, name='cita-iniciar'),
     path('citas/<int:pk>/completar/', views.completar_cita, name='cita-completar'),
     path('citas/<int:pk>/no-asistio/', views.marcar_no_asistio, name='cita-no-asistio'),
+    path('citas/<int:pk>/cambiar-estado/', views.cambiar_estado_cita_ajax, name='cambiar-estado-cita'),
     
     # ========================================================================
     # API / AJAX Endpoints
@@ -47,6 +48,10 @@ urlpatterns = [
     path('api/citas/<int:pk>/mover/', 
          views.mover_cita, 
          name='mover-cita'),
+    
+    path('api/pacientes/buscar/', 
+         views.buscar_pacientes, 
+         name='ajax-buscar-pacientes'),
     
     # ========================================================================
     # Calendario

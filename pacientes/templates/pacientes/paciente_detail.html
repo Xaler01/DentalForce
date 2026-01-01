@@ -45,9 +45,9 @@
                         <label class="form-label text-muted small">Género</label>
                         <p class="mb-0">
                             {% if paciente.genero == 'M' %}
-                                <span class="badge bg-info">Masculino</span>
+                                <span class="badge bg-info text-white">Masculino</span>
                             {% else %}
-                                <span class="badge bg-danger">Femenino</span>
+                                <span class="badge bg-danger text-white">Femenino</span>
                             {% endif %}
                         </p>
                     </div>
@@ -166,20 +166,31 @@
                             </thead>
                             <tbody>
                                 {% for cita in citas %}
-                                    <tr>
+                                    {% now "Y-m-d H:i" as now %}
+                                    {% if cita.fecha_hora|date:"Y-m-d H:i" > now %}
+                                        <tr style="cursor: pointer;" onclick="window.location.href='{% url 'cit:cita-detail' cita.pk %}';">
+                                    {% else %}
+                                        <tr>
+                                    {% endif %}
                                         <td>{{ cita.fecha_hora|date:"d/m/Y" }}</td>
                                         <td>{{ cita.fecha_hora|time:"H:i" }}</td>
-                                        <td>{{ cita.dentista.get_nombre_completo }}</td>
+                                        <td>{% if cita.dentista %}{{ cita.dentista }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
                                         <td>{{ cita.especialidad.nombre }}</td>
                                         <td>
-                                            {% if cita.estado == 'Confirmada' %}
-                                                <span class="badge bg-success">{{ cita.estado }}</span>
-                                            {% elif cita.estado == 'Completada' %}
-                                                <span class="badge bg-info">{{ cita.estado }}</span>
-                                            {% elif cita.estado == 'Cancelada' %}
-                                                <span class="badge bg-danger">{{ cita.estado }}</span>
+                                            {% if cita.estado == 'PEN' %}
+                                                <span class="badge text-dark" style="background-color: #ffc107;">PEND</span>
+                                            {% elif cita.estado == 'CON' %}
+                                                <span class="badge text-white" style="background-color: #17a2b8;">CONF</span>
+                                            {% elif cita.estado == 'ATE' %}
+                                                <span class="badge text-white" style="background-color: #007bff;">EN A</span>
+                                            {% elif cita.estado == 'COM' %}
+                                                <span class="badge text-white" style="background-color: #28a745;">COMP</span>
+                                            {% elif cita.estado == 'CAN' %}
+                                                <span class="badge text-white" style="background-color: #6c757d;">CANC</span>
+                                            {% elif cita.estado == 'NAS' %}
+                                                <span class="badge text-white" style="background-color: #dc3545;">NO A</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">{{ cita.estado }}</span>
+                                                <span class="badge bg-secondary text-white">{{ cita.get_estado_display|slice:":4"|upper }}</span>
                                             {% endif %}
                                         </td>
                                     </tr>

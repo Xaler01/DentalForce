@@ -8,18 +8,33 @@
     #calendar {
         max-width: 100%;
         margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
+    /* ===== MEJORAS PARA DISPONIBILIDAD Y AVAILABILITY ===== */
     .fc-event {
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: all 0.2s ease;
+        border-left: 4px solid rgba(0,0,0,0.2);
     }
     
     .fc-event:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15) !important;
         z-index: 1000 !important;
     }
+    
+    /* Indicador de disponibilidad en los slots */
+    .fc-daygrid-day:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    /* Indicador visual de disponibilidad por color */
+    .availability-available { background-color: rgba(40, 167, 69, 0.1); border-color: #28a745 !important; }
+    .availability-limited { background-color: rgba(255, 193, 7, 0.1); border-color: #ffc107 !important; }
+    .availability-full { background-color: rgba(220, 53, 69, 0.1); border-color: #dc3545 !important; }
     
     /* Estilos para el modal de detalles de cita */
     .cita-detail-modal {
@@ -27,55 +42,99 @@
     }
     
     .cita-detail-modal .row {
-        padding: 4px 0;
+        padding: 6px 0;
     }
     
     .cita-detail-modal strong {
         color: #495057;
+        font-weight: 600;
     }
     
     .cita-detail-modal .badge {
         font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    /* Alerta de validación en modal */
+    .validacion-alert {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        border-left: 4px solid;
+    }
+    
+    .validacion-alert.warning {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+    }
+    
+    .validacion-alert.error {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+    }
+    
+    .validacion-alert.info {
+        background-color: #d1ecf1;
+        border-color: #17a2b8;
+        color: #0c5460;
     }
     
     /* Filtros */
     .filtros-card {
         margin-bottom: 20px;
+        border-radius: 8px;
+        border-top: 4px solid #007bff;
     }
     
+    .filtros-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    /* Leyenda de Estados */
     .leyenda-estados {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
-        margin-top: 8px;
-        padding: 6px 10px;
-        background: #f8f9fa;
-        border-radius: 4px;
+        gap: 12px;
+        margin-top: 12px;
+        padding: 12px 15px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 6px;
+        border-left: 4px solid #007bff;
     }
     
     .leyenda-estados strong {
-        font-size: 12px;
-        margin-right: 5px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-right: 8px;
         color: #495057;
     }
     
     .leyenda-item {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
+        padding: 4px 8px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
     }
     
     .leyenda-color {
-        width: 14px;
-        height: 14px;
-        border-radius: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        border: 1px solid rgba(0,0,0,0.1);
     }
     
     /* Colores para el texto de la leyenda */
     .leyenda-item span {
         font-weight: 600;
-        font-size: 11px;
+        font-size: 12px;
         white-space: nowrap;
     }
     
@@ -85,6 +144,66 @@
     .leyenda-completada span { color: #1e7e34 !important; }  /* Completada - verde oscuro */
     .leyenda-cancelada span { color: #545b62 !important; }   /* Cancelada - gris oscuro */
     .leyenda-no-asistio span { color: #bd2130 !important; }  /* No Asistió - rojo oscuro */
+    
+    /* ===== MEJORAS PARA RESPONSIVE EN MÓVIL ===== */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        
+        #calendar {
+            font-size: 13px;
+        }
+        
+        .fc-button {
+            font-size: 12px !important;
+            padding: 4px 8px !important;
+        }
+        
+        .fc-daygrid-day-number {
+            font-size: 12px;
+        }
+        
+        .leyenda-estados {
+            gap: 8px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .leyenda-item {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .filtros-card .row > div {
+            margin-bottom: 10px;
+        }
+        
+        .btn-sm {
+            font-size: 12px;
+            padding: 0.4rem 0.6rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .h3 {
+            font-size: 18px;
+        }
+        
+        .d-sm-flex {
+            flex-direction: column;
+        }
+        
+        .fc {
+            font-size: 12px !important;
+        }
+        
+        .fc-header-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
 
 </style>
 {% endblock %}
@@ -261,6 +380,20 @@ document.addEventListener('DOMContentLoaded', function() {
             endTime: config.sabado_hora_fin
         });
     }
+
+    // Convierte la duración de slot (HH:MM:SS) a minutos para precargar el formulario
+    function getSlotDurationMinutes(value, fallback) {
+        if (typeof value === 'number' && !isNaN(value)) {
+            return value;
+        }
+        if (typeof value === 'string') {
+            var parts = value.split(':').map(function(p) { return parseInt(p, 10); });
+            if (parts.length >= 2 && parts.every(function(num) { return !isNaN(num); })) {
+                return (parts[0] * 60) + parts[1];
+            }
+        }
+        return fallback || 30;
+    }
     
     // Inicializar FullCalendar
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -327,8 +460,53 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             failure: function(error) {
                 console.error('❌ Error al cargar citas:', error);
-                showNotification('Error al cargar las citas', 'error');
+                showNotification('error', 'Error al cargar las citas');
             }
+        },
+
+        // Permitir seleccionar slots y crear cita con fecha/hora preseleccionada
+        selectable: true,
+        selectMirror: true,
+        dateClick: function(info) {
+            // Obtener hora actual local
+            var ahora = new Date();
+            
+            // La fecha del slot viene en UTC, necesitamos convertirla a hora local
+            // FullCalendar con timeZone: 'America/Guayaquil' ya maneja esto correctamente
+            var fechaSeleccionada = info.date;
+            
+            // Convertir ambas fechas a timestamp local para comparación justa
+            // Crear fecha local a partir de los componentes UTC del slot
+            var year = fechaSeleccionada.getUTCFullYear();
+            var month = fechaSeleccionada.getUTCMonth();
+            var day = fechaSeleccionada.getUTCDate();
+            var hour = fechaSeleccionada.getUTCHours();
+            var minute = fechaSeleccionada.getUTCMinutes();
+            
+            // Crear objeto Date interpretando como hora local (Ecuador)
+            var fechaLocal = new Date(year, month, day, hour, minute);
+            
+            console.log('Ahora (local):', ahora);
+            console.log('Slot seleccionado (local):', fechaLocal);
+            console.log('¿Es pasado?:', fechaLocal < ahora);
+            
+            // Dar margen de 1 minuto para evitar problemas de sincronización
+            var unMinutoAtras = new Date(ahora.getTime() - (60 * 1000));
+            
+            if (fechaLocal < unMinutoAtras) {
+                console.log('Bloqueando: fecha seleccionada está en el pasado');
+                showNotification('warning', 'No se pueden agendar citas en el pasado');
+                return;
+            }
+
+            var slotMinutes = getSlotDurationMinutes(info.view.calendar.getOption('slotDuration'), config.duracion_slot);
+            var createUrl = new URL('{% url "cit:cita-create" %}', window.location.origin);
+            createUrl.searchParams.set('start', info.date.toISOString());
+            if (slotMinutes) {
+                createUrl.searchParams.set('duration', slotMinutes);
+            }
+
+            window.location.href = createUrl.toString();
         },
         
         
@@ -360,6 +538,45 @@ document.addEventListener('DOMContentLoaded', function() {
             var minutos = fechaEvento.getUTCMinutes().toString().padStart(2, '0');
             
             var fechaFormateada = `${diaSemana}, ${dia} de ${mes} de ${anio}, ${horas}:${minutos}`;
+            
+            // Determinar alertas de validación según el estado
+            var validacionHTML = '';
+            if (props.estado_codigo === 'PEN') {
+                validacionHTML = `
+                    <div class="validacion-alert warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Estado Pendiente:</strong> La cita aún no ha sido confirmada por el paciente.
+                    </div>
+                `;
+            } else if (props.estado_codigo === 'CAN') {
+                validacionHTML = `
+                    <div class="validacion-alert error">
+                        <i class="fas fa-times-circle"></i> 
+                        <strong>Cita Cancelada:</strong> Esta cita ha sido cancelada. No se pueden realizar cambios.
+                    </div>
+                `;
+            } else if (props.estado_codigo === 'COM') {
+                validacionHTML = `
+                    <div class="validacion-alert info">
+                        <i class="fas fa-check-circle"></i> 
+                        <strong>Cita Completada:</strong> La atención ya fue realizada.
+                    </div>
+                `;
+            } else if (props.estado_codigo === 'NAS') {
+                validacionHTML = `
+                    <div class="validacion-alert error">
+                        <i class="fas fa-user-slash"></i> 
+                        <strong>Paciente No Asistió:</strong> El paciente no asistió a la cita.
+                    </div>
+                `;
+            } else if (props.estado_codigo === 'ATE') {
+                validacionHTML = `
+                    <div class="validacion-alert info">
+                        <i class="fas fa-user-check"></i> 
+                        <strong>En Atención:</strong> El paciente está siendo atendido en este momento.
+                    </div>
+                `;
+            }
             
             // Crear modal con jquery-confirm
             $.dialog({
@@ -428,7 +645,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <strong><i class="fas fa-info-circle"></i> Estado:</strong>
                             </div>
                             <div class="col-6">
-                                <span class="badge badge-${estadoBadgeClass}">${props.estado}</span>
+                                <span class="badge badge-${estadoBadgeClass}">${props.estado}</span>`
+                                + (validacionHTML ? validacionHTML : '') + `
+                            </div>
+                        </div>
                             </div>
                         </div>
                         
@@ -440,6 +660,59 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         ` : ''}
+                        
+                        <!-- Botones de estado rápido -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <strong><i class="fas fa-exchange-alt"></i> Cambiar Estado:</strong>
+                            </div>
+                        </div>
+                        <div class="row mt-2" id="estado-buttons">
+                            ${props.estado_codigo === 'PEN' ? `
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-success btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="CON">
+                                        <i class="fas fa-check"></i> Confirmar
+                                    </button>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-danger btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="CAN">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                </div>
+                            ` : props.estado_codigo === 'CON' ? `
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-info btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="ATE">
+                                        <i class="fas fa-user-check"></i> Iniciar Atención
+                                    </button>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-danger btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="CAN">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                </div>
+                            ` : props.estado_codigo === 'ATE' ? `
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-success btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="COM">
+                                        <i class="fas fa-check-circle"></i> Completar
+                                    </button>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <button type="button" class="btn btn-sm btn-warning btn-estado" 
+                                            data-cita-id="${info.event.id}" data-estado="NAS">
+                                        <i class="fas fa-user-slash"></i> No Asistió
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="col-12 mb-2">
+                                    <small class="text-muted">No hay cambios de estado disponibles para este estado</small>
+                                </div>
+                            `}
+                        </div>
                     </div>
                 `,
                 columnClass: 'col-md-6 col-md-offset-3',
@@ -493,6 +766,19 @@ document.addEventListener('DOMContentLoaded', function() {
             var citaId = info.event.id;
             var nuevaFechaHora = info.event.start;
             var duracion = info.event.extendedProps.duracion;
+            var estadoCita = info.event.extendedProps.estado_codigo;
+            
+            // Validar que no sea una cita en estado EN ATENCION
+            if (estadoCita === 'ATE') {
+                info.revert();
+                $.alert({
+                    title: 'Acción no permitida',
+                    content: 'No se puede mover una cita que está siendo atendida en este momento',
+                    type: 'red',
+                    icon: 'fa fa-ban'
+                });
+                return;
+            }
             
             // Validar día domingo
             if (nuevaFechaHora.getDay() === 0) {
@@ -628,6 +914,19 @@ document.addEventListener('DOMContentLoaded', function() {
             var start = info.event.start;
             var end = info.event.end;
             var nuevaDuracion = Math.round((end - start) / (1000 * 60)); // Minutos
+            var estadoCita = info.event.extendedProps.estado_codigo;
+            
+            // Validar que no sea una cita en estado EN ATENCION
+            if (estadoCita === 'ATE') {
+                info.revert();
+                $.alert({
+                    title: 'Acción no permitida',
+                    content: 'No se puede cambiar la duración de una cita que está siendo atendida en este momento',
+                    type: 'red',
+                    icon: 'fa fa-ban'
+                });
+                return;
+            }
             
             // Validar duración mínima y máxima
             if (nuevaDuracion < 15) {
@@ -756,6 +1055,72 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 4000);
     }
     
+    // Manejador para botones de cambio de estado en modal
+    $(document).on('click', '.btn-estado', function() {
+        var citaId = $(this).data('cita-id');
+        var nuevoEstado = $(this).data('estado');
+        var btnTexto = $(this).text().trim();
+        
+        // Mapeo de códigos de estado a nombres legibles
+        var estadoMap = {
+            'PEN': 'Pendiente',
+            'CON': 'Confirmada',
+            'ATE': 'En Atención',
+            'COM': 'Completada',
+            'CAN': 'Cancelada',
+            'NAS': 'No Asistió'
+        };
+        
+        $.confirm({
+            title: '¿Cambiar estado?',
+            content: `¿Está seguro de cambiar el estado a <strong>${estadoMap[nuevoEstado]}</strong>?`,
+            type: 'blue',
+            icon: 'fa fa-exchange-alt',
+            buttons: {
+                confirmar: {
+                    text: 'Sí, cambiar',
+                    btnClass: 'btn-primary',
+                    action: function() {
+                        // Enviar AJAX para cambiar estado
+                        $.ajax({
+                            url: `/cit/citas/${citaId}/cambiar-estado/`,
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            data: {
+                                'estado': nuevoEstado
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    showNotification('success', response.mensaje);
+                                    // Recargar eventos del calendario
+                                    setTimeout(function() {
+                                        calendar.refetchEvents();
+                                    }, 1000);
+                                } else {
+                                    showNotification('error', response.mensaje || 'Error al cambiar estado');
+                                }
+                            },
+                            error: function(xhr) {
+                                var errorMsg = 'Error al cambiar estado';
+                                if (xhr.responseJSON && xhr.responseJSON.mensaje) {
+                                    errorMsg = xhr.responseJSON.mensaje;
+                                }
+                                showNotification('error', errorMsg);
+                            }
+                        });
+                    }
+                },
+                cancelar: {
+                    text: 'Cancelar',
+                    btnClass: 'btn-secondary'
+                }
+            }
+        });
+    });
+    
     try {
         calendar.render();
     } catch (error) {
@@ -774,3 +1139,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+
