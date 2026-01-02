@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'personal',
     'pacientes',
     'facturacion',
+    'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
 ]
 
 
