@@ -9,6 +9,12 @@
         <div class="col-md-8">
             <h1 class="h3">{{ paciente.get_nombre_completo }}</h1>
             <p class="text-muted">Cédula: <strong>{{ paciente.cedula }}</strong></p>
+            {% if paciente.es_vip %}
+                <span class="badge bg-warning text-dark">
+                    <i class="fas fa-star"></i>
+                    VIP {{ paciente.get_categoria_vip_display|default:"" }}
+                </span>
+            {% endif %}
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'pacientes:paciente-update' paciente.pk %}" class="btn btn-warning btn-sm">

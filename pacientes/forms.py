@@ -5,6 +5,7 @@ import re
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Paciente
+from enfermedades.models import Enfermedad
 
 
 class PacienteForm(forms.ModelForm):
@@ -37,6 +38,7 @@ class PacienteForm(forms.ModelForm):
             'nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'genero',
             'telefono', 'email', 'direccion',
             'tipo_sangre', 'alergias', 'observaciones_medicas',
+            'enfermedades', 'es_vip', 'categoria_vip',
             'contacto_emergencia_nombre', 'contacto_emergencia_telefono',
             'contacto_emergencia_relacion', 'foto', 'clinica'
         ]
@@ -84,6 +86,16 @@ class PacienteForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Condiciones médicas, medicamentos actuales, etc.'
             }),
+            'enfermedades': forms.SelectMultiple(attrs={
+                'class': 'form-control',
+                'size': '6'
+            }),
+            'es_vip': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'categoria_vip': forms.Select(attrs={
+                'class': 'form-control'
+            }),
             'contacto_emergencia_nombre': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nombre del contacto'
@@ -113,12 +125,26 @@ class PacienteForm(forms.ModelForm):
             'tipo_sangre': 'Tipo de Sangre',
             'alergias': 'Alergias',
             'observaciones_medicas': 'Observaciones Médicas',
+            'enfermedades': 'Enfermedades (selección asistida)',
             'contacto_emergencia_nombre': 'Nombre Contacto Emergencia',
             'contacto_emergencia_telefono': 'Teléfono Emergencia',
             'contacto_emergencia_relacion': 'Relación',
             'foto': 'Fotografía',
             'clinica': 'Clínica',
+            'es_vip': 'Cliente VIP',
+            'categoria_vip': 'Categoría VIP',
         }
+
+    enfermedades = forms.ModelMultipleChoiceField(
+        queryset=Enfermedad.objects.filter(estado=True).order_by('nombre'),
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-control',
+            'size': '8'
+        }),
+        label='Enfermedades (catálogo)',
+        help_text='Selecciona una o varias del catálogo (usa Ctrl/Cmd para múltiples)'
+    )
     
     def clean_cedula(self):
         """Validar cédula ecuatoriana única"""

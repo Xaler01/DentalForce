@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase, Client
 from django.urls import reverse
 
+from enfermedades.models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente
 from clinicas.models import Clinica
 from .models import Paciente
 
@@ -15,6 +16,13 @@ class PacienteModelTest(TestCase):
 			username="admin",
 			password="testpass123",
 			email="admin@test.com",
+		)
+		self.categoria = CategoriaEnfermedad.objects.create(
+			nombre="Cardiovascular",
+			descripcion="",
+			estado=True,
+			uc=self.user,
+			um=self.user.id,
 		)
 		self.clinica = Clinica.objects.create(
 			nombre="Clinica Test",
@@ -46,6 +54,19 @@ class PacienteModelTest(TestCase):
 			defaults.pop("genero", None)
 		return Paciente(**defaults)
 
+	def _crear_enfermedad(self, nombre, nivel="ALTO", cie="C01", alerta_roja=False, alerta_amarilla=False):
+		return Enfermedad.objects.create(
+			categoria=self.categoria,
+			nombre=nombre,
+			codigo_cie10=cie,
+			nivel_riesgo=nivel,
+			requiere_interconsulta=False,
+			genera_alerta_roja=alerta_roja,
+			genera_alerta_amarilla=alerta_amarilla,
+			uc=self.user,
+			um=self.user.id,
+		)
+
 	def test_mapea_parametro_sexo(self):
 		paciente = self._build_paciente(sexo="F", genero=None)
 		paciente.full_clean()
@@ -74,6 +95,45 @@ class PacienteModelTest(TestCase):
 		edad_esperada = (date.today() - nacimiento).days // 365
 		self.assertEqual(paciente.get_edad(), edad_esperada)
 		self.assertEqual(paciente.get_nombre_completo(), "Juan Perez")
+
+	def test_calcular_alerta_sin_factores(self):
+		paciente = self._build_paciente()
+		paciente.full_clean()
+		paciente.save()
+		self.assertEqual(paciente.calcular_nivel_alerta(), 'VERDE')
+
+	def test_calcular_alerta_por_enfermedad_critica(self):
+		paciente = self._build_paciente()
+		paciente.full_clean()
+		paciente.save()
+		enf = self._crear_enfermedad("Hemofilia", nivel="CRITICO", cie="D66", alerta_roja=True)
+		EnfermedadPaciente.objects.create(
+			paciente=paciente,
+			enfermedad=enf,
+			uc=self.user,
+			um=self.user.id,
+		)
+		self.assertTrue(paciente.tiene_enfermedades_criticas())
+		self.assertEqual(paciente.calcular_nivel_alerta(), 'ROJO')
+
+	def test_calcular_alerta_por_vip_manual(self):
+		paciente = self._build_paciente(es_vip=True, categoria_vip="PREMIUM")
+		paciente.full_clean()
+		paciente.save()
+		self.assertEqual(paciente.calcular_nivel_alerta(), 'ROJO')
+
+	def test_calcular_alerta_por_riesgo_alto(self):
+		paciente = self._build_paciente()
+		paciente.full_clean()
+		paciente.save()
+		enf = self._crear_enfermedad("Hipertensión", nivel="ALTO", cie="I10", alerta_amarilla=True)
+		EnfermedadPaciente.objects.create(
+			paciente=paciente,
+			enfermedad=enf,
+			uc=self.user,
+			um=self.user.id,
+		)
+		self.assertEqual(paciente.calcular_nivel_alerta(), 'AMARILLO')
 
 
 class PacienteCRUDTests(TestCase):
@@ -150,6 +210,20 @@ class PacienteCRUDTests(TestCase):
 	def test_create_paciente_valid_post(self):
 		"""Test crear paciente con datos válidos"""
 		self.client.login(username='doctor', password='testpass123')
+		cat = CategoriaEnfermedad.objects.create(
+			nombre="Respiratoria",
+			descripcion="",
+			uc=self.user,
+			um=self.user.id,
+		)
+		enf = Enfermedad.objects.create(
+			categoria=cat,
+			nombre="Asma",
+			codigo_cie10="J45",
+			nivel_riesgo="MEDIO",
+			uc=self.user,
+			um=self.user.id,
+		)
 		data = {
 			'nombres': 'Maria',
 			'apellidos': 'García',
@@ -159,6 +233,7 @@ class PacienteCRUDTests(TestCase):
 			'telefono': '0912345678',
 			'email': 'maria@test.com',
 			'direccion': 'Calle nueva',
+			'enfermedades': [enf.id],
 		}
 		response = self.client.post(reverse('pacientes:paciente-create'), data)
 		self.assertEqual(response.status_code, 302)
@@ -166,6 +241,8 @@ class PacienteCRUDTests(TestCase):
 		paciente = Paciente.objects.get(cedula='1111111111')
 		self.assertEqual(paciente.nombres, 'Maria')
 		self.assertEqual(paciente.uc, self.user)
+		self.assertEqual(paciente.enfermedades.count(), 1)
+		self.assertEqual(paciente.enfermedades.first().nombre, 'Asma')
 	
 	def test_create_paciente_duplicate_cedula(self):
 		"""Test crear paciente con cédula duplicada"""

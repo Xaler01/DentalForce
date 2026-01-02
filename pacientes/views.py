@@ -72,10 +72,28 @@ class PacienteCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         """Agregar usuario de auditoría"""
-        form.instance.uc = self.request.user
-        form.instance.um = self.request.user.id
-        messages.success(self.request, f'Paciente {form.instance.get_nombre_completo()} creado exitosamente')
-        return super().form_valid(form)
+        paciente = form.save(commit=False)
+        paciente.uc = self.request.user
+        paciente.um = self.request.user.id
+        paciente.save()
+
+        # Relación M2M con enfermedades, guardando auditoría en through
+        enfermedades = form.cleaned_data.get('enfermedades')
+        if enfermedades is not None:
+            from enfermedades.models import EnfermedadPaciente
+            EnfermedadPaciente.objects.filter(paciente=paciente).delete()
+            EnfermedadPaciente.objects.bulk_create([
+                EnfermedadPaciente(
+                    paciente=paciente,
+                    enfermedad=enf,
+                    uc=self.request.user,
+                    um=self.request.user.id,
+                ) for enf in enfermedades
+            ])
+
+        messages.success(self.request, f'Paciente {paciente.get_nombre_completo()} creado exitosamente')
+        self.object = paciente
+        return super(CreateView, self).form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -94,9 +112,26 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     
     def form_valid(self, form):
         """Actualizar usuario de auditoría"""
-        form.instance.um = self.request.user.id
-        messages.success(self.request, f'Paciente {form.instance.get_nombre_completo()} actualizado exitosamente')
-        return super().form_valid(form)
+        paciente = form.save(commit=False)
+        paciente.um = self.request.user.id
+        paciente.save()
+
+        enfermedades = form.cleaned_data.get('enfermedades')
+        if enfermedades is not None:
+            from enfermedades.models import EnfermedadPaciente
+            EnfermedadPaciente.objects.filter(paciente=paciente).delete()
+            EnfermedadPaciente.objects.bulk_create([
+                EnfermedadPaciente(
+                    paciente=paciente,
+                    enfermedad=enf,
+                    uc=self.request.user,
+                    um=self.request.user.id,
+                ) for enf in enfermedades
+            ])
+
+        messages.success(self.request, f'Paciente {paciente.get_nombre_completo()} actualizado exitosamente')
+        self.object = paciente
+        return super(UpdateView, self).form_valid(form)
     
     def get_success_url(self):
         """Redirigir al detalle del paciente"""
