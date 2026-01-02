@@ -47,3 +47,113 @@ class CategoriaEnfermedad(ClaseModelo):
         """Retorna la cantidad de enfermedades activas en esta categoría"""
         return self.enfermedades.filter(estado=True).count()
     cantidad_enfermedades.short_description = "Enfermedades"
+
+
+class Enfermedad(ClaseModelo):
+    """
+    Catálogo de enfermedades preexistentes con niveles de riesgo
+    SOOD-72: Modelo principal con 51 enfermedades clasificadas
+    """
+    NIVEL_RIESGO_CHOICES = [
+        ('BAJO', 'Bajo - Requiere monitoreo estándar'),
+        ('MEDIO', 'Medio - Precauciones adicionales'),
+        ('ALTO', 'Alto - Consulta médica previa'),
+        ('CRITICO', 'Crítico - Atención especializada urgente'),
+    ]
+
+    categoria = models.ForeignKey(
+        CategoriaEnfermedad,
+        on_delete=models.PROTECT,
+        related_name='enfermedades',
+        help_text="Categoría a la que pertenece esta enfermedad"
+    )
+    nombre = models.CharField(
+        max_length=200,
+        unique=True,
+        help_text="Nombre común de la enfermedad"
+    )
+    nombre_cientifico = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Nombre médico/científico (opcional)"
+    )
+    codigo_cie10 = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="Código CIE-10 (Clasificación Internacional de Enfermedades)"
+    )
+    descripcion = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Descripción médica de la enfermedad"
+    )
+    nivel_riesgo = models.CharField(
+        max_length=10,
+        choices=NIVEL_RIESGO_CHOICES,
+        default='MEDIO',
+        help_text="Nivel de riesgo odontológico"
+    )
+    
+    # Consideraciones clínicas
+    contraindicaciones = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Tratamientos o medicamentos contraindicados"
+    )
+    precauciones = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Precauciones especiales durante procedimientos"
+    )
+    requiere_interconsulta = models.BooleanField(
+        default=False,
+        help_text="¿Requiere consulta médica previa al tratamiento?"
+    )
+    
+    # Alertas automáticas
+    genera_alerta_roja = models.BooleanField(
+        default=False,
+        help_text="Si está activo, genera automáticamente alerta ROJA"
+    )
+    genera_alerta_amarilla = models.BooleanField(
+        default=False,
+        help_text="Si está activo, genera automáticamente alerta AMARILLA"
+    )
+
+    class Meta:
+        verbose_name = "Enfermedad"
+        verbose_name_plural = "Enfermedades"
+        ordering = ['categoria', 'nombre']
+        db_table = 'enf_enfermedad'
+        indexes = [
+            models.Index(fields=['nivel_riesgo']),
+            models.Index(fields=['codigo_cie10']),
+        ]
+
+    def __str__(self):
+        if self.codigo_cie10:
+            return f"{self.nombre} ({self.codigo_cie10})"
+        return self.nombre
+
+    def get_color_riesgo(self):
+        """Retorna el color asociado al nivel de riesgo"""
+        colores = {
+            'BAJO': '#28a745',      # Verde
+            'MEDIO': '#ffc107',     # Amarillo
+            'ALTO': '#fd7e14',      # Naranja
+            'CRITICO': '#dc3545',   # Rojo
+        }
+        return colores.get(self.nivel_riesgo, '#6c757d')
+    
+    def get_icono_riesgo(self):
+        """Retorna el icono FontAwesome según el nivel de riesgo"""
+        iconos = {
+            'BAJO': 'fa-check-circle',
+            'MEDIO': 'fa-exclamation-triangle',
+            'ALTO': 'fa-exclamation-circle',
+            'CRITICO': 'fa-times-circle',
+        }
+        return iconos.get(self.nivel_riesgo, 'fa-info-circle')
