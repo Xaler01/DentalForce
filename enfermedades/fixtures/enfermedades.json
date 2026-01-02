@@ -1,0 +1,920 @@
+[
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 1,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Hipertensión Arterial",
+      "nombre_cientifico": "Hipertensión Esencial",
+      "codigo_cie10": "I10",
+      "descripcion": "Presión arterial elevada de forma crónica",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar vasoconstrictores en exceso. Limitar epinefrina en anestésicos.",
+      "precauciones": "Monitorear presión arterial antes de procedimientos. Sesiones cortas.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 2,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Infarto Agudo de Miocardio (IAM)",
+      "nombre_cientifico": "Síndrome Coronario Agudo",
+      "codigo_cie10": "I21",
+      "descripcion": "Daño al músculo cardíaco por obstrucción coronaria",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "No realizar procedimientos electivos durante 6 meses post-IAM. Contraindicado uso excesivo de vasoconstrictores.",
+      "precauciones": "Requiere autorización médica. Monitoreo continuo. Tener protocolo de emergencia.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 3,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Arritmia Cardíaca",
+      "nombre_cientifico": "Trastorno del Ritmo Cardíaco",
+      "codigo_cie10": "I49",
+      "descripcion": "Alteración en el ritmo normal del corazón",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Limitar vasoconstrictores. Evitar situaciones de estrés prolongado.",
+      "precauciones": "Monitorear signos vitales. Sesiones cortas y programadas.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 4,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Insuficiencia Cardíaca",
+      "nombre_cientifico": "Fallo Cardíaco Congestivo",
+      "codigo_cie10": "I50",
+      "descripcion": "Incapacidad del corazón para bombear sangre eficientemente",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Evitar sobrecarga de líquidos. Contraindicado uso excesivo de anestésicos con vasoconstrictor.",
+      "precauciones": "Posición semi-reclinada. Oxigenoterapia disponible. Monitoreo de edema.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 5,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Angina de Pecho",
+      "nombre_cientifico": "Angina Pectoris",
+      "codigo_cie10": "I20",
+      "descripcion": "Dolor torácico por falta de oxígeno en el corazón",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Evitar estrés y procedimientos prolongados. Limitar vasoconstrictores.",
+      "precauciones": "Tener nitroglicerina disponible. Sesiones cortas. Ansiólisis previa.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 6,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Marcapasos o Desfibrilador",
+      "nombre_cientifico": "Dispositivo Cardíaco Implantable",
+      "codigo_cie10": "Z95.0",
+      "descripcion": "Portador de dispositivo electrónico cardíaco",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar electrocirugía. No usar ultrasonido piezoeléctrico cerca del dispositivo.",
+      "precauciones": "Consultar con cardiólogo. Uso limitado de bisturí eléctrico.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 7,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Endocarditis Infecciosa Previa",
+      "nombre_cientifico": "Historia de Endocarditis",
+      "codigo_cie10": "I33",
+      "descripcion": "Antecedente de infección del revestimiento interno del corazón",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Requiere profilaxis antibiótica obligatoria antes de procedimientos invasivos.",
+      "precauciones": "Amoxicilina 2g 1 hora antes. Asepsia rigurosa.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 8,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Valvulopatía Cardíaca",
+      "nombre_cientifico": "Enfermedad Valvular",
+      "codigo_cie10": "I35",
+      "descripcion": "Alteración en las válvulas del corazón",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Requiere profilaxis antibiótica según severidad.",
+      "precauciones": "Evaluación médica previa. Profilaxis según protocolo AHA.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 9,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Cardiopatía Congénita",
+      "nombre_cientifico": "Malformación Cardíaca Congénita",
+      "codigo_cie10": "Q24",
+      "descripcion": "Defecto estructural del corazón presente desde el nacimiento",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Profilaxis antibiótica obligatoria en cardiopatías cianóticas.",
+      "precauciones": "Evaluación cardiológica actualizada. Manejo del estrés.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 10,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Anticoagulación Oral",
+      "nombre_cientifico": "Tratamiento Anticoagulante",
+      "codigo_cie10": "Z92.1",
+      "descripcion": "Uso de medicamentos anticoagulantes (Warfarina, nuevos anticoagulantes)",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "No suspender anticoagulación sin autorización médica.",
+      "precauciones": "INR reciente (<7 días). Técnicas hemostáticas locales. Coordinación con médico tratante.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 11,
+    "fields": {
+      "categoria": 1,
+      "nombre": "Accidente Cerebrovascular (ACV)",
+      "nombre_cientifico": "Ictus o Stroke",
+      "codigo_cie10": "I64",
+      "descripcion": "Daño cerebral por interrupción del flujo sanguíneo",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Esperar 6 meses post-ACV para procedimientos electivos. Control estricto de presión arterial.",
+      "precauciones": "Evaluación neurológica previa. Posición adecuada del paciente.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 12,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Diabetes Mellitus Tipo 1",
+      "nombre_cientifico": "Diabetes Insulinodependiente",
+      "codigo_cie10": "E10",
+      "descripcion": "Enfermedad autoinmune con deficiencia absoluta de insulina",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar procedimientos si glicemia >250 mg/dL o <70 mg/dL.",
+      "precauciones": "Citas matutinas post-desayuno. Control de glicemia pre-procedimiento. Manejo de hipoglicemia.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 13,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Diabetes Mellitus Tipo 2",
+      "nombre_cientifico": "Diabetes No Insulinodependiente",
+      "codigo_cie10": "E11",
+      "descripcion": "Resistencia a la insulina y deficiencia relativa",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar procedimientos si descompensación metabólica.",
+      "precauciones": "Control de glicemia. Mayor riesgo de infecciones. Cicatrización retardada.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 14,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Hipotiroidismo",
+      "nombre_cientifico": "Insuficiencia Tiroidea",
+      "codigo_cie10": "E03",
+      "descripcion": "Producción insuficiente de hormonas tiroideas",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar sedantes potentes si no está controlado.",
+      "precauciones": "Verificar tratamiento hormonal sustitutivo. Mayor sensibilidad a sedantes.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 15,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Hipertiroidismo",
+      "nombre_cientifico": "Tirotoxicosis",
+      "codigo_cie10": "E05",
+      "descripcion": "Producción excesiva de hormonas tiroideas",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar vasoconstrictores (epinefrina) si no está controlado. Riesgo de crisis tirotóxica.",
+      "precauciones": "Verificar control médico. Limitar epinefrina a 1:100,000. Manejo del estrés.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 16,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Insuficiencia Suprarrenal",
+      "nombre_cientifico": "Enfermedad de Addison",
+      "codigo_cie10": "E27.1",
+      "descripcion": "Producción insuficiente de cortisol y aldosterona",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Requiere suplementación de corticoides antes de procedimientos estresantes.",
+      "precauciones": "Coordinar con endocrinólogo. Hidrocortisona suplementaria. Manejo de crisis adrenal.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 17,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Síndrome de Cushing",
+      "nombre_cientifico": "Hipercortisolismo",
+      "codigo_cie10": "E24",
+      "descripcion": "Exceso de cortisol en el organismo",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Mayor riesgo de hipertensión e infecciones.",
+      "precauciones": "Control de presión arterial. Asepsia rigurosa. Cicatrización retardada.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 18,
+    "fields": {
+      "categoria": 2,
+      "nombre": "Obesidad Mórbida",
+      "nombre_cientifico": "Obesidad Clase III (IMC >40)",
+      "codigo_cie10": "E66.01",
+      "descripcion": "Exceso de peso corporal con IMC superior a 40",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Dificultad en posicionamiento y acceso. Mayor riesgo anestésico.",
+      "precauciones": "Adaptación de silla dental. Control de vía aérea. Dosificación ajustada de medicamentos.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 19,
+    "fields": {
+      "categoria": 3,
+      "nombre": "Asma Bronquial",
+      "nombre_cientifico": "Asma",
+      "codigo_cie10": "J45",
+      "descripcion": "Enfermedad inflamatoria crónica de las vías respiratorias",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar AINES (ibuprofeno, aspirina) si asma inducida por AINES. Evitar bisulfitos.",
+      "precauciones": "Tener broncodilatador disponible. Evitar desencadenantes (polvo, látex). Posición semi-reclinada.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 20,
+    "fields": {
+      "categoria": 3,
+      "nombre": "EPOC (Enfermedad Pulmonar Obstructiva Crónica)",
+      "nombre_cientifico": "Bronquitis Crónica / Enfisema",
+      "codigo_cie10": "J44",
+      "descripcion": "Enfermedad pulmonar con obstrucción crónica del flujo aéreo",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar sedación profunda. Cuidado con oxígeno suplementario (riesgo de depresión respiratoria).",
+      "precauciones": "Posición semi-reclinada. Sesiones cortas. Oxímetro de pulso.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 21,
+    "fields": {
+      "categoria": 3,
+      "nombre": "Apnea Obstructiva del Sueño",
+      "nombre_cientifico": "Síndrome de Apnea-Hipopnea del Sueño (SAHS)",
+      "codigo_cie10": "G47.33",
+      "descripcion": "Pausas respiratorias durante el sueño",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar sedantes potentes. Riesgo de obstrucción de vía aérea.",
+      "precauciones": "Posición adecuada. Monitoreo de saturación de oxígeno. Dispositivo CPAP disponible si usa.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 22,
+    "fields": {
+      "categoria": 3,
+      "nombre": "Tuberculosis Activa",
+      "nombre_cientifico": "TB Pulmonar",
+      "codigo_cie10": "A15",
+      "descripcion": "Infección bacteriana activa del pulmón",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Posponer tratamiento dental electivo hasta completar 2 semanas de tratamiento anti-TB.",
+      "precauciones": "Medidas de bioseguridad estrictas. Máscara N95. Ventilación adecuada.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 23,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Alergia a Penicilina",
+      "nombre_cientifico": "Hipersensibilidad a Betalactámicos",
+      "codigo_cie10": "Z88.0",
+      "descripcion": "Reacción alérgica a antibióticos del grupo penicilina",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Contraindicada amoxicilina, ampicilina y derivados. Evitar cefalosporinas si alergia severa.",
+      "precauciones": "Usar alternativas: macrólidos (azitromicina), clindamicina, fluoroquinolonas.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 24,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Alergia a Anestésicos Locales",
+      "nombre_cientifico": "Hipersensibilidad a Lidocaína/Articaína",
+      "codigo_cie10": "Z88.4",
+      "descripcion": "Reacción alérgica a anestésicos dentales",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Contraindicado el anestésico específico identificado.",
+      "precauciones": "Usar anestésico alternativo (tipo éster si alergia a amida o viceversa). Prueba cutánea previa.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 25,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Alergia al Látex",
+      "nombre_cientifico": "Hipersensibilidad al Látex Natural",
+      "codigo_cie10": "Z91.040",
+      "descripcion": "Reacción alérgica al látex de caucho natural",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar guantes de látex, dique de goma con látex.",
+      "precauciones": "Usar materiales libres de látex. Guantes de nitrilo o vinilo. Dique sintético.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 26,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Alergia a AINES",
+      "nombre_cientifico": "Hipersensibilidad a Antiinflamatorios No Esteroideos",
+      "codigo_cie10": "Z88.1",
+      "descripcion": "Reacción alérgica a ibuprofeno, aspirina, diclofenaco",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar ibuprofeno, aspirina, naproxeno, diclofenaco.",
+      "precauciones": "Usar alternativas: paracetamol, inhibidores selectivos COX-2 (celecoxib).",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 27,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Alergia a Metales (Níquel, Cromo)",
+      "nombre_cientifico": "Dermatitis de Contacto por Metales",
+      "codigo_cie10": "L23.0",
+      "descripcion": "Reacción alérgica a metales usados en odontología",
+      "nivel_riesgo": "BAJO",
+      "contraindicaciones": "Evitar aleaciones con níquel. Cuidado con brackets metálicos.",
+      "precauciones": "Usar materiales hipoalergénicos: titanio, circonio, porcelana.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 28,
+    "fields": {
+      "categoria": 4,
+      "nombre": "Reacción Anafiláctica Previa",
+      "nombre_cientifico": "Anafilaxia",
+      "codigo_cie10": "T78.2",
+      "descripcion": "Antecedente de reacción alérgica severa (shock anafiláctico)",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Identificar y evitar el agente causante. No usar sin prueba previa.",
+      "precauciones": "Tener kit de anafilaxia (epinefrina, antihistamínicos, corticoides). Plan de emergencia.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 29,
+    "fields": {
+      "categoria": 5,
+      "nombre": "Hemofilia",
+      "nombre_cientifico": "Deficiencia de Factor VIII o IX",
+      "codigo_cie10": "D66",
+      "descripcion": "Trastorno de coagulación hereditario",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Evitar anestesia troncular si es posible. No usar AINES.",
+      "precauciones": "Requiere reposición de factor de coagulación pre-procedimiento. Coordinación con hematólogo.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 30,
+    "fields": {
+      "categoria": 5,
+      "nombre": "Enfermedad de Von Willebrand",
+      "nombre_cientifico": "Déficit de Factor Von Willebrand",
+      "codigo_cie10": "D68.0",
+      "descripcion": "Trastorno hereditario de la coagulación más común",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar aspirina y AINES.",
+      "precauciones": "Desmopresina (DDAVP) pre-procedimiento. Medidas hemostáticas locales intensivas.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 31,
+    "fields": {
+      "categoria": 5,
+      "nombre": "Trombocitopenia",
+      "nombre_cientifico": "Recuento Bajo de Plaquetas",
+      "codigo_cie10": "D69.6",
+      "descripcion": "Disminución anormal del número de plaquetas",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar procedimientos invasivos si plaquetas <50,000/µL.",
+      "precauciones": "Hemograma reciente. Técnicas atraumáticas. Medidas hemostáticas locales.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 32,
+    "fields": {
+      "categoria": 5,
+      "nombre": "Anemia Severa",
+      "nombre_cientifico": "Anemia (Hb <8 g/dL)",
+      "codigo_cie10": "D64.9",
+      "descripcion": "Disminución severa de hemoglobina en sangre",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Posponer procedimientos electivos hasta corrección.",
+      "precauciones": "Oxígeno suplementario disponible. Posición semi-reclinada. Sesiones cortas.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 33,
+    "fields": {
+      "categoria": 5,
+      "nombre": "Leucemia",
+      "nombre_cientifico": "Neoplasia Hematológica",
+      "codigo_cie10": "C95",
+      "descripcion": "Cáncer de las células sanguíneas",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Evitar procedimientos invasivos durante quimioterapia activa. Riesgo de hemorragia e infección.",
+      "precauciones": "Coordinación con oncólogo. Hemograma completo reciente. Profilaxis antibiótica.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 34,
+    "fields": {
+      "categoria": 6,
+      "nombre": "VIH/SIDA",
+      "nombre_cientifico": "Síndrome de Inmunodeficiencia Adquirida",
+      "codigo_cie10": "B20",
+      "descripcion": "Infección por virus de inmunodeficiencia humana",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Mayor riesgo de infecciones oportunistas y sangrado.",
+      "precauciones": "Precauciones universales estrictas. Profilaxis antibiótica según recuento CD4. Manejo de lesiones orales.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 35,
+    "fields": {
+      "categoria": 6,
+      "nombre": "Lupus Eritematoso Sistémico",
+      "nombre_cientifico": "LES",
+      "codigo_cie10": "M32",
+      "descripcion": "Enfermedad autoinmune multisistémica",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Cuidado con uso prolongado de corticoides (supresión suprarrenal).",
+      "precauciones": "Puede requerir suplementación de corticoides. Mayor riesgo de infecciones.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 36,
+    "fields": {
+      "categoria": 6,
+      "nombre": "Artritis Reumatoide",
+      "nombre_cientifico": "AR",
+      "codigo_cie10": "M05",
+      "descripcion": "Enfermedad autoinmune de las articulaciones",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Limitación de apertura bucal si afecta ATM.",
+      "precauciones": "Adaptación de posición. Considerar inmunosupresión (mayor riesgo infeccioso).",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 37,
+    "fields": {
+      "categoria": 6,
+      "nombre": "Síndrome de Sjögren",
+      "nombre_cientifico": "Sicca Syndrome",
+      "codigo_cie10": "M35.0",
+      "descripcion": "Enfermedad autoinmune que afecta glándulas salivales",
+      "nivel_riesgo": "BAJO",
+      "contraindicaciones": "Xerostomía severa aumenta riesgo de caries.",
+      "precauciones": "Sustitutos salivales. Fluoruros tópicos. Hidratación constante.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 38,
+    "fields": {
+      "categoria": 7,
+      "nombre": "Hepatitis B Activa",
+      "nombre_cientifico": "Infección por VHB",
+      "codigo_cie10": "B18.1",
+      "descripcion": "Infección viral del hígado por hepatitis B",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Precauciones universales estrictas. Evitar fármacos hepatotóxicos.",
+      "precauciones": "Bioseguridad rigurosa. Vacunación del personal. Ajuste de dosis de medicamentos.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 39,
+    "fields": {
+      "categoria": 7,
+      "nombre": "Hepatitis C",
+      "nombre_cientifico": "Infección por VHC",
+      "codigo_cie10": "B18.2",
+      "descripcion": "Infección viral crónica del hígado",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Evitar medicamentos hepatotóxicos (paracetamol en altas dosis).",
+      "precauciones": "Precauciones universales. Ajuste de dosis farmacológica. Riesgo de sangrado si cirrosis.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 40,
+    "fields": {
+      "categoria": 7,
+      "nombre": "Herpes Simple Recurrente",
+      "nombre_cientifico": "VHS-1",
+      "codigo_cie10": "B00.1",
+      "descripcion": "Infección viral recurrente por herpes labial",
+      "nivel_riesgo": "BAJO",
+      "contraindicaciones": "Posponer procedimientos durante brote activo.",
+      "precauciones": "Profilaxis con aciclovir antes de procedimientos traumáticos.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 41,
+    "fields": {
+      "categoria": 8,
+      "nombre": "Epilepsia",
+      "nombre_cientifico": "Trastorno Convulsivo",
+      "codigo_cie10": "G40",
+      "descripcion": "Trastorno neurológico con crisis convulsivas",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar luces parpadeantes intensas (posible desencadenante).",
+      "precauciones": "Verificar cumplimiento de anticonvulsivantes. Proteger de traumatismos durante crisis.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 42,
+    "fields": {
+      "categoria": 8,
+      "nombre": "Enfermedad de Parkinson",
+      "nombre_cientifico": "Parkinsonismo",
+      "codigo_cie10": "G20",
+      "descripcion": "Trastorno neurodegenerativo con temblor y rigidez",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar metoclopramida (antináusea) - empeora síntomas.",
+      "precauciones": "Citas cortas matutinas (mejor control motor). Apoyo para transferencias. Sialorrea.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 43,
+    "fields": {
+      "categoria": 8,
+      "nombre": "Esclerosis Múltiple",
+      "nombre_cientifico": "EM",
+      "codigo_cie10": "G35",
+      "descripcion": "Enfermedad desmielinizante del sistema nervioso",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar estrés prolongado (puede desencadenar brotes).",
+      "precauciones": "Sesiones cortas. Adaptación según discapacidad. Manejo de fatiga.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 44,
+    "fields": {
+      "categoria": 8,
+      "nombre": "Alzheimer / Demencia",
+      "nombre_cientifico": "Deterioro Cognitivo",
+      "codigo_cie10": "G30",
+      "descripcion": "Enfermedad neurodegenerativa con pérdida de memoria",
+      "nivel_riesgo": "BAJO",
+      "contraindicaciones": "Dificultad para consentimiento informado (requiere tutor).",
+      "precauciones": "Comunicación simple. Presencia de acompañante. Instrucciones por escrito.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 45,
+    "fields": {
+      "categoria": 9,
+      "nombre": "Insuficiencia Renal Crónica",
+      "nombre_cientifico": "Enfermedad Renal Crónica",
+      "codigo_cie10": "N18",
+      "descripcion": "Pérdida progresiva de la función renal",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Ajustar dosis de medicamentos eliminados por riñón. Evitar nefrotóxicos.",
+      "precauciones": "Evitar AINES. Ajustar antibióticos. Cuidado con anemia y sangrado.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 46,
+    "fields": {
+      "categoria": 9,
+      "nombre": "Hemodiálisis",
+      "nombre_cientifico": "Terapia de Reemplazo Renal",
+      "codigo_cie10": "Z99.2",
+      "descripcion": "Paciente en tratamiento de diálisis renal",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "No realizar procedimientos el día de diálisis. Evitar brazo con fístula arteriovenosa.",
+      "precauciones": "Programar al día siguiente de diálisis. Profilaxis antibiótica. Control de presión arterial.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 47,
+    "fields": {
+      "categoria": 10,
+      "nombre": "Embarazo",
+      "nombre_cientifico": "Gestación",
+      "codigo_cie10": "Z33.1",
+      "descripcion": "Estado de gestación",
+      "nivel_riesgo": "MEDIO",
+      "contraindicaciones": "Evitar radiografías en 1er trimestre (usar solo si urgente con protección). Evitar tetraciclinas, metronidazol.",
+      "precauciones": "Segundo trimestre es ideal. Posición lateral izquierda en 3er trimestre. Lidocaína sin epinefrina preferible.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 48,
+    "fields": {
+      "categoria": 10,
+      "nombre": "Radioterapia en Cabeza/Cuello",
+      "nombre_cientifico": "Antecedente de Radioterapia",
+      "codigo_cie10": "Z92.3",
+      "descripcion": "Paciente que recibió radioterapia en región orofacial",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Riesgo elevado de osteorradionecrosis post-extracción. Evitar extracciones si es posible.",
+      "precauciones": "Oxígeno hiperbárico pre/post extracción. Asepsia rigurosa. Cirugía atraumática.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 49,
+    "fields": {
+      "categoria": 10,
+      "nombre": "Quimioterapia Activa",
+      "nombre_cientifico": "Tratamiento Oncológico",
+      "codigo_cie10": "Z51.1",
+      "descripcion": "Paciente bajo tratamiento de quimioterapia",
+      "nivel_riesgo": "CRITICO",
+      "contraindicaciones": "Evitar procedimientos invasivos durante nadir (días 7-14 post-quimio). Riesgo de neutropenia.",
+      "precauciones": "Hemograma completo reciente. Profilaxis antibiótica. Manejo de mucositis oral.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": true,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 50,
+    "fields": {
+      "categoria": 10,
+      "nombre": "Bifosfonatos (Osteoporosis/Cáncer)",
+      "nombre_cientifico": "Terapia con Bifosfonatos",
+      "codigo_cie10": "Z79.83",
+      "descripcion": "Uso de bifosfonatos orales o intravenosos",
+      "nivel_riesgo": "ALTO",
+      "contraindicaciones": "Riesgo de osteonecrosis maxilar post-extracción (especialmente IV).",
+      "precauciones": "Evaluar tiempo de uso. Evitar extracciones si es posible. Técnica atraumática. Clorhexidina.",
+      "requiere_interconsulta": true,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": true,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.enfermedad",
+    "pk": 51,
+    "fields": {
+      "categoria": 10,
+      "nombre": "Trastorno de Ansiedad / Fobia Dental",
+      "nombre_cientifico": "Ansiedad Generalizada / Fobia Específica",
+      "codigo_cie10": "F41.9",
+      "descripcion": "Ansiedad severa o fobia específica al tratamiento dental",
+      "nivel_riesgo": "BAJO",
+      "contraindicaciones": "Puede requerir sedación consciente.",
+      "precauciones": "Explicación detallada. Señales de pausa. Considerar premedicación ansiolítica (diazepam). Técnicas de relajación.",
+      "requiere_interconsulta": false,
+      "genera_alerta_roja": false,
+      "genera_alerta_amarilla": false,
+      "estado": true
+    }
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Cardiovascular",
+      "descripcion": "Enfermedades del corazón y sistema circulatorio",
+      "icono": "fa-heart",
+      "color": "#dc3545",
+      "orden": 1,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 2,
+    "fields": {
+      "nombre": "Endocrinológica",
+      "descripcion": "Trastornos del sistema endocrino y metabolismo",
+      "icono": "fa-heartbeat",
+      "color": "#28a745",
+      "orden": 2,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 3,
+    "fields": {
+      "nombre": "Respiratoria",
+      "descripcion": "Enfermedades del sistema respiratorio",
+      "icono": "fa-lungs",
+      "color": "#17a2b8",
+      "orden": 3,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 4,
+    "fields": {
+      "nombre": "Alérgica",
+      "descripcion": "Alergias y reacciones inmunológicas",
+      "icono": "fa-allergies",
+      "color": "#ffc107",
+      "orden": 4,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 5,
+    "fields": {
+      "nombre": "Hematológica",
+      "descripcion": "Trastornos de la sangre y coagulación",
+      "icono": "fa-tint",
+      "color": "#6f42c1",
+      "orden": 5,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 6,
+    "fields": {
+      "nombre": "Autoinmune",
+      "descripcion": "Enfermedades autoinmunes y del sistema inmunológico",
+      "icono": "fa-shield-virus",
+      "color": "#fd7e14",
+      "orden": 6,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 7,
+    "fields": {
+      "nombre": "Infecciosa",
+      "descripcion": "Enfermedades infecciosas virales y bacterianas",
+      "icono": "fa-virus",
+      "color": "#e83e8c",
+      "orden": 7,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 8,
+    "fields": {
+      "nombre": "Neurológica",
+      "descripcion": "Trastornos del sistema nervioso",
+      "icono": "fa-brain",
+      "color": "#6c757d",
+      "orden": 8,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 9,
+    "fields": {
+      "nombre": "Renal",
+      "descripcion": "Enfermedades del sistema renal y urinario",
+      "icono": "fa-prescription-bottle",
+      "color": "#20c997",
+      "orden": 9,
+      "estado": true
+    }
+  },
+  {
+    "model": "enfermedades.categoriaenfermedad",
+    "pk": 10,
+    "fields": {
+      "nombre": "Otras",
+      "descripcion": "Otras condiciones médicas relevantes",
+      "icono": "fa-notes-medical",
+      "color": "#6c757d",
+      "orden": 10,
+      "estado": true
+    }
+  }
+]
