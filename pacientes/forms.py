@@ -140,10 +140,10 @@ class PacienteForm(forms.ModelForm):
         required=False,
         widget=forms.SelectMultiple(attrs={
             'class': 'form-control',
-            'size': '8'
+            'size': '6'
         }),
         label='Enfermedades (catálogo)',
-        help_text='Selecciona una o varias del catálogo (usa Ctrl/Cmd para múltiples)'
+        help_text='Selecciona del catálogo escribiendo o haciendo clic'
     )
     
     def clean_cedula(self):

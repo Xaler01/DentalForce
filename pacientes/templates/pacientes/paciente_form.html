@@ -433,5 +433,28 @@
 
         renderChips();
     })();
+
+    // Control de habilitación de Categoría VIP basado en checkbox
+    (function () {
+        const esVipCheckbox = document.getElementById('{{ form.es_vip.id_for_label }}');
+        const categoriaVipSelect = document.getElementById('{{ form.categoria_vip.id_for_label }}');
+        
+        if (!esVipCheckbox || !categoriaVipSelect) return;
+
+        const toggleCategoriaVip = () => {
+            if (esVipCheckbox.checked) {
+                categoriaVipSelect.disabled = false;
+            } else {
+                categoriaVipSelect.disabled = true;
+                categoriaVipSelect.value = ''; // Resetear a "No VIP"
+            }
+        };
+
+        // Inicializar estado al cargar página
+        toggleCategoriaVip();
+
+        // Escuchar cambios en el checkbox
+        esVipCheckbox.addEventListener('change', toggleCategoriaVip);
+    })();
 </script>
 {% endblock %}
