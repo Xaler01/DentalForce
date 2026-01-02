@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from bases.models import ClaseModelo
 
 
@@ -157,3 +158,106 @@ class Enfermedad(ClaseModelo):
             'CRITICO': 'fa-times-circle',
         }
         return iconos.get(self.nivel_riesgo, 'fa-info-circle')
+
+
+class EnfermedadPaciente(ClaseModelo):
+    """
+    Relación M2M entre Paciente y Enfermedad (Through model)
+    SOOD-73: Permite registrar enfermedades con contexto adicional
+    """
+    ESTADO_ENFERMEDAD_CHOICES = [
+        ('ACTIVA', 'Activa - Bajo tratamiento actual'),
+        ('CONTROLADA', 'Controlada - Con medicación'),
+        ('REMISION', 'En Remisión - Sin síntomas'),
+        ('CURADA', 'Curada - Ya no requiere tratamiento'),
+    ]
+
+    paciente = models.ForeignKey(
+        'pacientes.Paciente',
+        on_delete=models.CASCADE,
+        related_name='enfermedades_paciente',
+        help_text="Paciente que padece la enfermedad"
+    )
+    enfermedad = models.ForeignKey(
+        Enfermedad,
+        on_delete=models.PROTECT,
+        related_name='pacientes_afectados',
+        help_text="Enfermedad diagnosticada"
+    )
+    
+    # Contexto clínico
+    fecha_diagnostico = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Fecha de diagnóstico (si se conoce)"
+    )
+    estado_actual = models.CharField(
+        max_length=15,
+        choices=ESTADO_ENFERMEDAD_CHOICES,
+        default='ACTIVA',
+        help_text="Estado actual de la enfermedad"
+    )
+    medicacion_actual = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Medicamentos actuales relacionados con esta enfermedad"
+    )
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Notas clínicas adicionales del dentista"
+    )
+    
+    # Control
+    ultima_revision = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Última vez que se revisó/actualizó esta información"
+    )
+    requiere_atencion_especial = models.BooleanField(
+        default=False,
+        help_text="Marcar si requiere consideraciones especiales urgentes"
+    )
+
+    class Meta:
+        verbose_name = "Enfermedad del Paciente"
+        verbose_name_plural = "Enfermedades de Pacientes"
+        unique_together = [('paciente', 'enfermedad')]
+        ordering = ['-fecha_diagnostico', 'enfermedad__nombre']
+        db_table = 'enf_enfermedad_paciente'
+        indexes = [
+            models.Index(fields=['paciente', 'estado_actual']),
+            models.Index(fields=['enfermedad', 'estado_actual']),
+        ]
+
+    def __str__(self):
+        return f"{self.paciente} - {self.enfermedad} ({self.estado_actual})"
+
+    def save(self, *args, **kwargs):
+        """
+        Guarda y actualiza la última revisión
+        """
+        if not self.ultima_revision:
+            self.ultima_revision = timezone.now().date()
+        super().save(*args, **kwargs)
+
+    def dias_desde_diagnostico(self):
+        """Calcula días transcurridos desde el diagnóstico"""
+        if not self.fecha_diagnostico:
+            return None
+        delta = timezone.now().date() - self.fecha_diagnostico
+        return delta.days
+
+    def dias_desde_revision(self):
+        """Calcula días desde la última revisión"""
+        if not self.ultima_revision:
+            return None
+        delta = timezone.now().date() - self.ultima_revision
+        return delta.days
+
+    def requiere_actualizacion(self, dias=180):
+        """Verifica si la información requiere actualización (default 6 meses)"""
+        dias_revision = self.dias_desde_revision()
+        if dias_revision is None:
+            return True
+        return dias_revision > dias
