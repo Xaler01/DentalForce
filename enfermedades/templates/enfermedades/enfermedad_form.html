@@ -1,0 +1,109 @@
+{% extends 'base/base.html' %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-xl-10 col-md-11 col-sm-12">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="m-0 font-weight-bold text-primary">
+                            {% if object %}Editar{% else %}Nueva{% endif %} Enfermedad
+                        </h5>
+                        <a href="{% url 'enfermedades:enfermedad_list' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_categoria">Categoría <span class="text-danger">*</span></label>
+                                {{ form.categoria }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="id_nombre">Nombre <span class="text-danger">*</span></label>
+                                {{ form.nombre }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_nombre_cientifico">Nombre científico</label>
+                                {{ form.nombre_cientifico }}
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="id_codigo_cie10">Código CIE-10</label>
+                                {{ form.codigo_cie10 }}
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="id_nivel_riesgo">Nivel de riesgo</label>
+                                {{ form.nivel_riesgo }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_descripcion">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="id_contraindicaciones">Contraindicaciones</label>
+                                {{ form.contraindicaciones }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="id_precauciones">Precauciones</label>
+                                {{ form.precauciones }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <div class="custom-control custom-checkbox mt-4">
+                                    {{ form.requiere_interconsulta }}
+                                    <label class="custom-control-label" for="id_requiere_interconsulta">Requiere interconsulta</label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="custom-control custom-checkbox mt-4">
+                                    {{ form.genera_alerta_roja }}
+                                    <label class="custom-control-label" for="id_genera_alerta_roja">Genera alerta roja</label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <div class="custom-control custom-checkbox mt-4">
+                                    {{ form.genera_alerta_amarilla }}
+                                    <label class="custom-control-label" for="id_genera_alerta_amarilla">Genera alerta amarilla</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                {{ form.estado }}
+                                <label class="custom-control-label" for="id_estado">Activo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'enfermedades:enfermedad_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock page_content %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        $('#id_categoria').addClass('form-control custom-select');
+        $('#id_nombre').addClass('form-control');
+        $('#id_nombre_cientifico').addClass('form-control');
+        $('#id_codigo_cie10').addClass('form-control');
+        $('#id_nivel_riesgo').addClass('form-control custom-select');
+    });
+</script>
+{% endblock js_page %}

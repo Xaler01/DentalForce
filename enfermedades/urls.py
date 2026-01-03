@@ -13,6 +13,12 @@ urlpatterns = [
     path('categorias/crear/', views.CategoriaEnfermedadCreateView.as_view(), name='categoria_create'),
     path('categorias/<int:pk>/editar/', views.CategoriaEnfermedadUpdateView.as_view(), name='categoria_update'),
     path('categorias/<int:pk>/eliminar/', views.CategoriaEnfermedadDeleteView.as_view(), name='categoria_delete'),
+
+    # SOOD-83: CRUD de Enfermedad
+    path('', views.EnfermedadListView.as_view(), name='enfermedad_list'),
+    path('crear/', views.EnfermedadCreateView.as_view(), name='enfermedad_create'),
+    path('<int:pk>/editar/', views.EnfermedadUpdateView.as_view(), name='enfermedad_update'),
+    path('<int:pk>/eliminar/', views.EnfermedadDeleteView.as_view(), name='enfermedad_delete'),
     
     # URLs de Enfermedad (SOOD-83 - Fase 3)
     # path('', views.EnfermedadListView.as_view(), name='enfermedad_list'),
