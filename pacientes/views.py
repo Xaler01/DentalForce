@@ -178,6 +178,28 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
         context['citas_confirmadas'] = todas_citas.filter(estado='CON').count()
         context['citas_completadas'] = todas_citas.filter(estado='COM').count()
         
+        # Enfermedades del paciente (SOOD-84)
+        from enfermedades.models import EnfermedadPaciente
+        
+        enfermedades_activas = EnfermedadPaciente.objects.filter(
+            paciente=self.object,
+            estado_actual='ACTIVA'
+        ).select_related('enfermedad', 'enfermedad__categoria').order_by(
+            '-enfermedad__nivel_riesgo', 'enfermedad__nombre'
+        )
+        
+        enfermedades_curadas = EnfermedadPaciente.objects.filter(
+            paciente=self.object,
+            estado_actual='CURADA'
+        ).select_related('enfermedad', 'enfermedad__categoria').order_by(
+            '-fm', 'enfermedad__nombre'
+        )[:5]  # Últimas 5 curadas
+        
+        context['enfermedades_activas'] = enfermedades_activas
+        context['enfermedades_curadas'] = enfermedades_curadas
+        context['total_enfermedades'] = enfermedades_activas.count()
+        context['enfermedades_criticas'] = enfermedades_activas.filter(enfermedad__nivel_riesgo='CRITICO').count()
+        
         context['title'] = f'Detalle de {self.object.get_nombre_completo()}'
         return context
 

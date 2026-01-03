@@ -127,7 +127,7 @@
         <div class="col-md-8">
             <!-- Estadísticas -->
             <div class="row mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card text-center">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Total de Citas</h6>
@@ -135,7 +135,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card text-center">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Confirmadas</h6>
@@ -143,7 +143,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card text-center">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Completadas</h6>
@@ -151,6 +151,109 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted">Enfermedades</h6>
+                            <h2 class="mb-0 {% if enfermedades_criticas > 0 %}text-danger{% elif total_enfermedades > 0 %}text-warning{% else %}text-success{% endif %}">
+                                {{ total_enfermedades }}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enfermedades (SOOD-84) -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-notes-medical text-danger"></i> Enfermedades Preexistentes
+                    </h5>
+                    <a href="{% url 'pacientes:paciente-update' paciente.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Gestionar
+                    </a>
+                </div>
+                {% if enfermedades_activas %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Enfermedad</th>
+                                    <th>Categoría</th>
+                                    <th>Nivel de Riesgo</th>
+                                    <th>Desde</th>
+                                    <th>Alertas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ep in enfermedades_activas %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ ep.enfermedad.nombre }}</strong>
+                                            {% if ep.enfermedad.codigo_cie10 %}
+                                                <small class="text-muted">({{ ep.enfermedad.codigo_cie10 }})</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background-color: {{ ep.enfermedad.categoria.color|default:'#6c757d' }};">
+                                                {{ ep.enfermedad.categoria.nombre }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if ep.enfermedad.nivel_riesgo == 'CRITICO' %}
+                                                <span class="badge badge-danger">Crítico</span>
+                                            {% elif ep.enfermedad.nivel_riesgo == 'ALTO' %}
+                                                <span class="badge badge-warning">Alto</span>
+                                            {% elif ep.enfermedad.nivel_riesgo == 'MEDIO' %}
+                                                <span class="badge badge-info">Medio</span>
+                                            {% else %}
+                                                <span class="badge badge-success">Bajo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ ep.fecha_diagnostico|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>
+                                            {% if ep.enfermedad.genera_alerta_roja %}
+                                                <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Roja</span>
+                                            {% endif %}
+                                            {% if ep.enfermedad.genera_alerta_amarilla %}
+                                                <span class="badge badge-warning"><i class="fas fa-exclamation-circle"></i> Amarilla</span>
+                                            {% endif %}
+                                            {% if ep.enfermedad.requiere_interconsulta %}
+                                                <span class="badge badge-info"><i class="fas fa-user-md"></i> Interconsulta</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if ep.observaciones %}
+                                        <tr>
+                                            <td colspan="5" class="bg-light">
+                                                <small><strong>Observaciones:</strong> {{ ep.observaciones }}</small>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card-body text-center text-muted">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="mb-0">No se han registrado enfermedades preexistentes</p>
+                    </div>
+                {% endif %}
+                
+                {% if enfermedades_curadas %}
+                    <div class="card-footer bg-light">
+                        <h6 class="mb-2">Enfermedades Curadas/Controladas:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for ep in enfermedades_curadas %}
+                                <span class="badge badge-secondary" title="Actualizada el {{ ep.fm|date:'d/m/Y' }}">
+                                    {{ ep.enfermedad.nombre }}
+                                    {% if ep.fm %}({{ ep.fm|date:"d/m/Y" }}){% endif %}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
             </div>
 
             <!-- Historial de Citas -->
