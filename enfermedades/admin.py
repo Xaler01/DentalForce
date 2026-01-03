@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente
+from .models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente, AlertaPaciente
 
 
 @admin.register(CategoriaEnfermedad)
@@ -251,3 +251,178 @@ class EnfermedadPacienteAdmin(admin.ModelAdmin):
             obj.uc = request.user
         obj.um = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(AlertaPaciente)
+class AlertaPacienteAdmin(admin.ModelAdmin):
+    """
+    Administración de Alertas de Pacientes
+    SOOD-77: Gestión y seguimiento de alertas automáticas
+    """
+    list_display = (
+        'paciente_link',
+        'nivel_badge',
+        'tipo_display',
+        'titulo',
+        'es_activa',
+        'requiere_accion',
+        'vista_badge',
+        'fc'
+    )
+    list_filter = (
+        'nivel',
+        'tipo',
+        'es_activa',
+        'requiere_accion',
+        ('vista_por', admin.RelatedOnlyFieldListFilter),
+        'fc'
+    )
+    search_fields = (
+        'paciente__nombres',
+        'paciente__apellidos',
+        'paciente__cedula',
+        'titulo',
+        'descripcion'
+    )
+    ordering = ('-fc', '-nivel')
+    readonly_fields = (
+        'fc',
+        'fm',
+        'uc',
+        'um',
+        'fecha_vista_display',
+        'dias_desde_creacion'
+    )
+    
+    fieldsets = (
+        ('Información de la Alerta', {
+            'fields': (
+                'paciente',
+                'nivel',
+                'tipo',
+                'titulo',
+                'descripcion'
+            )
+        }),
+        ('Enfermedades Relacionadas', {
+            'fields': ('enfermedades_relacionadas',),
+            'classes': ('collapse',)
+        }),
+        ('Estado y Seguimiento', {
+            'fields': (
+                'es_activa',
+                'requiere_accion',
+                'fecha_vencimiento',
+                'vista_por',
+                'fecha_vista_display',
+                'notas_seguimiento'
+            )
+        }),
+        ('Auditoría', {
+            'fields': ('fc', 'fm', 'uc', 'um', 'dias_desde_creacion'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    filter_horizontal = ('enfermedades_relacionadas',)
+    
+    def paciente_link(self, obj):
+        """Link al paciente"""
+        if obj.paciente:
+            from django.urls import reverse
+            from django.utils.html import format_html
+            url = reverse('admin:pacientes_paciente_change', args=[obj.paciente.id])
+            return format_html('<a href="{}">{}</a>', url, obj.paciente)
+        return '-'
+    paciente_link.short_description = 'Paciente'
+    
+    def nivel_badge(self, obj):
+        """Badge coloreado según nivel"""
+        colores = {
+            'VERDE': '#28a745',
+            'AMARILLO': '#ffc107',
+            'ROJO': '#dc3545',
+        }
+        color = colores.get(obj.nivel, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_nivel_display()
+        )
+    nivel_badge.short_description = 'Nivel'
+    
+    def tipo_display(self, obj):
+        """Tipo de alerta con icono"""
+        iconos = {
+            'ENFERMEDAD_CRITICA': '🔴',
+            'ENFERMEDAD_ALTA': '🟠',
+            'VIP_MANUAL': '⭐',
+            'VIP_FACTURACION': '💰',
+            'MULTIPLES_CONDICIONES': '📋',
+            'REQUIERE_INTERCONSULTA': '👨‍⚕️',
+            'SISTEMA': '⚙️',
+        }
+        icono = iconos.get(obj.tipo, '📌')
+        return f"{icono} {obj.get_tipo_display()}"
+    tipo_display.short_description = 'Tipo'
+    
+    def vista_badge(self, obj):
+        """Badge indicando si fue vista"""
+        if obj.vista_por and obj.fecha_vista:
+            return format_html(
+                '<span style="color: green;">✓ {}</span>',
+                obj.vista_por.get_full_name() or obj.vista_por.username
+            )
+        if obj.requiere_accion:
+            return format_html('<span style="color: red; font-weight: bold;">⚠ Pendiente</span>')
+        return '-'
+    vista_badge.short_description = 'Revisión'
+    
+    def fecha_vista_display(self, obj):
+        """Muestra fecha de vista formateada"""
+        if obj.fecha_vista:
+            return obj.fecha_vista.strftime('%d/%m/%Y %H:%M')
+        return 'No revisada'
+    fecha_vista_display.short_description = 'Fecha de Revisión'
+    
+    def dias_desde_creacion(self, obj):
+        """Días desde que se creó la alerta"""
+        from django.utils import timezone
+        delta = timezone.now() - obj.fc
+        dias = delta.days
+        if dias == 0:
+            return 'Hoy'
+        elif dias == 1:
+            return '1 día'
+        else:
+            return f'{dias} días'
+    dias_desde_creacion.short_description = 'Antigüedad'
+    
+    def save_model(self, request, obj, form, change):
+        """Guarda el modelo asignando usuario de creación/modificación"""
+        if not change:  # Nuevo registro
+            obj.uc = request.user
+        obj.um = request.user
+        super().save_model(request, obj, form, change)
+    
+    actions = ['marcar_como_vistas', 'desactivar_alertas']
+    
+    def marcar_como_vistas(self, request, queryset):
+        """Acción para marcar alertas como vistas"""
+        count = 0
+        for alerta in queryset:
+            if not alerta.vista_por:
+                alerta.marcar_como_vista(request.user)
+                count += 1
+        self.message_user(request, f'{count} alerta(s) marcada(s) como vista(s).')
+    marcar_como_vistas.short_description = "Marcar como vistas"
+    
+    def desactivar_alertas(self, request, queryset):
+        """Acción para desactivar alertas"""
+        count = queryset.filter(es_activa=True).update(
+            es_activa=False,
+            um=request.user.id
+        )
+        self.message_user(request, f'{count} alerta(s) desactivada(s).')
+    desactivar_alertas.short_description = "Desactivar alertas seleccionadas"
+

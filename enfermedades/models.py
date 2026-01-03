@@ -261,3 +261,151 @@ class EnfermedadPaciente(ClaseModelo):
         if dias_revision is None:
             return True
         return dias_revision > dias
+
+
+class AlertaPaciente(ClaseModelo):
+    """
+    Sistema de Alertas de Pacientes
+    SOOD-77: Registro histórico de alertas generadas automáticamente
+    """
+    NIVEL_ALERTA_CHOICES = [
+        ('VERDE', 'Verde - Sin riesgos identificados'),
+        ('AMARILLO', 'Amarillo - Precauciones necesarias'),
+        ('ROJO', 'Rojo - Atención prioritaria/VIP'),
+    ]
+    
+    TIPO_ALERTA_CHOICES = [
+        ('ENFERMEDAD_CRITICA', 'Enfermedad Crítica'),
+        ('ENFERMEDAD_ALTA', 'Enfermedad de Alto Riesgo'),
+        ('VIP_MANUAL', 'Cliente VIP (Manual)'),
+        ('VIP_FACTURACION', 'Cliente VIP (por Facturación)'),
+        ('MULTIPLES_CONDICIONES', 'Múltiples Condiciones Médicas'),
+        ('REQUIERE_INTERCONSULTA', 'Requiere Interconsulta Médica'),
+        ('SISTEMA', 'Alerta del Sistema'),
+    ]
+    
+    paciente = models.ForeignKey(
+        'pacientes.Paciente',
+        on_delete=models.CASCADE,
+        related_name='alertas',
+        help_text="Paciente al que pertenece esta alerta"
+    )
+    
+    nivel = models.CharField(
+        max_length=10,
+        choices=NIVEL_ALERTA_CHOICES,
+        help_text="Nivel de severidad de la alerta"
+    )
+    
+    tipo = models.CharField(
+        max_length=30,
+        choices=TIPO_ALERTA_CHOICES,
+        help_text="Tipo/origen de la alerta"
+    )
+    
+    titulo = models.CharField(
+        max_length=200,
+        help_text="Título descriptivo de la alerta"
+    )
+    
+    descripcion = models.TextField(
+        help_text="Descripción detallada de la alerta"
+    )
+    
+    # Metadatos adicionales
+    enfermedades_relacionadas = models.ManyToManyField(
+        Enfermedad,
+        blank=True,
+        related_name='alertas_generadas',
+        help_text="Enfermedades que provocaron esta alerta"
+    )
+    
+    requiere_accion = models.BooleanField(
+        default=True,
+        help_text="Si requiere acción inmediata del personal"
+    )
+    
+    es_activa = models.BooleanField(
+        default=True,
+        help_text="Si la alerta sigue vigente"
+    )
+    
+    fecha_vencimiento = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Fecha en que la alerta deja de ser relevante (opcional)"
+    )
+    
+    # Seguimiento
+    vista_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='alertas_vistas',
+        help_text="Usuario que revisó la alerta"
+    )
+    
+    fecha_vista = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Fecha en que se revisó la alerta"
+    )
+    
+    notas_seguimiento = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Notas del personal sobre el seguimiento"
+    )
+
+    class Meta:
+        verbose_name = "Alerta de Paciente"
+        verbose_name_plural = "Alertas de Pacientes"
+        ordering = ['-fc', '-nivel']  # Más recientes primero, rojas primero
+        db_table = 'enf_alerta_paciente'
+        indexes = [
+            models.Index(fields=['paciente', 'nivel', 'es_activa']),
+            models.Index(fields=['nivel', 'es_activa', '-fc']),
+            models.Index(fields=['tipo', 'es_activa']),
+        ]
+
+    def __str__(self):
+        return f"{self.paciente} - {self.get_nivel_display()} - {self.titulo}"
+
+    def marcar_como_vista(self, usuario):
+        """Marca la alerta como vista por un usuario"""
+        self.vista_por = usuario
+        self.fecha_vista = timezone.now()
+        self.save(update_fields=['vista_por', 'fecha_vista', 'fm', 'um'])
+
+    def desactivar(self, razon=None):
+        """Desactiva la alerta"""
+        self.es_activa = False
+        if razon:
+            self.notas_seguimiento = (self.notas_seguimiento or "") + f"\nDesactivada: {razon}"
+        self.save(update_fields=['es_activa', 'notas_seguimiento', 'fm', 'um'])
+
+    def esta_vencida(self):
+        """Verifica si la alerta ha vencido"""
+        if not self.fecha_vencimiento:
+            return False
+        return timezone.now() > self.fecha_vencimiento
+
+    def get_color_badge(self):
+        """Retorna el color CSS para el badge según el nivel"""
+        colores = {
+            'VERDE': 'success',
+            'AMARILLO': 'warning',
+            'ROJO': 'danger',
+        }
+        return colores.get(self.nivel, 'secondary')
+
+    def get_icono(self):
+        """Retorna el icono FontAwesome según el nivel"""
+        iconos = {
+            'VERDE': 'fa-check-circle',
+            'AMARILLO': 'fa-exclamation-triangle',
+            'ROJO': 'fa-exclamation-circle',
+        }
+        return iconos.get(self.nivel, 'fa-info-circle')
+
