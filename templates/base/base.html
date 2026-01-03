@@ -78,6 +78,7 @@
       {% url 'cit:sucursal-list' as sucursal_list_url %}
       {% url 'cit:especialidad-list' as especialidad_list_url %}
       {% url 'cit:dentista-list' as dentista_list_url %}
+      {% url 'enfermedades:categoria_list' as enf_categoria_list_url %}
 
 
       <!-- REORGANIZED MENU FOR RECEPCIONISTA/AGENDADOR USER -->
@@ -190,6 +191,12 @@
             <a class="collapse-item" href="{{ dentista_list_url }}">
               <i class="fas fa-fw fa-user-md"></i>
               <span>Dentistas</span>
+            </a>
+            {% endif %}
+            {% if perms.enfermedades.view_categoriaenfermedad %}
+            <a class="collapse-item" href="{{ enf_categoria_list_url }}">
+              <i class="fas fa-fw fa-notes-medical"></i>
+              <span>Categorías de Enfermedades</span>
             </a>
             {% endif %}
           </div>

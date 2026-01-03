@@ -8,11 +8,11 @@ from . import views
 app_name = 'enfermedades'
 
 urlpatterns = [
-    # URLs de CategoriaEnfermedad (SOOD-82 - Fase 3)
-    # path('categorias/', views.CategoriaListView.as_view(), name='categoria_list'),
-    # path('categorias/crear/', views.CategoriaCreateView.as_view(), name='categoria_create'),
-    # path('categorias/<int:pk>/editar/', views.CategoriaUpdateView.as_view(), name='categoria_update'),
-    # path('categorias/<int:pk>/eliminar/', views.CategoriaDeleteView.as_view(), name='categoria_delete'),
+    # SOOD-82: CRUD de Categoría de Enfermedad
+    path('categorias/', views.CategoriaEnfermedadListView.as_view(), name='categoria_list'),
+    path('categorias/crear/', views.CategoriaEnfermedadCreateView.as_view(), name='categoria_create'),
+    path('categorias/<int:pk>/editar/', views.CategoriaEnfermedadUpdateView.as_view(), name='categoria_update'),
+    path('categorias/<int:pk>/eliminar/', views.CategoriaEnfermedadDeleteView.as_view(), name='categoria_delete'),
     
     # URLs de Enfermedad (SOOD-83 - Fase 3)
     # path('', views.EnfermedadListView.as_view(), name='enfermedad_list'),

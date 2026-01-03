@@ -1,0 +1,74 @@
+{% extends 'base/base.html' %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-xl-8 col-md-10 col-sm-12">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="m-0 font-weight-bold text-info">
+                            {% if object %}Editar{% else %}Nueva{% endif %} Categoría de Enfermedad
+                        </h5>
+                        <a href="{% url 'enfermedades:categoria_list' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="id_nombre">Nombre <span class="text-danger">*</span></label>
+                            {{ form.nombre }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_descripcion">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="id_icono">Icono (FontAwesome)</label>
+                                {{ form.icono }}
+                                <small class="form-text text-muted">Ej: fa-heart, fa-lungs</small>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="id_color">Color</label>
+                                {{ form.color }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="id_orden">Orden</label>
+                                {{ form.orden }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                {{ form.estado }}
+                                <label class="custom-control-label" for="id_estado">Activo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'enfermedades:categoria_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock page_content %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        $('#id_nombre').addClass('form-control');
+        $('#id_descripcion').addClass('form-control');
+        $('#id_icono').addClass('form-control');
+        $('#id_color').addClass('form-control');
+        $('#id_orden').addClass('form-control');
+    });
+</script>
+{% endblock js_page %}
