@@ -24,4 +24,11 @@ urlpatterns = [
 
     # Reactivar paciente desactivado
     path('<int:pk>/reactivar/', views.PacienteReactivateView.as_view(), name='paciente-reactivate'),
+
+    # Gestión rápida de enfermedades (AJAX)
+    path('<int:pk>/enfermedades/agregar/', views.PacienteEnfermedadAddView.as_view(), name='paciente-enfermedad-add'),
+    path('<int:pk>/enfermedades/<int:ep_id>/eliminar/', views.PacienteEnfermedadDeleteView.as_view(), name='paciente-enfermedad-delete'),
+    
+    # API AJAX para alertas (SOOD-87)
+    path('<int:pk>/alertas/detalles/', views.PacienteAlertasDetallesAJAXView.as_view(), name='paciente-alertas-detalles'),
 ]

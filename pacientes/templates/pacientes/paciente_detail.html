@@ -5,16 +5,53 @@
 
 {% block page_content %}
 <div class="container-fluid py-4">
+    <style>
+        .semaforo-indicator {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        .semaforo-rojo { background: #dc3545; }
+        .semaforo-amarillo { background: #ffc107; color: #212529; }
+        .semaforo-verde { background: #28a745; }
+    </style>
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="h3">{{ paciente.get_nombre_completo }}</h1>
-            <p class="text-muted">Cédula: <strong>{{ paciente.cedula }}</strong></p>
-            {% if paciente.es_vip %}
-                <span class="badge bg-warning text-dark">
-                    <i class="fas fa-star"></i>
-                    VIP {{ paciente.get_categoria_vip_display|default:"" }}
-                </span>
-            {% endif %}
+            <div class="d-flex align-items-center">
+                <div class="semaforo-indicator {{ semaforo_clase }}" title="{{ semaforo_label }}">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="ml-3">
+                    <div class="d-flex align-items-center flex-wrap mb-1">
+                        <h1 class="h3 mb-0 mr-3">{{ paciente.get_nombre_completo }}</h1>
+                        <span class="badge badge-light text-dark">{{ semaforo_label }}</span>
+                    </div>
+                    <p class="text-muted mb-2">Cédula: <strong>{{ paciente.cedula }}</strong></p>
+                    <div class="d-flex flex-wrap align-items-center">
+                        {% if paciente.es_vip %}
+                            <span class="badge bg-warning text-dark mr-2 mb-1">
+                                <i class="fas fa-star"></i>
+                                VIP {{ paciente.get_categoria_vip_display|default:"" }}
+                            </span>
+                        {% endif %}
+                        {% if enfermedades_criticas > 0 %}
+                            <span class="badge badge-danger mr-2 mb-1">
+                                <i class="fas fa-heartbeat"></i> Condición crítica
+                            </span>
+                        {% endif %}
+                        {% if total_enfermedades > 0 %}
+                            <span class="badge badge-info mb-1">
+                                <i class="fas fa-notes-medical"></i> {{ total_enfermedades }} condición(es)
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'pacientes:paciente-update' paciente.pk %}" class="btn btn-warning btn-sm">
@@ -27,6 +64,41 @@
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
         </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Alertas del Paciente</h5>
+                <small class="text-muted">{{ semaforo_label }}</small>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modalAlertasPaciente">
+                <i class="fas fa-stream"></i> Ver historial de alertas
+            </button>
+        </div>
+        {% if alertas_activas %}
+            <div class="list-group list-group-flush">
+                {% for alerta in alertas_activas %}
+                    <div class="list-group-item d-flex align-items-start">
+                        <span class="badge badge-{{ alerta.get_color_badge }} mr-3">
+                            <i class="fas {{ alerta.get_icono }}"></i> {{ alerta.get_nivel_display }}
+                        </span>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ alerta.titulo }}</strong>
+                                <small class="text-muted">{{ alerta.fc|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <p class="mb-1 small text-muted">{{ alerta.descripcion }}</p>
+                            <div class="small text-uppercase text-secondary">{{ alerta.get_tipo_display }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card-body text-muted">
+                <i class="fas fa-check-circle text-success"></i> Sin alertas activas
+            </div>
+        {% endif %}
     </div>
 
     <div class="row">
@@ -169,9 +241,16 @@
                     <h5 class="mb-0">
                         <i class="fas fa-notes-medical text-danger"></i> Enfermedades Preexistentes
                     </h5>
-                    <a href="{% url 'pacientes:paciente-update' paciente.pk %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-edit"></i> Gestionar
-                    </a>
+                    <div class="btn-group" role="group" aria-label="Acciones enfermedades">
+                        {% if perms.enfermedades.add_enfermedadpaciente %}
+                        <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#modalEnfermedad">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'pacientes:paciente-update' paciente.pk %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Gestionar
+                        </a>
+                    </div>
                 </div>
                 {% if enfermedades_activas %}
                     <div class="table-responsive">
@@ -183,6 +262,9 @@
                                     <th>Nivel de Riesgo</th>
                                     <th>Desde</th>
                                     <th>Alertas</th>
+                                    {% if perms.enfermedades.delete_enfermedadpaciente %}
+                                    <th class="text-end">Acciones</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -222,10 +304,17 @@
                                                 <span class="badge badge-info"><i class="fas fa-user-md"></i> Interconsulta</span>
                                             {% endif %}
                                         </td>
+                                        {% if perms.enfermedades.delete_enfermedadpaciente %}
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-enfermedad" data-url="{% url 'pacientes:paciente-enfermedad-delete' paciente.pk ep.id %}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                        {% endif %}
                                     </tr>
                                     {% if ep.observaciones %}
                                         <tr>
-                                            <td colspan="5" class="bg-light">
+                                            <td colspan="{% if perms.enfermedades.delete_enfermedadpaciente %}6{% else %}5{% endif %}" class="bg-light">
                                                 <small><strong>Observaciones:</strong> {{ ep.observaciones }}</small>
                                             </td>
                                         </tr>
@@ -254,6 +343,60 @@
                         </div>
                     </div>
                 {% endif %}
+            </div>
+
+            <!-- Modal Agregar Enfermedad -->
+            <div class="modal fade" id="modalEnfermedad" tabindex="-1" role="dialog" aria-labelledby="modalEnfermedadLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalEnfermedadLabel">Agregar enfermedad</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form id="form-enfermedad" method="post" data-url="{% url 'pacientes:paciente-enfermedad-add' paciente.pk %}">
+                            <div class="modal-body">
+                                {% csrf_token %}
+                                <div id="enfermedad-errors" class="alert alert-danger d-none" role="alert"></div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-8">
+                                        <label for="id_enfermedad">{{ form_enfermedad.enfermedad.label }}</label>
+                                        {{ form_enfermedad.enfermedad }}
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="id_estado_actual">{{ form_enfermedad.estado_actual.label }}</label>
+                                        {{ form_enfermedad.estado_actual }}
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="id_fecha_diagnostico">{{ form_enfermedad.fecha_diagnostico.label }}</label>
+                                        {{ form_enfermedad.fecha_diagnostico }}
+                                    </div>
+                                    <div class="form-group col-md-4 d-flex align-items-center">
+                                        <div class="form-check mt-4">
+                                            {{ form_enfermedad.requiere_atencion_especial }}
+                                            <label class="form-check-label" for="id_requiere_atencion_especial">{{ form_enfermedad.requiere_atencion_especial.label }}</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="id_medicacion_actual">{{ form_enfermedad.medicacion_actual.label }}</label>
+                                    {{ form_enfermedad.medicacion_actual }}
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label for="id_observaciones">{{ form_enfermedad.observaciones.label }}</label>
+                                    {{ form_enfermedad.observaciones }}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <!-- Historial de Citas -->
@@ -340,4 +483,203 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+<!-- Modal Alertas -->
+<div class="modal fade" id="modalAlertasPaciente" tabindex="-1" role="dialog" aria-labelledby="modalAlertasPacienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAlertasPacienteLabel">Alertas del Paciente - {{ paciente.get_nombre_completo }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% if alertas_historial %}
+                    <div class="list-group">
+                        {% for alerta in alertas_historial %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="badge badge-{{ alerta.get_color_badge }} mr-2">
+                                            <i class="fas {{ alerta.get_icono }}"></i> {{ alerta.get_nivel_display }}
+                                        </span>
+                                        <strong>{{ alerta.titulo }}</strong>
+                                    </div>
+                                    <small class="text-muted">{{ alerta.fc|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1 small text-muted">{{ alerta.descripcion }}</p>
+                                <div class="small text-uppercase text-secondary">{{ alerta.get_tipo_display }} · {% if alerta.es_activa %}Activa{% else %}Inactiva{% endif %}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Sin alertas registradas.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block js_page %}
+<script>
+(function ($) {
+    function getCsrfToken() {
+        var tokenInput = document.querySelector('input[name=csrfmiddlewaretoken]');
+        return tokenInput ? tokenInput.value : '';
+    }
+
+    // Modal de alertas mejorado con AJAX (SOOD-87)
+    $('#modalAlertasPaciente').on('show.bs.modal', function () {
+        var pacienteId = {{ paciente.pk }};
+        var $modal = $(this);
+        var $body = $modal.find('.modal-body');
+        
+        // Mostrar loading
+        $body.html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>');
+        
+        // Cargar datos de alertas vía AJAX
+        $.ajax({
+            url: '{% url "pacientes:paciente-alertas-detalles" paciente.pk %}',
+            method: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
+            if (data.success) {
+                var html = renderAlertasModal(data);
+                $body.html(html);
+            } else {
+                $body.html('<p class="text-danger">Error al cargar alertas.</p>');
+            }
+        }).fail(function () {
+            $body.html('<p class="text-danger">Error de conexión.</p>');
+        });
+    });
+
+    function renderAlertasModal(data) {
+        var html = '<div class="alert-details">';
+        
+        // Semáforo grande
+        var semaforoClase = {
+            'ROJO': 'semaforo-rojo',
+            'AMARILLO': 'semaforo-amarillo',
+            'VERDE': 'semaforo-verde'
+        }[data.nivel_alerta] || 'semaforo-verde';
+        
+        html += '<div class="text-center mb-3">';
+        html += '<div class="semaforo-indicator ' + semaforoClase + '" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto;">';
+        html += '<i class="fas fa-circle"></i></div>';
+        html += '<h5 class="mt-2">' + data.label + '</h5></div>';
+        
+        // Factores agrupados
+        if (data.factores) {
+            html += '<div class="factores-section">';
+            
+            if (data.factores.ROJO && data.factores.ROJO.length > 0) {
+                html += '<div class="mb-3"><h6 class="text-danger"><i class="fas fa-exclamation-circle"></i> Factores Críticos</h6>';
+                html += '<ul class="list-unstyled small">';
+                data.factores.ROJO.forEach(function (f) {
+                    html += '<li><i class="fas fa-circle text-danger"></i> ' + f + '</li>';
+                });
+                html += '</ul></div>';
+            }
+            
+            if (data.factores.AMARILLO && data.factores.AMARILLO.length > 0) {
+                html += '<div class="mb-3"><h6 class="text-warning"><i class="fas fa-exclamation-triangle"></i> Precauciones</h6>';
+                html += '<ul class="list-unstyled small">';
+                data.factores.AMARILLO.forEach(function (f) {
+                    html += '<li><i class="fas fa-circle text-warning"></i> ' + f + '</li>';
+                });
+                html += '</ul></div>';
+            }
+            
+            if (data.factores.INFO && data.factores.INFO.length > 0) {
+                html += '<div class="mb-3"><h6 class="text-info"><i class="fas fa-info-circle"></i> Información</h6>';
+                html += '<ul class="list-unstyled small">';
+                data.factores.INFO.forEach(function (f) {
+                    html += '<li><i class="fas fa-check text-info"></i> ' + f + '</li>';
+                });
+                html += '</ul></div>';
+            }
+            
+            html += '</div>';
+        }
+        
+        // Alertas activas
+        if (data.alertas_activas && data.alertas_activas.length > 0) {
+            html += '<div class="alertas-activas mt-3"><h6>Alertas Activas</h6>';
+            html += '<div class="list-group list-group-sm">';
+            data.alertas_activas.forEach(function (alerta) {
+                var colorClass = 'badge-' + (alerta.nivel === 'ROJO' ? 'danger' : alerta.nivel === 'AMARILLO' ? 'warning' : 'success');
+                html += '<div class="list-group-item small"><span class="badge ' + colorClass + '">' + alerta.nivel + '</span> ' + alerta.titulo + '</div>';
+            });
+            html += '</div></div>';
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    $('#form-enfermedad').on('submit', function (e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $btn = $form.find('button[type="submit"]');
+        var $errors = $('#enfermedad-errors');
+
+        $errors.addClass('d-none').empty();
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: $form.data('url'),
+            method: 'POST',
+            data: $form.serialize(),
+        }).done(function (resp) {
+            if (resp && resp.success) {
+                $('#modalEnfermedad').modal('hide');
+                window.location.reload();
+            }
+        }).fail(function (xhr) {
+            var payload = xhr.responseJSON || {};
+            var errors = payload.errors || {};
+            if (Object.keys(errors).length > 0) {
+                Object.keys(errors).forEach(function (field) {
+                    errors[field].forEach(function (msg) {
+                        $errors.append('<div>' + msg + '</div>');
+                    });
+                });
+                $errors.removeClass('d-none');
+            } else {
+                $errors.removeClass('d-none').text('No se pudo guardar la enfermedad. Inténtalo nuevamente.');
+            }
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    $('.btn-remove-enfermedad').on('click', function (e) {
+        e.preventDefault();
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: $btn.data('url'),
+            method: 'POST',
+            data: { csrfmiddlewaretoken: getCsrfToken() },
+        }).done(function (resp) {
+            if (resp && resp.success) {
+                window.location.reload();
+            }
+        }).fail(function () {
+            if (typeof mensaje === 'function') {
+                mensaje('No se pudo eliminar la enfermedad.', 'error');
+            }
+        }).always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+})(jQuery);
+</script>
 {% endblock %}

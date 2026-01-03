@@ -76,12 +76,29 @@
 
     <!-- Tabla de pacientes -->
     <div class="card">
+        <style>
+            .semaforo-list-indicator {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                font-size: 0.7rem;
+                margin-right: 0.5rem;
+            }
+            .semaforo-rojo { background: #dc3545; }
+            .semaforo-amarillo { background: #ffc107; color: #212529; }
+            .semaforo-verde { background: #28a745; }
+        </style>
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th style="width: 5%">Alerta</th>
                         <th style="width: 10%">Cédula</th>
-                        <th style="width: 30%">Nombre</th>
+                        <th style="width: 25%">Nombre</th>
                         <th style="width: 15%">Teléfono</th>
                         <th style="width: 15%">Email</th>
                         <th style="width: 10%">Género</th>
@@ -93,6 +110,14 @@
                     {% if pacientes %}
                         {% for paciente in pacientes %}
                             <tr>
+                                <td>
+                                    <div class="semaforo-list-indicator {{ paciente.semaforo_clase }}" 
+                                         title="{{ paciente.semaforo_label }}" 
+                              º           data-toggle="tooltip" 
+                                         data-placement="top">
+                                        <i class="fas fa-circle"></i>
+                                    </div>
+                                </td>
                                 <td><strong>{{ paciente.cedula }}</strong></td>
                                 <td>
                                     <a href="{% url 'pacientes:paciente-detail' paciente.pk %}" class="text-decoration-none">

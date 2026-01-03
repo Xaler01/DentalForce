@@ -1932,7 +1932,7 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.POST:
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST)
         else:
             context['cubiculo_formset'] = CubiculoFormSet()
@@ -1941,19 +1941,20 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset']
+        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
 
-        if cubiculo_formset.is_valid():
+        if cubiculo_formset is None or cubiculo_formset.is_valid():
             form.instance.uc = self.request.user
             self.object = form.save()
 
-            cubiculo_formset.instance = self.object
-            cubiculos = cubiculo_formset.save(commit=False)
-            for cubiculo in cubiculos:
-                cubiculo.uc = self.request.user
-                cubiculo.save()
-            for obj in cubiculo_formset.deleted_objects:
-                obj.delete()
+            if cubiculo_formset:
+                cubiculo_formset.instance = self.object
+                cubiculos = cubiculo_formset.save(commit=False)
+                for cubiculo in cubiculos:
+                    cubiculo.uc = self.request.user
+                    cubiculo.save()
+                for obj in cubiculo_formset.deleted_objects:
+                    obj.delete()
 
             messages.success(
                 self.request,
@@ -1965,7 +1966,10 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
 
     def form_invalid(self, form):
         from .forms import CubiculoFormSet
-        cubiculo_formset = CubiculoFormSet(self.request.POST)
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            cubiculo_formset = CubiculoFormSet(self.request.POST)
+        else:
+            cubiculo_formset = CubiculoFormSet()
         messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
         return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 
@@ -1989,7 +1993,7 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.POST:
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST, instance=self.object)
         else:
             context['cubiculo_formset'] = CubiculoFormSet(instance=self.object)
@@ -1999,20 +2003,21 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset']
+        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
 
-        if cubiculo_formset.is_valid():
+        if cubiculo_formset is None or cubiculo_formset.is_valid():
             form.instance.um = self.request.user.id
             self.object = form.save()
 
-            cubiculo_formset.instance = self.object
-            cubiculos = cubiculo_formset.save(commit=False)
-            for cubiculo in cubiculos:
-                if not cubiculo.pk:
-                    cubiculo.uc = self.request.user
-                cubiculo.save()
-            for obj in cubiculo_formset.deleted_objects:
-                obj.delete()
+            if cubiculo_formset:
+                cubiculo_formset.instance = self.object
+                cubiculos = cubiculo_formset.save(commit=False)
+                for cubiculo in cubiculos:
+                    if not cubiculo.pk:
+                        cubiculo.uc = self.request.user
+                    cubiculo.save()
+                for obj in cubiculo_formset.deleted_objects:
+                    obj.delete()
 
             messages.success(self.request, f'Sucursal "{self.object.nombre}" actualizada exitosamente.')
             return redirect(self.success_url)
@@ -2022,7 +2027,10 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_invalid(self, form):
         from .forms import CubiculoFormSet
-        cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+        else:
+            cubiculo_formset = CubiculoFormSet(instance=self.object)
         messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
         return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 

@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import CategoriaEnfermedad, Enfermedad
+from .models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente
 
 
 class CategoriaEnfermedadForm(forms.ModelForm):
@@ -87,3 +87,42 @@ class EnfermedadForm(forms.ModelForm):
         self.fields['descripcion'].required = False
         self.fields['contraindicaciones'].required = False
         self.fields['precauciones'].required = False
+
+
+class EnfermedadPacienteForm(forms.ModelForm):
+    class Meta:
+        model = EnfermedadPaciente
+        fields = [
+            'enfermedad', 'estado_actual', 'fecha_diagnostico',
+            'medicacion_actual', 'observaciones', 'requiere_atencion_especial'
+        ]
+        labels = {
+            'enfermedad': 'Enfermedad',
+            'estado_actual': 'Estado',
+            'fecha_diagnostico': 'Fecha diagnóstico',
+            'medicacion_actual': 'Medicación actual',
+            'observaciones': 'Observaciones',
+            'requiere_atencion_especial': 'Requiere atención especial',
+        }
+        widgets = {
+            'fecha_diagnostico': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'medicacion_actual': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['enfermedad'].queryset = Enfermedad.objects.filter(estado=True).order_by('nombre')
+        for name, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxInput):
+                widget.attrs.update({'class': 'form-check-input'})
+            elif isinstance(widget, forms.Select):
+                widget.attrs.update({'class': 'form-control'})
+            elif isinstance(widget, forms.DateInput):
+                widget.attrs.setdefault('class', 'form-control')
+            else:
+                widget.attrs.update({'class': 'form-control'})
+        self.fields['fecha_diagnostico'].required = False
+        self.fields['medicacion_actual'].required = False
+        self.fields['observaciones'].required = False

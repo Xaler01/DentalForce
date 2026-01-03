@@ -58,6 +58,10 @@ def dentista_post_save(sender, instance, created, **kwargs):
     Asigna automáticamente "Odontología General" y "Diagnóstico" al nuevo dentista.
     """
     if created:
+        from django.conf import settings
+        # Permitir desactivar la asignación automática (útil para pruebas)
+        if not getattr(settings, 'ASSIGN_ESPECIALIDADES_BASE', False):
+            return
         try:
             from .models import Especialidad
             # Obtener o crear la especialidad "Odontología General"
@@ -67,7 +71,9 @@ def dentista_post_save(sender, instance, created, **kwargs):
                     'descripcion': 'Odontología General - Servicios básicos de odontología, resinas y tratamientos de emergencia',
                     'duracion_default': 30,
                     'color_calendario': '#2ecc71',  # Verde
-                    'estado': True
+                    'estado': True,
+                    'uc': instance.uc,
+                    'um': instance.um,
                 }
             )
 
@@ -78,7 +84,9 @@ def dentista_post_save(sender, instance, created, **kwargs):
                     'descripcion': 'Evaluación diagnóstica inicial y seguimiento clínico',
                     'duracion_default': 30,
                     'color_calendario': '#8e44ad',  # Morado
-                    'estado': True
+                    'estado': True,
+                    'uc': instance.uc,
+                    'um': instance.um,
                 }
             )
 

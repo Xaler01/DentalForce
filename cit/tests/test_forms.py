@@ -111,10 +111,13 @@ class CitaFormTest(TestCase):
             um=self.user.id
         )
         
-        # Fecha y hora válida (mañana a las 10:00 AM)
-        self.fecha_valida = timezone.now().replace(
+        # Fecha y hora válida (próximo día hábil a las 10:00 AM, evitando domingo)
+        fecha_valida = timezone.now().replace(
             hour=10, minute=0, second=0, microsecond=0
         ) + timedelta(days=1)
+        if fecha_valida.weekday() == 6:
+            fecha_valida += timedelta(days=1)
+        self.fecha_valida = fecha_valida
     
     # ========================================================================
     # TESTS DE CREACIÓN EXITOSA
