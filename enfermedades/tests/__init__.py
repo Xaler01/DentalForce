@@ -1,0 +1,3 @@
+"""
+Tests del módulo enfermedades
+"""
