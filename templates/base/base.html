@@ -83,6 +83,7 @@
       {% url 'cit:dentista-list' as dentista_list_url %}
       {% url 'enfermedades:categoria_list' as enf_categoria_list_url %}
       {% url 'enfermedades:enfermedad_list' as enf_enfermedad_list_url %}
+      {% url 'enfermedades:dashboard_alertas' as dashboard_alertas_url %}
 
 
       <!-- REORGANIZED MENU FOR RECEPCIONISTA/AGENDADOR USER -->
@@ -221,6 +222,17 @@
       <div class="sidebar-heading">
         Administración
       </div>
+
+      <!-- Nav Item - Dashboard de Alertas (Solo Staff/Admin) SOOD-91 -->
+      {% if user.is_staff %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ dashboard_alertas_url }}">
+          <i class="fas fa-fw fa-chart-line" style="color: #e74c3c;"></i>
+          <span>Dashboard de Alertas</span>
+          <span class="badge badge-danger badge-counter ml-2" id="alertas-counter" style="display: none;">0</span>
+        </a>
+      </li>
+      {% endif %}
 
       <!-- Nav Item - Inventario (Collapsed by Default) -->
       <li class="nav-item">

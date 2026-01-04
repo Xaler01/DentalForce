@@ -1,10 +1,15 @@
 from django.urls import reverse_lazy
 from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.decorators import method_decorator
 from django.views import generic
+from django.db.models import Count, Q
 
 from bases.views import SinPrivilegios
-from .models import CategoriaEnfermedad, Enfermedad
+from pacientes.models import Paciente
+from .models import CategoriaEnfermedad, Enfermedad, AlertaPaciente
 from .forms import CategoriaEnfermedadForm, EnfermedadForm
+from .utils import CalculadorAlerta
 
 
 class CategoriaEnfermedadListView(SinPrivilegios, generic.ListView):
@@ -105,3 +110,124 @@ class EnfermedadDeleteView(SuccessMessageMixin, SinPrivilegios, generic.DeleteVi
 	template_name = "enfermedades/enfermedad_confirm_delete.html"
 	success_url = reverse_lazy("enfermedades:enfermedad_list")
 	success_message = "Enfermedad eliminada correctamente"
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class DashboardAlertasView(generic.ListView):
+	"""
+	Dashboard de alertas para administradores (SOOD-91).
+	
+	Vista exclusiva para personal staff que muestra:
+	- Estadísticas generales de alertas
+	- Listado de pacientes con alertas activas
+	- Filtros por nivel de alerta
+	- Gráficos y métricas del sistema
+	"""
+	
+	model = Paciente
+	template_name = "enfermedades/dashboard_alertas.html"
+	context_object_name = "pacientes"
+	paginate_by = 20
+	
+	def get_queryset(self):
+		"""Filtra pacientes con alertas activas según filtros aplicados."""
+		queryset = Paciente.objects.filter(estado=True).select_related()
+		
+		# Obtener pacientes con alertas activas
+		pacientes_con_alertas = AlertaPaciente.objects.filter(
+			es_activa=True
+		).values_list('paciente_id', flat=True).distinct()
+		
+		queryset = queryset.filter(id__in=pacientes_con_alertas)
+		
+		# Filtro por nivel de alerta
+		nivel_filtro = self.request.GET.get('nivel', '')
+		if nivel_filtro in ['ROJO', 'AMARILLO', 'VERDE']:
+			# Calculamos nivel para cada paciente y filtramos
+			pacientes_filtrados = []
+			for paciente in queryset:
+				calc = CalculadorAlerta(paciente)
+				if calc.calcular_nivel_alerta() == nivel_filtro:
+					# Agregamos atributos calculados al objeto
+					paciente.nivel_alerta = nivel_filtro
+					paciente.semaforo_clase = self._get_semaforo_clase(nivel_filtro)
+					paciente.semaforo_label = nivel_filtro
+					paciente.factores_alerta = calc.obtener_factores_alerta()
+					pacientes_filtrados.append(paciente)
+			return pacientes_filtrados
+		else:
+			# Sin filtro, agregar datos calculados a todos
+			for paciente in queryset:
+				calc = CalculadorAlerta(paciente)
+				nivel = calc.calcular_nivel_alerta()
+				paciente.nivel_alerta = nivel
+				paciente.semaforo_clase = self._get_semaforo_clase(nivel)
+				paciente.semaforo_label = nivel
+				paciente.factores_alerta = calc.obtener_factores_alerta()
+		
+		return queryset.order_by('-id')
+	
+	def get_context_data(self, **kwargs):
+		"""Agrega estadísticas y datos adicionales al contexto."""
+		context = super().get_context_data(**kwargs)
+		
+		# Estadísticas generales
+		total_pacientes = Paciente.objects.filter(estado=True).count()
+		alertas_activas = AlertaPaciente.objects.filter(
+			es_activa=True
+		).count()
+		
+		# Contar por nivel de alerta
+		pacientes_activos = Paciente.objects.filter(estado=True)
+		rojos = []
+		amarillos = []
+		verdes = []
+		
+		for paciente in pacientes_activos:
+			calc = CalculadorAlerta(paciente)
+			nivel = calc.calcular_nivel_alerta()
+			if nivel == 'ROJO':
+				rojos.append(paciente.id)
+			elif nivel == 'AMARILLO':
+				amarillos.append(paciente.id)
+			elif nivel == 'VERDE':
+				verdes.append(paciente.id)
+		
+		# Contar VIPs
+		total_vips = Paciente.objects.filter(estado=True, es_vip=True).count()
+		
+		# Enfermedades más comunes en pacientes con alertas
+		from enfermedades.models import EnfermedadPaciente
+		enfermedades_comunes = EnfermedadPaciente.objects.filter(
+			paciente__estado=True,
+			paciente__id__in=[p.id for p in self.get_queryset()]
+		).values(
+			'enfermedad__nombre',
+			'enfermedad__nivel_riesgo'
+		).annotate(
+			total=Count('id')
+		).order_by('-total')[:10]
+		
+		context.update({
+			'total_pacientes': total_pacientes,
+			'total_alertas_activas': alertas_activas,
+			'total_rojos': len(rojos),
+			'total_amarillos': len(amarillos),
+			'total_verdes': len(verdes),
+			'total_vips': total_vips,
+			'porcentaje_alertas': round((alertas_activas / total_pacientes * 100) if total_pacientes > 0 else 0, 1),
+			'enfermedades_comunes': enfermedades_comunes,
+			'nivel_filtro': self.request.GET.get('nivel', ''),
+		})
+		
+		return context
+	
+	def _get_semaforo_clase(self, nivel):
+		"""Retorna la clase CSS según el nivel de alerta."""
+		clases = {
+			'ROJO': 'rojo',
+			'AMARILLO': 'amarillo',
+			'VERDE': 'verde'
+		}
+		return clases.get(nivel, 'verde')
+

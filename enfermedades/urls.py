@@ -20,6 +20,9 @@ urlpatterns = [
     path('<int:pk>/editar/', views.EnfermedadUpdateView.as_view(), name='enfermedad_update'),
     path('<int:pk>/eliminar/', views.EnfermedadDeleteView.as_view(), name='enfermedad_delete'),
     
+    # SOOD-91: Dashboard de Alertas para Administradores
+    path('dashboard-alertas/', views.DashboardAlertasView.as_view(), name='dashboard_alertas'),
+    
     # URLs de Enfermedad (SOOD-83 - Fase 3)
     # path('', views.EnfermedadListView.as_view(), name='enfermedad_list'),
     # path('crear/', views.EnfermedadCreateView.as_view(), name='enfermedad_create'),
