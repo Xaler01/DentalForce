@@ -9,6 +9,29 @@ from .models import (
     ComisionDentista, Clinica, Sucursal
 )
 from django.contrib.auth.models import User
+from pacientes.models import Paciente
+
+
+# Widget personalizado para pacientes con mejor búsqueda
+class PacienteSelect2(forms.Select):
+    """
+    Widget Select2 mejorado para búsqueda de pacientes
+    Muestra: "Apellido, Nombre (Cédula)" para mejor identificación
+    """
+    
+    def __init__(self, attrs=None, choices=()):
+        if attrs is None:
+            attrs = {}
+        # Asegurar clases de Select2
+        attrs['class'] = attrs.get('class', '') + ' form-control select2-paciente'
+        attrs['data-placeholder'] = 'Buscar paciente por nombre o cédula...'
+        attrs['style'] = attrs.get('style', '') + '; width: 100%;'
+        super().__init__(attrs, choices)
+    
+    def optgroups(self, name, value, attrs=None):
+        """Personalizar cómo se muestran las opciones"""
+        for group_name, subgroup, index in super().optgroups(name, value, attrs):
+            yield group_name, subgroup, index
 
 
 # Widget personalizado para Select Multiple que garantiza el atributo multiple
@@ -84,9 +107,9 @@ class CitaForm(forms.ModelForm):
             'observaciones'
         ]
         widgets = {
-            'paciente': forms.Select(attrs={
-                'class': 'form-control select2',
-                'required': True
+            'paciente': PacienteSelect2(attrs={
+                'required': True,
+                'data-search-field': 'nombres,apellidos,cedula'
             }),
             'dentista': forms.Select(attrs={
                 'class': 'form-control select2',

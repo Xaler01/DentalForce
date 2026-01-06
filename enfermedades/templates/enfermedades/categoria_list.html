@@ -48,9 +48,7 @@
                             <td>{{ item.nombre }}</td>
                             <td>
                                 {% if item.icono %}
-                                    <span class="badge badge-light border">
-                                        <i class="fas {{ item.icono }}"></i> {{ item.icono }}
-                                    </span>
+                                    <i class="fas {{ item.icono }} fa-2x" style="color: {{ item.color }};"></i>
                                 {% else %}
                                     <span class="text-muted">N/D</span>
                                 {% endif %}
