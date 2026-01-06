@@ -56,6 +56,46 @@
                     <h6 class="text-primary mb-3">
                         <i class="fas fa-user-injured"></i> Información del Paciente
                     </h6>
+                    
+                    <!-- Alerta de Enfermedades Críticas (PRIORIDAD MÁXIMA) -->
+                    {% if cita.paciente.tiene_enfermedades_criticas %}
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>⚠️ PACIENTE CON ENFERMEDADES CRÍTICAS</strong><br>
+                            <small>Revisar historial médico antes de proceder con el tratamiento. Este paciente requiere atención especial.</small>
+                        </div>
+                    {% elif cita.paciente.calcular_nivel_alerta == 'ALTO' %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-exclamation-circle"></i> <strong>⚠️ PACIENTE CON CONDICIONES DE ALTO RIESGO</strong><br>
+                            <small>Revisar condiciones médicas preexistentes antes del tratamiento.</small>
+                        </div>
+                    {% elif cita.paciente.calcular_nivel_alerta == 'MEDIO' %}
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i> <strong>ℹ️ PACIENTE CON CONDICIONES MÉDICAS</strong><br>
+                            <small>Tomar precauciones según historial médico.</small>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Alerta de Paciente VIP -->
+                    {% if cita.paciente.es_vip %}
+                        {% if cita.paciente.categoria_vip == 'PLATINUM' %}
+                            <div class="alert alert-danger mb-3">
+                                <i class="fas fa-star"></i> <strong>⭐ PACIENTE VIP PLATINUM</strong> - Dar trato prioritario
+                            </div>
+                        {% elif cita.paciente.categoria_vip == 'PREMIUM' %}
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-gem"></i> <strong>💎 PACIENTE VIP PREMIUM</strong> - Atención especial
+                            </div>
+                        {% elif cita.paciente.categoria_vip == 'STANDARD' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-medal"></i> <strong>🏅 PACIENTE VIP STANDARD</strong>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-primary mb-3">
+                                <i class="fas fa-crown"></i> <strong>👑 PACIENTE VIP</strong>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Nombre Completo:</strong><br>

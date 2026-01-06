@@ -951,13 +951,13 @@ def citas_json(request):
 
 
 @login_required
-@login_required
 @require_http_methods(["GET"])
 def buscar_pacientes(request):
     """
     Endpoint AJAX para buscar pacientes.
     Retorna JSON con lista de pacientes que coinciden con la búsqueda.
     Compatible con Select2.
+    Busca por: nombres, apellidos o cédula.
     """
     query = request.GET.get('q', '').strip()
     page = int(request.GET.get('page', 1))
@@ -969,6 +969,7 @@ def buscar_pacientes(request):
         pacientes = Paciente.objects.filter(
             estado=True
         ).order_by('-id')[:10]
+        print(f"[DEBUG] Sin query, mostrando recientes: {pacientes.count()} pacientes")
     else:
         # Buscar en nombre, apellido o cédula
         pacientes = Paciente.objects.filter(
@@ -977,29 +978,40 @@ def buscar_pacientes(request):
             Q(cedula__icontains=query),
             estado=True
         ).order_by('apellidos', 'nombres')
+        print(f"[DEBUG] Con query '{query}': {pacientes.count()} pacientes encontrados")
     
     # Paginación
     per_page = 10
     start = (page - 1) * per_page
     end = start + per_page
-    total_count = len(pacientes)
-    pacientes_page = pacientes[start:end]
+    total_count = pacientes.count() if hasattr(pacientes, 'count') else len(pacientes)
+    pacientes_page = list(pacientes[start:end])
+    
+    print(f"[DEBUG] Pagina {page}: mostrando {len(pacientes_page)} de {total_count}")
     
     results = [{
         'id': p.id,
         'text': f"{p.nombres} {p.apellidos}",
         'cedula': p.cedula,
         'nombres': p.nombres,
-        'apellidos': p.apellidos
+        'apellidos': p.apellidos,
+        'es_vip': p.es_vip,
+        'categoria_vip': p.categoria_vip,
+        'tiene_enfermedades_criticas': p.tiene_enfermedades_criticas(),
+        'nivel_alerta': p.calcular_nivel_alerta()
     } for p in pacientes_page]
     
-    return JsonResponse({
+    response = {
         'results': results,
         'total_count': total_count,
         'pagination': {
             'more': (page * per_page) < total_count
         }
-    })
+    }
+    
+    print(f"[DEBUG] Retornando: {response}")
+    
+    return JsonResponse(response)
 
 
 
