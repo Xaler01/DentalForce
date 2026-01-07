@@ -16,59 +16,74 @@
         </div>
     </div>
 
-    <!-- Formulario de búsqueda -->
-    <div class="card mb-4">
+    <!-- Filtros y Búsqueda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
         <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label for="buscar" class="form-label">Buscar</label>
-                    <input 
-                        type="text" 
-                        class="form-control form-control-sm" 
-                        id="buscar"
-                        name="buscar"
-                        placeholder="Nombre, cédula o teléfono"
-                        value="{{ form.buscar.value|default:'' }}"
-                    >
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="genero" class="form-label">Género</label>
-                    <select class="form-select form-select-sm" id="genero" name="genero">
-                        <option value="">Todos</option>
-                        <option value="M" {% if form.genero.value == 'M' %}selected{% endif %}>Masculino</option>
-                        <option value="F" {% if form.genero.value == 'F' %}selected{% endif %}>Femenino</option>
-                    </select>
-                </div>
-                
-                <div class="col-md-3">
-                    <label for="tipo_sangre" class="form-label">Tipo de Sangre</label>
-                    <select class="form-select form-select-sm" id="tipo_sangre" name="tipo_sangre">
-                        <option value="">Todos</option>
-                        <option value="O+" {% if form.tipo_sangre.value == 'O+' %}selected{% endif %}>O+</option>
-                        <option value="O-" {% if form.tipo_sangre.value == 'O-' %}selected{% endif %}>O-</option>
-                        <option value="A+" {% if form.tipo_sangre.value == 'A+' %}selected{% endif %}>A+</option>
-                        <option value="A-" {% if form.tipo_sangre.value == 'A-' %}selected{% endif %}>A-</option>
-                        <option value="B+" {% if form.tipo_sangre.value == 'B+' %}selected{% endif %}>B+</option>
-                        <option value="B-" {% if form.tipo_sangre.value == 'B-' %}selected{% endif %}>B-</option>
-                        <option value="AB+" {% if form.tipo_sangre.value == 'AB+' %}selected{% endif %}>AB+</option>
-                        <option value="AB-" {% if form.tipo_sangre.value == 'AB-' %}selected{% endif %}>AB-</option>
-                    </select>
-                </div>
-                
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="fas fa-search"></i> Buscar
-                    </button>
-                </div>
-
-                <div class="col-md-12 d-flex align-items-center mt-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="1" id="incluir_inactivos" name="incluir_inactivos" {% if incluir_inactivos %}checked{% endif %}>
-                        <label class="form-check-label" for="incluir_inactivos">
-                            Incluir pacientes desactivados
-                        </label>
+            <form method="get" id="filter-form">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="buscar"><i class="fas fa-search"></i> Búsqueda General</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="buscar"
+                                name="buscar"
+                                placeholder="Nombre, cédula o teléfono"
+                                value="{{ form.buscar.value|default:'' }}"
+                            >
+                        </div>
                     </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="genero"><i class="fas fa-venus-mars"></i> Género</label>
+                            <select class="form-control" id="genero" name="genero">
+                                <option value="">Todos</option>
+                                <option value="M" {% if form.genero.value == 'M' %}selected{% endif %}>Masculino</option>
+                                <option value="F" {% if form.genero.value == 'F' %}selected{% endif %}>Femenino</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="tipo_sangre"><i class="fas fa-droplet"></i> Tipo de Sangre</label>
+                            <select class="form-control" id="tipo_sangre" name="tipo_sangre">
+                                <option value="">Todos</option>
+                                <option value="O+" {% if form.tipo_sangre.value == 'O+' %}selected{% endif %}>O+</option>
+                                <option value="O-" {% if form.tipo_sangre.value == 'O-' %}selected{% endif %}>O-</option>
+                                <option value="A+" {% if form.tipo_sangre.value == 'A+' %}selected{% endif %}>A+</option>
+                                <option value="A-" {% if form.tipo_sangre.value == 'A-' %}selected{% endif %}>A-</option>
+                                <option value="B+" {% if form.tipo_sangre.value == 'B+' %}selected{% endif %}>B+</option>
+                                <option value="B-" {% if form.tipo_sangre.value == 'B-' %}selected{% endif %}>B-</option>
+                                <option value="AB+" {% if form.tipo_sangre.value == 'AB+' %}selected{% endif %}>AB+</option>
+                                <option value="AB-" {% if form.tipo_sangre.value == 'AB-' %}selected{% endif %}>AB-</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <a href="{% url 'pacientes:paciente-list' %}" class="btn btn-secondary btn-block mt-2">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" value="1" id="incluir_inactivos" name="incluir_inactivos" {% if incluir_inactivos %}checked{% endif %}>
+                    <label class="form-check-label" for="incluir_inactivos">
+                        Incluir pacientes desactivados
+                    </label>
                 </div>
             </form>
         </div>
@@ -113,7 +128,7 @@
                                 <td>
                                     <div class="semaforo-list-indicator {{ paciente.semaforo_clase }}" 
                                          title="{{ paciente.semaforo_label }}" 
-                              º           data-toggle="tooltip" 
+                                         data-toggle="tooltip" 
                                          data-placement="top">
                                         <i class="fas fa-circle"></i>
                                     </div>

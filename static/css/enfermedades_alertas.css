@@ -362,3 +362,94 @@
     font-weight: bold;
     font-size: 0.75rem;
 }
+
+/* ========== ESTILOS PARA FILTROS DE ALERTA ========== */
+
+.filter-btn {
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-btn.active {
+    transform: scale(1.05);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.filter-btn.rojo { 
+    background-color: #dc3545; 
+    color: white;
+    border-color: #dc3545;
+}
+
+.filter-btn.rojo:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.filter-btn.amarillo { 
+    background-color: #ffc107; 
+    color: #333;
+    border-color: #ffc107;
+}
+
+.filter-btn.amarillo:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+}
+
+.filter-btn.verde { 
+    background-color: #28a745; 
+    color: white;
+    border-color: #28a745;
+}
+
+.filter-btn.verde:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+/* Iconos dentro de filtros */
+.filter-btn i {
+    font-size: 1rem;
+}
+
+.filter-btn .text-danger {
+    color: #dc3545 !important;
+}
+
+.filter-btn .text-warning {
+    color: #ffc107 !important;
+}
+
+.filter-btn .text-success {
+    color: #28a745 !important;
+}
+
+/* Estilos para badges de enfermedades con colores según nivel de riesgo */
+.enfermedad-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0.1rem;
+    border-radius: 10px;
+    color: white;
+    background-color: #17a2b8;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-rojo {
+    background-color: #dc3545;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-amarillo {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-verde {
+    background-color: #28a745;
+}

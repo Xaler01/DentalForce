@@ -169,23 +169,32 @@
             </h6>
         </div>
         <div class="card-body">
-            <div class="btn-group btn-group-toggle" data-toggle="buttons" role="group">
+            <div class="d-flex flex-wrap gap-2">
                 <a href="{% url 'enfermedades:dashboard_alertas' %}" 
                    class="btn filter-btn {% if not nivel_filtro %}active{% endif %}"
                    style="background-color: #6c757d; color: white;">
-                    <i class="fas fa-list"></i> Todos
+                    <i class="fas fa-th-list"></i> Todos
                 </a>
                 <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=ROJO" 
                    class="btn filter-btn rojo {% if nivel_filtro == 'ROJO' %}active{% endif %}">
-                    <i class="fas fa-circle"></i> Rojos
+                    {% if nivel_filtro == 'ROJO' %}
+                        <span class="semaforo-list-indicator semaforo-rojo" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Rojos
                 </a>
                 <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=AMARILLO" 
                    class="btn filter-btn amarillo {% if nivel_filtro == 'AMARILLO' %}active{% endif %}">
-                    <i class="fas fa-circle"></i> Amarillos
+                    {% if nivel_filtro == 'AMARILLO' %}
+                        <span class="semaforo-list-indicator semaforo-amarillo" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Amarillos
                 </a>
                 <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=VERDE" 
                    class="btn filter-btn verde {% if nivel_filtro == 'VERDE' %}active{% endif %}">
-                    <i class="fas fa-circle"></i> Verdes
+                    {% if nivel_filtro == 'VERDE' %}
+                        <span class="semaforo-list-indicator semaforo-verde" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Verdes
                 </a>
             </div>
             {% if nivel_filtro %}
@@ -224,12 +233,12 @@
                     <table class="table table-bordered table-hover" id="dataTable">
                         <thead class="thead-light">
                             <tr>
-                                <th width="50">Alerta</th>
+                                <th width="50" class="text-center">Alerta</th>
                                 <th>Paciente</th>
                                 <th>Cédula</th>
-                                <th>Edad</th>
+                                <th width="80">Edad</th>
                                 <th>Enfermedades</th>
-                                <th>VIP</th>
+                                <th width="50" class="text-center">VIP</th>
                                 <th width="150" class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -249,12 +258,12 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ paciente.cedula|default:"Sin cédula" }}</td>
-                                <td>{{ paciente.edad|default:"N/A" }} años</td>
+                                <td class="text-center">{{ paciente.get_edad|default:"N/A" }} años</td>
                                 <td>
                                     {% if paciente.enfermedades.exists %}
-                                        {% for ep in paciente.enfermedades_relacion.all|slice:":3" %}
-                                            <span class="badge enfermedad-badge bg-alerta-{{ paciente.semaforo_clase }}">
-                                                {{ ep.enfermedad.nombre }}
+                                        {% for enfermedad in paciente.enfermedades.all|slice:":3" %}
+                                            <span class="badge enfermedad-badge" style="background-color: #17a2b8; color: white;">
+                                                {{ enfermedad.nombre }}
                                             </span>
                                         {% endfor %}
                                         {% if paciente.enfermedades.count > 3 %}
@@ -298,8 +307,8 @@
 
                 <!-- Paginación -->
                 {% if is_paginated %}
-                <nav aria-label="Paginación">
-                    <ul class="pagination justify-content-center">
+                <nav aria-label="Paginación" class="d-flex justify-content-center">
+                    <ul class="pagination mt-4">
                         {% if page_obj.has_previous %}
                         <li class="page-item">
                             <a class="page-link" href="?page=1{% if nivel_filtro %}&nivel={{ nivel_filtro }}{% endif %}">Primera</a>

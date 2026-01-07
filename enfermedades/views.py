@@ -225,9 +225,9 @@ class DashboardAlertasView(generic.ListView):
 	def _get_semaforo_clase(self, nivel):
 		"""Retorna la clase CSS según el nivel de alerta."""
 		clases = {
-			'ROJO': 'rojo',
-			'AMARILLO': 'amarillo',
-			'VERDE': 'verde'
+			'ROJO': 'semaforo-rojo',
+			'AMARILLO': 'semaforo-amarillo',
+			'VERDE': 'semaforo-verde'
 		}
-		return clases.get(nivel, 'verde')
+		return clases.get(nivel, 'semaforo-verde')
 
