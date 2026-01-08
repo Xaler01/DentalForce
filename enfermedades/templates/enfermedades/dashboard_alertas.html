@@ -262,7 +262,7 @@
                                 <td>
                                     {% if paciente.enfermedades.exists %}
                                         {% for enfermedad in paciente.enfermedades.all|slice:":3" %}
-                                            <span class="badge enfermedad-badge" style="background-color: #17a2b8; color: white;">
+                                            <span class="badge enfermedad-badge {% if enfermedad.nivel_riesgo == 'CRITICO' %}bg-alerta-semaforo-rojo{% elif enfermedad.nivel_riesgo == 'ALTO' %}bg-alerta-semaforo-amarillo{% elif enfermedad.nivel_riesgo == 'MEDIO' %}bg-alerta-semaforo-amarillo{% else %}bg-alerta-semaforo-verde{% endif %}">
                                                 {{ enfermedad.nombre }}
                                             </span>
                                         {% endfor %}
