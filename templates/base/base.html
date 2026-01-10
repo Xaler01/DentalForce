@@ -10,7 +10,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-    <title>Orbedent | Cuidamos tu sonrisa</title>
+    <title>{{ clinica_titulo_pestana|default:"PowerDent | Cuidamos tu sonrisa" }}</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{% static 'base/img/favicon.ico' %}">
@@ -54,7 +54,10 @@
         <div class="sidebar-brand-icon rotate-n-15">
           <i class="fas fa-laugh-wink"></i>
         </div>
-          <div class="sidebar-brand-text mx-3">Orbedent-<sub>v1.0</sub></div>
+          <div class="sidebar-brand-text mx-3">
+            {{ clinica_nombre|default:"PowerDent" }}
+            <sub class="text-light" style="font-size: 0.65rem;">{{ by_powerdent_label|default:"by PowerDent" }}</sub>
+          </div>
       </a>
 
       <!-- Divider -->
@@ -557,10 +560,27 @@
       <!-- End of Main Content -->
         {% block footer %}
       <!-- Footer -->
-      <footer class="sticky-footer bg-white">
-        <div class="container my-auto">
-          <div class="copyright text-center my-auto">
-            <span>Copyright &copy; PowerDent 2026</span>
+      <footer class="sticky-footer bg-white border-top">
+        <div class="container-fluid py-3">
+          <div class="row align-items-center text-center">
+            <div class="col-12">
+              <!-- Nombre de la clínica actual -->
+              <p class="mb-1 font-weight-bold text-dark">
+                {{ clinica_nombre|default:"PowerDent" }}
+              </p>
+              <!-- Eslogan opcional -->
+              {% if clinica_eslogan %}
+                <p class="mb-2 small text-muted">
+                  {{ clinica_eslogan }}
+                </p>
+              {% endif %}
+              <!-- Branding by PowerDent -->
+              <p class="mb-0 small text-muted">
+                <span>{{ by_powerdent_label|default:"by PowerDent" }}</span>
+                <span class="mx-1">·</span>
+                <span>© 2026</span>
+              </p>
+            </div>
           </div>
         </div>
       </footer>

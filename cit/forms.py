@@ -1378,7 +1378,7 @@ class ClinicaForm(forms.ModelForm):
     class Meta:
         model = Clinica
         fields = [
-            'nombre', 'direccion', 'telefono', 'email',
+            'nombre', 'eslogan', 'titulo_pestana', 'direccion', 'telefono', 'email',
             'ruc', 'razon_social', 'representante_legal',
             'pais', 'moneda', 'zona_horaria',
             'logo', 'sitio_web'
@@ -1388,6 +1388,16 @@ class ClinicaForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nombre comercial de la clínica',
                 'maxlength': '150'
+            }),
+            'eslogan': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: "Cuidamos tu sonrisa" (opcional)',
+                'maxlength': '80'
+            }),
+            'titulo_pestana': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: "Clínica Tío Alex | Tu salud oral primero" (opcional)',
+                'maxlength': '180'
             }),
             'direccion': forms.Textarea(attrs={
                 'class': 'form-control',

@@ -9,6 +9,21 @@ class Clinica(ClaseModelo):
     telefono = models.CharField(max_length=20, verbose_name='Teléfono', help_text='Teléfono de contacto principal')
     email = models.EmailField(verbose_name='Email', help_text='Email de contacto de la clínica')
 
+    eslogan = models.CharField(
+        max_length=80,
+        blank=True,
+        null=True,
+        verbose_name='Eslogan',
+        help_text='Frase corta y memorable (máx. 80 caracteres). Ej: "Gestión clínica"'
+    )
+    titulo_pestana = models.CharField(
+        max_length=180,
+        blank=True,
+        null=True,
+        verbose_name='Título de Pestaña Personalizado',
+        help_text='Texto a mostrar en la pestaña del navegador (opcional). Si no llenan, usará: Nombre | Eslogan'
+    )
+
     ruc = models.CharField(max_length=20, blank=True, null=True, verbose_name='RUC/NIT/CUIT')
     razon_social = models.CharField(max_length=200, blank=True, null=True, verbose_name='Razón Social')
     representante_legal = models.CharField(max_length=150, blank=True, null=True, verbose_name='Representante Legal')
