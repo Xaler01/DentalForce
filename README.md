@@ -155,12 +155,20 @@ DB_USER=orbedent_user
 DB_PASSWORD=tu_password_seguro
 DB_HOST=localhost
 DB_PORT=5432
+
+# JIRA Y CONFLUENCE (para agentes post-commit)
+JIRA_URL=https://sistemaodontologico.atlassian.net
+JIRA_EMAIL=tu-email@example.com
+JIRA_API_TOKEN=tu-token-api-aqui
+CONFLUENCE_URL=https://sistemaodontologico.atlassian.net/wiki
 ```
 
 **Generar SECRET_KEY:**
 ```bash
 python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
 ```
+
+> **Nota:** Las variables de Jira/Confluence son opcionales. Los agentes post-commit las usan para actualizar automáticamente las tareas en Jira y sincronizar con Confluence después de cada commit.
 
 ### 6. Aplicar Migraciones
 ```bash

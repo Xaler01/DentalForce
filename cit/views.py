@@ -951,13 +951,13 @@ def citas_json(request):
 
 
 @login_required
-@login_required
 @require_http_methods(["GET"])
 def buscar_pacientes(request):
     """
     Endpoint AJAX para buscar pacientes.
     Retorna JSON con lista de pacientes que coinciden con la búsqueda.
     Compatible con Select2.
+    Busca por: nombres, apellidos o cédula.
     """
     query = request.GET.get('q', '').strip()
     page = int(request.GET.get('page', 1))
@@ -969,6 +969,7 @@ def buscar_pacientes(request):
         pacientes = Paciente.objects.filter(
             estado=True
         ).order_by('-id')[:10]
+        print(f"[DEBUG] Sin query, mostrando recientes: {pacientes.count()} pacientes")
     else:
         # Buscar en nombre, apellido o cédula
         pacientes = Paciente.objects.filter(
@@ -977,29 +978,40 @@ def buscar_pacientes(request):
             Q(cedula__icontains=query),
             estado=True
         ).order_by('apellidos', 'nombres')
+        print(f"[DEBUG] Con query '{query}': {pacientes.count()} pacientes encontrados")
     
     # Paginación
     per_page = 10
     start = (page - 1) * per_page
     end = start + per_page
-    total_count = len(pacientes)
-    pacientes_page = pacientes[start:end]
+    total_count = pacientes.count() if hasattr(pacientes, 'count') else len(pacientes)
+    pacientes_page = list(pacientes[start:end])
+    
+    print(f"[DEBUG] Pagina {page}: mostrando {len(pacientes_page)} de {total_count}")
     
     results = [{
         'id': p.id,
         'text': f"{p.nombres} {p.apellidos}",
         'cedula': p.cedula,
         'nombres': p.nombres,
-        'apellidos': p.apellidos
+        'apellidos': p.apellidos,
+        'es_vip': p.es_vip,
+        'categoria_vip': p.categoria_vip,
+        'tiene_enfermedades_criticas': p.tiene_enfermedades_criticas(),
+        'nivel_alerta': p.calcular_nivel_alerta()
     } for p in pacientes_page]
     
-    return JsonResponse({
+    response = {
         'results': results,
         'total_count': total_count,
         'pagination': {
             'more': (page * per_page) < total_count
         }
-    })
+    }
+    
+    print(f"[DEBUG] Retornando: {response}")
+    
+    return JsonResponse(response)
 
 
 
@@ -1932,7 +1944,7 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.POST:
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST)
         else:
             context['cubiculo_formset'] = CubiculoFormSet()
@@ -1941,19 +1953,20 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset']
+        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
 
-        if cubiculo_formset.is_valid():
+        if cubiculo_formset is None or cubiculo_formset.is_valid():
             form.instance.uc = self.request.user
             self.object = form.save()
 
-            cubiculo_formset.instance = self.object
-            cubiculos = cubiculo_formset.save(commit=False)
-            for cubiculo in cubiculos:
-                cubiculo.uc = self.request.user
-                cubiculo.save()
-            for obj in cubiculo_formset.deleted_objects:
-                obj.delete()
+            if cubiculo_formset:
+                cubiculo_formset.instance = self.object
+                cubiculos = cubiculo_formset.save(commit=False)
+                for cubiculo in cubiculos:
+                    cubiculo.uc = self.request.user
+                    cubiculo.save()
+                for obj in cubiculo_formset.deleted_objects:
+                    obj.delete()
 
             messages.success(
                 self.request,
@@ -1965,7 +1978,10 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
 
     def form_invalid(self, form):
         from .forms import CubiculoFormSet
-        cubiculo_formset = CubiculoFormSet(self.request.POST)
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            cubiculo_formset = CubiculoFormSet(self.request.POST)
+        else:
+            cubiculo_formset = CubiculoFormSet()
         messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
         return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 
@@ -1989,7 +2005,7 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.POST:
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST, instance=self.object)
         else:
             context['cubiculo_formset'] = CubiculoFormSet(instance=self.object)
@@ -1999,20 +2015,21 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset']
+        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
 
-        if cubiculo_formset.is_valid():
+        if cubiculo_formset is None or cubiculo_formset.is_valid():
             form.instance.um = self.request.user.id
             self.object = form.save()
 
-            cubiculo_formset.instance = self.object
-            cubiculos = cubiculo_formset.save(commit=False)
-            for cubiculo in cubiculos:
-                if not cubiculo.pk:
-                    cubiculo.uc = self.request.user
-                cubiculo.save()
-            for obj in cubiculo_formset.deleted_objects:
-                obj.delete()
+            if cubiculo_formset:
+                cubiculo_formset.instance = self.object
+                cubiculos = cubiculo_formset.save(commit=False)
+                for cubiculo in cubiculos:
+                    if not cubiculo.pk:
+                        cubiculo.uc = self.request.user
+                    cubiculo.save()
+                for obj in cubiculo_formset.deleted_objects:
+                    obj.delete()
 
             messages.success(self.request, f'Sucursal "{self.object.nombre}" actualizada exitosamente.')
             return redirect(self.success_url)
@@ -2022,7 +2039,10 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_invalid(self, form):
         from .forms import CubiculoFormSet
-        cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+        else:
+            cubiculo_formset = CubiculoFormSet(instance=self.object)
         messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
         return self.render_to_response(self.get_context_data(form=form, cubiculo_formset=cubiculo_formset))
 

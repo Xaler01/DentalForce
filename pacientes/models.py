@@ -2,6 +2,8 @@
 Pacientes app models: Paciente
 Moved from cit.models during SOOD-62 refactoring.
 """
+from decimal import Decimal
+
 from django.db import models
 from bases.models import ClaseModelo
 from clinicas.models import Clinica
@@ -98,6 +100,26 @@ class Paciente(ClaseModelo):
         help_text='Condiciones médicas, medicamentos, etc.',
         blank=True
     )
+
+    VIP_CHOICES = [
+        ('', 'No VIP'),
+        ('STANDARD', 'VIP Standard'),
+        ('PREMIUM', 'VIP Premium'),
+        ('PLATINUM', 'VIP Platinum'),
+    ]
+    es_vip = models.BooleanField(
+        default=False,
+        verbose_name='Cliente VIP',
+        help_text='Marcar manualmente si el paciente es VIP'
+    )
+    categoria_vip = models.CharField(
+        max_length=10,
+        choices=VIP_CHOICES,
+        blank=True,
+        default='',
+        verbose_name='Categoría VIP',
+        help_text='Clasificación VIP manual (Standard/Premium/Platinum)'
+    )
     
     # Contacto de Emergencia
     contacto_emergencia_nombre = models.CharField(
@@ -139,6 +161,15 @@ class Paciente(ClaseModelo):
         help_text='Clínica donde está registrado el paciente',
         null=True,
         blank=True
+    )
+
+    enfermedades = models.ManyToManyField(
+        'enfermedades.Enfermedad',
+        through='enfermedades.EnfermedadPaciente',
+        related_name='pacientes',
+        verbose_name='Enfermedades',
+        blank=True,
+        help_text='Enfermedades preexistentes asociadas al paciente'
     )
 
     def __init__(self, *args, **kwargs):
@@ -215,4 +246,40 @@ class Paciente(ClaseModelo):
         return f"{self.nombres} {self.apellidos}"
     
     get_nombre_completo.short_description = 'Nombre Completo'
+
+    def get_enfermedades_criticas(self):
+        """Retorna enfermedades críticas activas o que generan alerta roja"""
+        return self.enfermedades.filter(
+            models.Q(nivel_riesgo='CRITICO') | models.Q(genera_alerta_roja=True),
+            pacientes_afectados__estado=True
+        ).distinct()
+
+    def tiene_enfermedades_criticas(self):
+        """Indica si el paciente tiene alguna enfermedad crítica"""
+        return self.get_enfermedades_criticas().exists()
+
+    def get_total_facturado(self):
+        """Stub: total facturado (se implementará en Fase 4)"""
+        return Decimal('0.00')
+
+    def es_vip_por_facturacion(self, umbral=3000):
+        """Determina si es VIP por monto facturado (stub actual)"""
+        return self.get_total_facturado() >= Decimal(umbral)
+
+    def calcular_nivel_alerta(self):
+        """Calcula nivel de alerta simplificado según VIP y enfermedades"""
+        if self.tiene_enfermedades_criticas() or self.es_vip or self.es_vip_por_facturacion():
+            return 'ROJO'
+
+        tiene_alto = self.enfermedades.filter(
+            pacientes_afectados__estado=True,
+            nivel_riesgo__in=['ALTO', 'MEDIO'],
+        ).exists()
+        if tiene_alto:
+            return 'AMARILLO'
+        return 'VERDE'
+
+    def actualizar_alertas(self):
+        """Placeholder: se implementará en Fase 2 con sistema de alertas"""
+        return None
 

@@ -1,0 +1,534 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link href="{% static 'css/enfermedades_alertas.css' %}" rel="stylesheet">
+<style>
+    .stat-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card.rojo { border-color: #dc3545; }
+    .stat-card.amarillo { border-color: #ffc107; }
+    .stat-card.verde { border-color: #28a745; }
+    .stat-card.info { border-color: #17a2b8; }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-btn {
+        border-radius: 20px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    .filter-btn.active {
+        transform: scale(1.05);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+    .filter-btn.rojo { 
+        background-color: #dc3545; 
+        color: white;
+    }
+    .filter-btn.amarillo { 
+        background-color: #ffc107; 
+        color: #333;
+    }
+    .filter-btn.verde { 
+        background-color: #28a745; 
+        color: white;
+    }
+    
+    .patient-row {
+        transition: background-color 0.2s;
+    }
+    .patient-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .enfermedad-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.1rem;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-chart-line"></i> Dashboard de Alertas
+        </h1>
+        <span class="badge badge-info">Solo para Administradores</span>
+    </div>
+
+    <!-- Cards de Estadísticas -->
+    <div class="row mb-4">
+        <!-- Total Alertas Activas -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card rojo h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-label mb-1">Alertas Activas</div>
+                            <h2 class="stat-value text-danger">{{ total_alertas_activas }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">{{ porcentaje_alertas }}% del total de pacientes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacientes Rojos -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card rojo h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-label mb-1">Pacientes Rojos</div>
+                            <h2 class="stat-value text-danger">{{ total_rojos }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <div class="semaforo-indicator rojo"></div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Máxima prioridad</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacientes Amarillos -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card amarillo h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-label mb-1">Pacientes Amarillos</div>
+                            <h2 class="stat-value text-warning">{{ total_amarillos }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <div class="semaforo-indicator amarillo"></div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Requieren precaución</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacientes VIP -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card info h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="stat-label mb-1">Pacientes VIP</div>
+                            <h2 class="stat-value text-info">{{ total_vips }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Atención prioritaria</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'enfermedades:dashboard_alertas' %}" 
+                   class="btn filter-btn {% if not nivel_filtro %}active{% endif %}"
+                   style="background-color: #6c757d; color: white;">
+                    <i class="fas fa-th-list"></i> Todos
+                </a>
+                <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=ROJO" 
+                   class="btn filter-btn rojo {% if nivel_filtro == 'ROJO' %}active{% endif %}">
+                    {% if nivel_filtro == 'ROJO' %}
+                        <span class="semaforo-list-indicator semaforo-rojo" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Rojos
+                </a>
+                <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=AMARILLO" 
+                   class="btn filter-btn amarillo {% if nivel_filtro == 'AMARILLO' %}active{% endif %}">
+                    {% if nivel_filtro == 'AMARILLO' %}
+                        <span class="semaforo-list-indicator semaforo-amarillo" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Amarillos
+                </a>
+                <a href="{% url 'enfermedades:dashboard_alertas' %}?nivel=VERDE" 
+                   class="btn filter-btn verde {% if nivel_filtro == 'VERDE' %}active{% endif %}">
+                    {% if nivel_filtro == 'VERDE' %}
+                        <span class="semaforo-list-indicator semaforo-verde" style="width:12px;height:12px;margin-right:8px;"></span>
+                    {% endif %}
+                    Verdes
+                </a>
+            </div>
+            {% if nivel_filtro %}
+            <div class="mt-2">
+                <small class="text-muted">
+                    Mostrando pacientes con nivel de alerta: <strong>{{ nivel_filtro }}</strong>
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabla de Pacientes con Alertas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-users"></i> Pacientes con Alertas Activas
+            </h6>
+            <span class="badge badge-primary badge-pill">{{ pacientes|length }} pacientes</span>
+        </div>
+        <div class="card-body">
+            {% if not pacientes %}
+                <div class="alert alert-success text-center" role="alert">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <h5>¡Excelente!</h5>
+                    <p class="mb-0">
+                        {% if nivel_filtro %}
+                            No hay pacientes con alertas de nivel {{ nivel_filtro }}.
+                        {% else %}
+                            No hay pacientes con alertas activas en el sistema.
+                        {% endif %}
+                    </p>
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="dataTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="50" class="text-center">Alerta</th>
+                                <th>Paciente</th>
+                                <th>Cédula</th>
+                                <th width="80">Edad</th>
+                                <th>Enfermedades</th>
+                                <th width="50" class="text-center">VIP</th>
+                                <th width="150" class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paciente in pacientes %}
+                            <tr class="patient-row">
+                                <td class="text-center">
+                                    <div class="semaforo-list-indicator {{ paciente.semaforo_clase }}" 
+                                         title="Nivel de alerta: {{ paciente.semaforo_label }}"
+                                         data-toggle="tooltip">
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ paciente.apellidos }}, {{ paciente.nombres }}</strong>
+                                    {% if paciente.nivel_alerta == 'ROJO' %}
+                                        <span class="badge badge-danger ml-2">CRÍTICO</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ paciente.cedula|default:"Sin cédula" }}</td>
+                                <td class="text-center">{{ paciente.get_edad|default:"N/A" }} años</td>
+                                <td>
+                                    {% if paciente.enfermedades.exists %}
+                                        {% for enfermedad in paciente.enfermedades.all|slice:":3" %}
+                                            <span class="badge enfermedad-badge {% if enfermedad.nivel_riesgo == 'CRITICO' %}bg-alerta-semaforo-rojo{% elif enfermedad.nivel_riesgo == 'ALTO' %}bg-alerta-semaforo-amarillo{% elif enfermedad.nivel_riesgo == 'MEDIO' %}bg-alerta-semaforo-amarillo{% else %}bg-alerta-semaforo-verde{% endif %}">
+                                                {{ enfermedad.nombre }}
+                                            </span>
+                                        {% endfor %}
+                                        {% if paciente.enfermedades.count > 3 %}
+                                            <span class="badge badge-secondary enfermedad-badge">
+                                                +{{ paciente.enfermedades.count|add:"-3" }} más
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <small class="text-muted">Sin enfermedades</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if paciente.es_vip %}
+                                        <i class="fas fa-star text-warning" title="VIP" data-toggle="tooltip"></i>
+                                    {% else %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'pacientes:paciente-detail' paciente.pk %}" 
+                                       class="btn btn-sm btn-info" 
+                                       title="Ver ficha completa"
+                                       data-toggle="tooltip">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-warning"
+                                            data-toggle="modal"
+                                            data-target="#modalAlertasPaciente"
+                                            data-paciente-id="{{ paciente.id }}"
+                                            title="Ver alertas"
+                                            data-tooltip="tooltip">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <nav aria-label="Paginación" class="d-flex justify-content-center">
+                    <ul class="pagination mt-4">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if nivel_filtro %}&nivel={{ nivel_filtro }}{% endif %}">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if nivel_filtro %}&nivel={{ nivel_filtro }}{% endif %}">Anterior</a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if nivel_filtro %}&nivel={{ nivel_filtro }}{% endif %}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if nivel_filtro %}&nivel={{ nivel_filtro }}{% endif %}">Última</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enfermedades Más Comunes en Pacientes con Alertas -->
+    {% if enfermedades_comunes %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-bar"></i> Enfermedades Más Comunes en Pacientes con Alertas
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for item in enfermedades_comunes %}
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ item.enfermedad__nombre }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                Riesgo: 
+                                <span class="badge badge-riesgo-{{ item.enfermedad__nivel_riesgo|lower }}">
+                                    {{ item.enfermedad__nivel_riesgo }}
+                                </span>
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge badge-primary badge-pill">{{ item.total }} pacientes</span>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-info" 
+                             role="progressbar" 
+                             style="width: {% widthratio item.total enfermedades_comunes.0.total 100 %}%"
+                             aria-valuenow="{{ item.total }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ enfermedades_comunes.0.total }}">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Alertas (reutilizado de paciente_detail.html) -->
+<div class="modal fade" id="modalAlertasPaciente" tabindex="-1" role="dialog" aria-labelledby="modalAlertasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAlertasLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Detalles de Alertas
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modalAlertasContent">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando información de alertas...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Inicializar DataTable con opciones personalizadas
+    if ($('#dataTable').length) {
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            },
+            "pageLength": 20,
+            "order": [[0, "desc"]], // Ordenar por nivel de alerta
+            "columnDefs": [
+                { "orderable": false, "targets": [6] } // Deshabilitar orden en columna de acciones
+            ]
+        });
+    }
+    
+    // Cargar modal de alertas via AJAX (SOOD-87)
+    $('#modalAlertasPaciente').on('show.bs.modal', function(event) {
+        var button = $(event.relatedTarget);
+        var pacienteId = button.data('paciente-id');
+        var modal = $(this);
+        var contentDiv = modal.find('#modalAlertasContent');
+        
+        // Mostrar spinner de carga
+        contentDiv.html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando información de alertas...</p>
+            </div>
+        `);
+        
+        // Hacer petición AJAX
+        $.ajax({
+            url: '/pacientes/' + pacienteId + '/alertas/detalles/',
+            method: 'GET',
+            success: function(data) {
+                renderAlertasModal(data);
+            },
+            error: function(xhr, status, error) {
+                contentDiv.html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>Error al cargar alertas:</strong> ${error}
+                    </div>
+                `);
+            }
+        });
+    });
+    
+    function renderAlertasModal(data) {
+        var contentDiv = $('#modalAlertasContent');
+        var nivelClase = data.nivel.toLowerCase();
+        
+        var html = `
+            <div class="text-center mb-4">
+                <div class="semaforo-indicator ${nivelClase} mb-3" style="width: 80px; height: 80px; margin: 0 auto;"></div>
+                <h4>Nivel de Alerta: <span class="text-${nivelClase == 'rojo' ? 'danger' : (nivelClase == 'amarillo' ? 'warning' : 'success')}">${data.nivel}</span></h4>
+            </div>
+            
+            <h6 class="font-weight-bold mb-3"><i class="fas fa-list-ul"></i> Factores de Alerta:</h6>
+        `;
+        
+        // Agrupar factores por tipo
+        var factoresRojo = data.factores.filter(f => f.tipo === 'ROJO');
+        var factoresAmarillo = data.factores.filter(f => f.tipo === 'AMARILLO');
+        var factoresInfo = data.factores.filter(f => f.tipo === 'INFO');
+        
+        if (factoresRojo.length > 0) {
+            html += '<div class="alert alert-danger"><strong>🔴 Factores Críticos (ROJO):</strong><ul class="mb-0 mt-2">';
+            factoresRojo.forEach(f => {
+                html += `<li>${f.descripcion}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        if (factoresAmarillo.length > 0) {
+            html += '<div class="alert alert-warning"><strong>🟡 Factores de Precaución (AMARILLO):</strong><ul class="mb-0 mt-2">';
+            factoresAmarillo.forEach(f => {
+                html += `<li>${f.descripcion}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        if (factoresInfo.length > 0) {
+            html += '<div class="alert alert-info"><strong>ℹ️ Información Adicional:</strong><ul class="mb-0 mt-2">';
+            factoresInfo.forEach(f => {
+                html += `<li>${f.descripcion}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        // Alertas activas
+        if (data.alertas_activas && data.alertas_activas.length > 0) {
+            html += '<h6 class="font-weight-bold mt-4 mb-3"><i class="fas fa-bell"></i> Alertas Activas:</h6>';
+            html += '<div class="list-group">';
+            data.alertas_activas.forEach(alerta => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${alerta.titulo}</h6>
+                            <small class="text-muted">${alerta.fecha_creacion}</small>
+                        </div>
+                        <p class="mb-1">${alerta.descripcion}</p>
+                        <small class="text-muted">Tipo: ${alerta.tipo_alerta}</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        contentDiv.html(html);
+    }
+});
+</script>
+{% endblock %}

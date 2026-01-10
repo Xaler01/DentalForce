@@ -202,6 +202,35 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
+                            <!-- Eslogan -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.eslogan.id_for_label }}">
+                                        {{ form.eslogan.label }}
+                                    </label>
+                                    {{ form.eslogan }}
+                                    {% if form.eslogan.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.eslogan.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.eslogan.help_text }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Título de Pestaña -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.titulo_pestana.id_for_label }}">
+                                        {{ form.titulo_pestana.label }}
+                                    </label>
+                                    {{ form.titulo_pestana }}
+                                    {% if form.titulo_pestana.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.titulo_pestana.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Si se deja vacío, se usará "Nombre | Eslogan".</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <!-- Logo -->
                             <div class="col-md-6">
                                 <div class="form-group">

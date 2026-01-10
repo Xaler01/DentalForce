@@ -184,16 +184,67 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.antecedentes_medicos.id_for_label }}" class="form-label">
-                        {{ form.antecedentes_medicos.label }}
+                        <label for="{{ form.observaciones_medicas.id_for_label }}" class="form-label">
+                            {{ form.observaciones_medicas.label }}
                     </label>
-                    {{ form.antecedentes_medicos }}
-                    {% if form.antecedentes_medicos.errors %}
+                        {{ form.observaciones_medicas }}
+                        {% if form.observaciones_medicas.errors %}
                         <div class="invalid-feedback d-block">
-                            {{ form.antecedentes_medicos.errors.0 }}
+                                {{ form.observaciones_medicas.errors.0 }}
                         </div>
                     {% endif %}
                 </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.enfermedades.id_for_label }}" class="form-label">
+                        {{ form.enfermedades.label }}
+                    </label>
+                    <div id="enfermedades-chip-box" class="form-control p-2" style="min-height: 48px; max-height: 156px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start;">
+                        <!-- Chips dinámicos -->
+                        <input type="text" id="enfermedades-chip-input" class="border-0 flex-grow-1" placeholder="Escribe para buscar..." style="min-width: 200px; outline: none;">
+                    </div>
+                    <div id="enfermedades-suggestions" class="list-group shadow-sm mt-1" style="max-height: 200px; overflow-y: auto; display: none;"></div>
+
+                    <!-- Select original oculto para envío del formulario -->
+                    <div class="d-none">{{ form.enfermedades }}</div>
+                    <small class="form-text text-muted mt-2 d-block">{{ form.enfermedades.help_text }}</small>
+                    {% if form.enfermedades.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.enfermedades.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                    <!-- Clasificación VIP -->
+                    <h5 class="mb-3 border-bottom pb-2">Clasificación VIP</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check form-switch mt-2">
+                                {{ form.es_vip }}
+                                <label for="{{ form.es_vip.id_for_label }}" class="form-check-label ms-2">
+                                    {{ form.es_vip.label }}
+                                </label>
+                            </div>
+                            {% if form.es_vip.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.es_vip.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.categoria_vip.id_for_label }}" class="form-label">
+                                {{ form.categoria_vip.label }}
+                            </label>
+                            {{ form.categoria_vip }}
+                            {% if form.categoria_vip.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.categoria_vip.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Usa categoría solo si marcas como VIP.</small>
+                        </div>
+                    </div>
 
                 <!-- Contacto de Emergencia -->
                 <h5 class="mb-3 border-bottom pb-2">Contacto de Emergencia</h5>
@@ -267,6 +318,143 @@
                 }, false);
             });
         }, false);
+    })();
+
+    // Búsqueda en el selector de enfermedades (filtra opciones en vivo)
+    (function () {
+        const select = document.getElementById('{{ form.enfermedades.id_for_label }}');
+        const chipBox = document.getElementById('enfermedades-chip-box');
+        const input = document.getElementById('enfermedades-chip-input');
+        const suggestions = document.getElementById('enfermedades-suggestions');
+        if (!select || !chipBox || !input || !suggestions) return;
+
+        const renderChips = () => {
+            chipBox.querySelectorAll('.enf-chip').forEach(chip => chip.remove());
+            Array.from(select.options).filter(o => o.selected).forEach(opt => {
+                const chip = document.createElement('span');
+                chip.className = 'badge bg-primary text-white enf-chip d-flex align-items-center';
+                chip.style.gap = '6px';
+                chip.innerHTML = `<span>${opt.text}</span><button type="button" class="btn btn-sm btn-light" aria-label="Quitar" style="padding:2px 6px;">×</button>`;
+                chip.querySelector('button').addEventListener('click', () => {
+                    opt.selected = false;
+                    renderChips();
+                });
+                chipBox.insertBefore(chip, input);
+            });
+            // Mantener a la vista los chips recién agregados cuando hay scroll
+            chipBox.scrollTop = chipBox.scrollHeight;
+        };
+
+        const closeSuggestions = () => {
+            suggestions.style.display = 'none';
+            suggestions.innerHTML = '';
+        };
+
+        const openSuggestions = (items) => {
+            suggestions.innerHTML = '';
+            items.forEach(opt => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action';
+                item.textContent = opt.text;
+                item.addEventListener('click', () => {
+                    opt.selected = true;
+                    input.value = '';
+                    renderChips();
+                    closeSuggestions();
+                    input.focus();
+                });
+                suggestions.appendChild(item);
+            });
+            suggestions.style.display = items.length ? 'block' : 'none';
+        };
+
+        const filterOptions = (term) => {
+            const lower = term.toLowerCase();
+            const available = Array.from(select.options).filter(o => !o.selected && o.text.toLowerCase().includes(lower));
+            return available.slice(0, 12); // limitar sugerencias
+        };
+
+        const showDefaultSuggestions = () => {
+            const matches = filterOptions('');
+            openSuggestions(matches);
+        };
+
+        input.addEventListener('input', (e) => {
+            const term = e.target.value.trim();
+            if (!term) {
+                showDefaultSuggestions();
+                return;
+            }
+            const matches = filterOptions(term);
+            openSuggestions(matches);
+        });
+
+        input.addEventListener('focus', () => {
+            if (input.value.trim() === '') {
+                showDefaultSuggestions();
+            }
+        });
+
+        chipBox.addEventListener('click', () => {
+            input.focus();
+            if (input.value.trim() === '') {
+                showDefaultSuggestions();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSuggestions();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!suggestions.contains(e.target) && e.target !== input) {
+                closeSuggestions();
+            }
+        });
+
+        // Seleccionar el primer match al presionar Enter
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const term = input.value.trim();
+                if (!term) return;
+                const first = filterOptions(term)[0];
+                if (first) {
+                    first.selected = true;
+                    input.value = '';
+                    renderChips();
+                    closeSuggestions();
+                }
+            }
+        });
+
+        renderChips();
+    })();
+
+    // Control de habilitación de Categoría VIP basado en checkbox
+    (function () {
+        const esVipCheckbox = document.getElementById('{{ form.es_vip.id_for_label }}');
+        const categoriaVipSelect = document.getElementById('{{ form.categoria_vip.id_for_label }}');
+        
+        if (!esVipCheckbox || !categoriaVipSelect) return;
+
+        const toggleCategoriaVip = () => {
+            if (esVipCheckbox.checked) {
+                categoriaVipSelect.disabled = false;
+            } else {
+                categoriaVipSelect.disabled = true;
+                categoriaVipSelect.value = ''; // Resetear a "No VIP"
+            }
+        };
+
+        // Inicializar estado al cargar página
+        toggleCategoriaVip();
+
+        // Escuchar cambios en el checkbox
+        esVipCheckbox.addEventListener('change', toggleCategoriaVip);
     })();
 </script>
 {% endblock %}

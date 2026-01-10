@@ -1,0 +1,145 @@
+{% extends 'base/base.html' %}
+
+{% block page_content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Catálogo de Enfermedades</h6>
+        <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-600"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                aria-labelledby="dropdownMenuLink">
+                <div class="dropdown-header">Acciones</div>
+                <a class="dropdown-item" href="{% url 'enfermedades:enfermedad_create' %}">
+                    <i class="fas fa-plus-circle"></i> Nueva Enfermedad
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        {% if not enfermedades %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> No hay enfermedades registradas.
+                <a href="{% url 'enfermedades:enfermedad_create' %}" class="alert-link">¿Desea crear una?</a>
+            </div>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Categoría</th>
+                            <th>Nombre</th>
+                            <th>CIE-10</th>
+                            <th>Riesgo</th>
+                            <th>Interconsulta</th>
+                            <th>Alertas</th>
+                            <th>Estado</th>
+                            <th>Modificación</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in enfermedades %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.categoria.nombre }}</td>
+                            <td>{{ item.nombre }}</td>
+                            <td>{{ item.codigo_cie10|default:"-" }}</td>
+                            <td>
+                                {% if item.nivel_riesgo == 'CRITICO' %}
+                                    <span class="badge badge-danger" style="background-color: #dc3545;">
+                                        <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.3rem;"></i> Crítico
+                                    </span>
+                                {% elif item.nivel_riesgo == 'ALTO' %}
+                                    <span class="badge badge-warning" style="background-color: #ffc107; color: #212529;">
+                                        <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.3rem;"></i> Alto
+                                    </span>
+                                {% elif item.nivel_riesgo == 'MEDIO' %}
+                                    <span class="badge badge-info" style="background-color: #17a2b8;">
+                                        <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.3rem;"></i> Medio
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-success" style="background-color: #28a745;">
+                                        <i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 0.3rem;"></i> Bajo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.requiere_interconsulta %}
+                                    <span class="badge badge-warning">Sí</span>
+                                {% else %}
+                                    <span class="badge badge-light border">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.genera_alerta_roja %}
+                                    <span class="badge badge-danger">Roja</span>
+                                {% endif %}
+                                {% if item.genera_alerta_amarilla %}
+                                    <span class="badge badge-warning">Amarilla</span>
+                                {% endif %}
+                                {% if not item.genera_alerta_roja and not item.genera_alerta_amarilla %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.estado %}
+                                    <span class="badge badge-success">Activo</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.fm|date:"d/m/Y H:i" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'enfermedades:enfermedad_update' item.id %}"
+                                   class="btn btn-warning btn-circle btn-sm"
+                                   title="Editar"
+                                   aria-label="Editar {{ item.nombre }}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'enfermedades:enfermedad_delete' item.id %}"
+                                   class="btn btn-danger btn-circle btn-sm"
+                                   title="Eliminar"
+                                   aria-label="Eliminar {{ item.nombre }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock page_content %}
+
+{% block js_page %}
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "language": {
+                "sProcessing": "Procesando...",
+                "sLengthMenu": "Mostrar _MENU_ registros",
+                "sZeroRecords": "No se encontraron resultados",
+                "sEmptyTable": "Ningún dato disponible en esta tabla",
+                "sInfo": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                "sInfoEmpty": "Mostrando 0 a 0 de 0 registros",
+                "sInfoFiltered": "(filtrado de _MAX_ registros)",
+                "sSearch": "Buscar:",
+                "oPaginate": {
+                    "sFirst": "<span class='fas fa-angle-double-left'></span>",
+                    "sLast": "<span class='fas fa-angle-double-right'></span>",
+                    "sNext": "<span class='fas fa-angle-right'></span>",
+                    "sPrevious": "<span class='fas fa-angle-left'></span>"
+                }
+            },
+            "order": [[1, "asc"], [2, "asc"]]
+        });
+    });
+</script>
+{% endblock js_page %}

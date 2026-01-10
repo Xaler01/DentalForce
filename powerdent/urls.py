@@ -29,6 +29,7 @@ urlpatterns = [
     path('cmp/', include(('cmp.urls', 'cmp'), namespace='cmp')),
     path('cit/', include(('cit.urls', 'cit'), namespace='cit')),
     path('pacientes/', include(('pacientes.urls', 'pacientes'), namespace='pacientes')),
+    path('enfermedades/', include(('enfermedades.urls', 'enfermedades'), namespace='enfermedades')),  # SOOD-70
 
     path('admin/', admin.site.urls),
     # path('', inicio, name='Inicio'),  # La ruta raíz ahora renderiza el index.html

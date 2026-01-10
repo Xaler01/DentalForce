@@ -28,6 +28,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-prod
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+# Flags de negocio
+ASSIGN_ESPECIALIDADES_BASE = os.getenv('ASSIGN_ESPECIALIDADES_BASE', 'False') == 'True'
+# Evitar efectos colaterales en test suites (solo se activa en tests si se fuerza explícitamente)
+import sys
+if 'test' in sys.argv and os.getenv('ASSIGN_ESPECIALIDADES_BASE_TEST', '') != 'True':
+    ASSIGN_ESPECIALIDADES_BASE = False
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
 # Application definition
@@ -47,6 +54,7 @@ INSTALLED_APPS = [
     'personal',
     'pacientes',
     'facturacion',
+    'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
 ]
 
 
@@ -74,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'powerdent.context_processors.clinica_context',
             ],
         },
     },

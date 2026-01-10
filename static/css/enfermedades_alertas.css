@@ -1,0 +1,455 @@
+/* 
+   Estilos para Sistema de Enfermedades y Alertas (SOOD-88)
+   Diseño limpio y responsive para semáforos, alertas y cards
+*/
+
+/* ========== SEMÁFOROS (SOOD-85, SOOD-86, SOOD-87) ========== */
+
+/* Indicador semáforo grande (detalle de paciente) */
+.semaforo-indicator {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    animation: pulse-light 2s ease-in-out infinite;
+}
+
+.semaforo-indicator.semaforo-rojo {
+    background: #dc3545;
+}
+
+.semaforo-indicator.semaforo-amarillo {
+    background: #ffc107;
+    color: #212529;
+}
+
+.semaforo-indicator.semaforo-verde {
+    background: #28a745;
+}
+
+/* Indicador semáforo pequeño (lista de pacientes) */
+.semaforo-list-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.7rem;
+    margin-right: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.semaforo-list-indicator.semaforo-rojo {
+    background: #dc3545;
+}
+
+.semaforo-list-indicator.semaforo-amarillo {
+    background: #ffc107;
+    color: #212529;
+}
+
+.semaforo-list-indicator.semaforo-verde {
+    background: #28a745;
+}
+
+/* Animación pulse para semáforos rojo y amarillo */
+@keyframes pulse-light {
+    0%, 100% {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+}
+
+.semaforo-rojo,
+.semaforo-amarillo {
+    animation: pulse-light 2s ease-in-out infinite;
+}
+
+/* ========== ALERTAS EN CABECERA ========== */
+
+.alert-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-badge.critical {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-badge.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.alert-badge.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* ========== CARDS Y LISTAS DE ALERTAS ========== */
+
+.alert-card {
+    border-left: 4px solid #999;
+    transition: all 0.3s ease;
+}
+
+.alert-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.alert-card.rojo {
+    border-left-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.alert-card.rojo:hover {
+    background-color: #ffe0e0;
+}
+
+.alert-card.amarillo {
+    border-left-color: #ffc107;
+    background-color: #fffef5;
+}
+
+.alert-card.amarillo:hover {
+    background-color: #fffff0;
+}
+
+.alert-card.verde {
+    border-left-color: #28a745;
+    background-color: #f5fdf7;
+}
+
+.alert-card.verde:hover {
+    background-color: #f0faf4;
+}
+
+.alert-icon {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.alert-description {
+    font-size: 0.875rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.alert-meta {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* ========== MODAL DE ALERTAS (SOOD-87) ========== */
+
+.alert-details {
+    padding: 1rem;
+}
+
+.factores-section {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.factores-section h6 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.factores-section i {
+    margin-right: 0.5rem;
+}
+
+.factores-section ul li {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.factores-section ul li i {
+    margin-right: 0.5rem;
+    font-size: 0.6rem;
+}
+
+.alertas-activas {
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+}
+
+.alertas-activas h6 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.alertas-activas .list-group-item {
+    border: none;
+    padding: 0.5rem 0;
+    background: transparent;
+}
+
+.alertas-activas .list-group-item .badge {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.6rem;
+    margin-right: 0.5rem;
+}
+
+/* ========== CONDICIONES CRÍTICAS ========== */
+
+.condition-critical {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.condition-warning {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.condition-info {
+    color: #17a2b8;
+}
+
+/* ========== TABLAS CON ENFERMEDADES ========== */
+
+.table-enfermedades tr:hover {
+    background-color: #f9f9f9;
+}
+
+.badge-riesgo {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-riesgo.bajo {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-riesgo.medio {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-riesgo.alto {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.badge-riesgo.critico {
+    background-color: #dc3545;
+    color: white;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+    .semaforo-indicator {
+        width: 40px;
+        height: 40px;
+    }
+
+    .alert-card {
+        margin-bottom: 0.75rem;
+    }
+
+    .factores-section {
+        padding: 0.75rem;
+    }
+
+    .alert-details {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .semaforo-indicator {
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
+    }
+
+    .alert-badge {
+        display: block;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ========== UTILIDADES ========== */
+
+.text-rojo {
+    color: #dc3545;
+}
+
+.text-amarillo {
+    color: #ffc107;
+}
+
+.text-verde {
+    color: #28a745;
+}
+
+.bg-alerta-rojo {
+    background-color: #fff5f5;
+}
+
+.bg-alerta-amarillo {
+    background-color: #fffef5;
+}
+
+.bg-alerta-verde {
+    background-color: #f5fdf7;
+}
+
+/* Indicador visual de necesidad de acción */
+.requires-action {
+    position: relative;
+}
+
+.requires-action::before {
+    content: "!";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+/* ========== ESTILOS PARA FILTROS DE ALERTA ========== */
+
+.filter-btn {
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-btn.active {
+    transform: scale(1.05);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.filter-btn.rojo { 
+    background-color: #dc3545; 
+    color: white;
+    border-color: #dc3545;
+}
+
+.filter-btn.rojo:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.filter-btn.amarillo { 
+    background-color: #ffc107; 
+    color: #333;
+    border-color: #ffc107;
+}
+
+.filter-btn.amarillo:hover {
+    background-color: #e0a800;
+    border-color: #e0a800;
+}
+
+.filter-btn.verde { 
+    background-color: #28a745; 
+    color: white;
+    border-color: #28a745;
+}
+
+.filter-btn.verde:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+/* Iconos dentro de filtros */
+.filter-btn i {
+    font-size: 1rem;
+}
+
+.filter-btn .text-danger {
+    color: #dc3545 !important;
+}
+
+.filter-btn .text-warning {
+    color: #ffc107 !important;
+}
+
+.filter-btn .text-success {
+    color: #28a745 !important;
+}
+
+/* Estilos para badges de enfermedades con colores según nivel de riesgo */
+.enfermedad-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin: 0.1rem;
+    border-radius: 10px;
+    color: white;
+    background-color: #17a2b8;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-rojo {
+    background-color: #dc3545;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-amarillo {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.enfermedad-badge.bg-alerta-semaforo-verde {
+    background-color: #28a745;
+}

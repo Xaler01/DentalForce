@@ -39,6 +39,20 @@
                         <dt class="col-sm-5">Nombre Comercial:</dt>
                         <dd class="col-sm-7">{{ clinica.nombre }}</dd>
 
+                        {% if clinica.eslogan %}
+                        <dt class="col-sm-5">Eslogan:</dt>
+                        <dd class="col-sm-7">
+                            <em>"{{ clinica.eslogan }}"</em>
+                        </dd>
+                        {% endif %}
+
+                        {% if clinica.titulo_pestana %}
+                        <dt class="col-sm-5">Título Pestaña:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-info">{{ clinica.titulo_pestana }}</span>
+                        </dd>
+                        {% endif %}
+
                         {% if clinica.razon_social %}
                         <dt class="col-sm-5">Razón Social:</dt>
                         <dd class="col-sm-7">{{ clinica.razon_social }}</dd>

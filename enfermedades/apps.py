@@ -1,0 +1,9 @@
+from django.apps import AppConfig
+
+
+class EnfermedadesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'enfermedades'
+
+    def ready(self):  # pragma: no cover - solo importa señales
+        from . import signals  # noqa: F401
