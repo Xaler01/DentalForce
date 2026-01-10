@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from clinicas.views import ClinicaSelectView
 
 app_name = 'cit'
 
@@ -81,6 +82,7 @@ urlpatterns = [
     # CRUD de Clínicas
     # ========================================================================
     path('clinicas/', views.ClinicaListView.as_view(), name='clinica-list'),
+     path('clinicas/seleccionar/', ClinicaSelectView.as_view(), name='clinica-seleccionar'),
     path('clinicas/nueva/', views.ClinicaCreateView.as_view(), name='clinica-create'),
     path('clinicas/<int:pk>/', views.ClinicaDetailView.as_view(), name='clinica-detail'),
     path('clinicas/<int:pk>/editar/', views.ClinicaUpdateView.as_view(), name='clinica-update'),

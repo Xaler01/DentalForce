@@ -9,6 +9,18 @@ from bases.models import ClaseModelo
 from clinicas.models import Clinica
 
 
+class PacienteManager(models.Manager):
+    """Manager personalizado para filtrar pacientes por clínica"""
+    
+    def para_clinica(self, clinica_id):
+        """Retorna solo pacientes de la clínica especificada"""
+        return self.filter(clinica_id=clinica_id, estado=True)
+    
+    def activos(self):
+        """Retorna solo pacientes activos"""
+        return self.filter(estado=True)
+
+
 class Paciente(ClaseModelo):
     """
     Modelo para representar un paciente de la clínica.
@@ -171,6 +183,9 @@ class Paciente(ClaseModelo):
         blank=True,
         help_text='Enfermedades preexistentes asociadas al paciente'
     )
+
+    # Manager personalizado
+    objects = PacienteManager()
 
     def __init__(self, *args, **kwargs):
         # Compatibility for fixtures/tests that use 'sexo' instead of 'genero'

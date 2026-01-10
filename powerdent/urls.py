@@ -28,6 +28,7 @@ urlpatterns = [
     path('inv/', include(('inv.urls', 'inv'), namespace='inv')),
     path('cmp/', include(('cmp.urls', 'cmp'), namespace='cmp')),
     path('cit/', include(('cit.urls', 'cit'), namespace='cit')),
+    path('clinicas/', include(('clinicas.urls', 'clinicas'), namespace='clinicas')),
     path('pacientes/', include(('pacientes.urls', 'pacientes'), namespace='pacientes')),
     path('enfermedades/', include(('enfermedades.urls', 'enfermedades'), namespace='enfermedades')),  # SOOD-70
 

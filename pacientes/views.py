@@ -31,9 +31,21 @@ class PacienteListView(LoginRequiredMixin, ListView):
     login_url = 'login'
     
     def get_queryset(self):
-        """Filtrar pacientes según búsqueda"""
+        """Filtrar pacientes según búsqueda y clínica activa"""
+        # Obtener clínica activa desde sesión
+        clinica_id = self.request.session.get('clinica_id')
+        
         incluir_inactivos = self.request.GET.get('incluir_inactivos') == '1'
-        qs = Paciente.objects.all().order_by('apellidos', 'nombres') if incluir_inactivos else Paciente.objects.filter(estado=True).order_by('apellidos', 'nombres')
+        
+        # Filtrar por clínica activa
+        if clinica_id:
+            if incluir_inactivos:
+                qs = Paciente.objects.filter(clinica_id=clinica_id).order_by('apellidos', 'nombres')
+            else:
+                qs = Paciente.objects.para_clinica(clinica_id).order_by('apellidos', 'nombres')
+        else:
+            # Sin clínica, no mostrar nada (el middleware debería redirigir)
+            qs = Paciente.objects.none()
         
         form = PacienteBuscarForm(self.request.GET)
         if form.is_valid():
@@ -93,10 +105,16 @@ class PacienteCreateView(LoginRequiredMixin, CreateView):
     login_url = 'login'
     
     def form_valid(self, form):
-        """Agregar usuario de auditoría"""
+        """Agregar usuario de auditoría y clínica activa"""
         paciente = form.save(commit=False)
         paciente.uc = self.request.user
         paciente.um = self.request.user.id
+        
+        # Asignar clínica activa desde sesión
+        clinica_id = self.request.session.get('clinica_id')
+        if clinica_id:
+            paciente.clinica_id = clinica_id
+        
         paciente.save()
 
         # Relación M2M con enfermedades, guardando auditoría en through

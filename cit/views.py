@@ -30,15 +30,23 @@ class CitaListView(LoginRequiredMixin, ListView):
     paginate_by = 25
     
     def get_queryset(self):
-        """Optimizar consultas y aplicar filtros"""
-        queryset = Cita.objects.select_related(
-            'paciente',
-            'dentista',
-            'dentista__usuario',
-            'especialidad',
-            'cubiculo',
-            'cubiculo__sucursal'
-        ).all()
+        """Optimizar consultas y aplicar filtros incluyendo clínica activa"""
+        # Obtener clínica activa desde sesión
+        clinica_id = self.request.session.get('clinica_id')
+        
+        # Filtrar por clínica activa
+        if clinica_id:
+            queryset = Cita.objects.para_clinica(clinica_id).select_related(
+                'paciente',
+                'dentista',
+                'dentista__usuario',
+                'especialidad',
+                'cubiculo',
+                'cubiculo__sucursal'
+            )
+        else:
+            # Sin clínica, no mostrar nada (el middleware debería redirigir)
+            queryset = Cita.objects.none()
         
         # Filtro por estado
         estado = self.request.GET.get('estado')
@@ -876,14 +884,21 @@ def citas_json(request):
     especialidad_id = request.GET.get('especialidad_id')
     estado = request.GET.get('estado')
     
-    # Consulta base con optimización
-    queryset = Cita.objects.select_related(
-        'paciente',
-        'dentista',
-        'dentista__usuario',
-        'especialidad',
-        'cubiculo'
-    ).all()
+    # Obtener clínica activa desde sesión
+    clinica_id = request.session.get('clinica_id')
+    
+    # Consulta base con optimización y filtro de clínica
+    if clinica_id:
+        queryset = Cita.objects.para_clinica(clinica_id).select_related(
+            'paciente',
+            'dentista',
+            'dentista__usuario',
+            'especialidad',
+            'cubiculo'
+        )
+    else:
+        # Sin clínica, no mostrar nada
+        queryset = Cita.objects.none()
     
     # Filtrar por rango de fechas si se proporciona
     if start and end:
@@ -1850,6 +1865,56 @@ class ClinicaActivateView(LoginRequiredMixin, View):
         return redirect('cit:clinica-detail', pk=pk)
 
 
+class ClinicaSelectView(LoginRequiredMixin, View):
+    """Vista para seleccionar la clínica activa en la sesión"""
+    template_name = 'cit/clinica_select.html'
+    
+    def get(self, request):
+        """Mostrar el selector de clínicas"""
+        # Admin ve TODAS las clínicas, usuarios regulares solo ven activas
+        if request.user.is_staff and request.user.is_superuser:
+            clinicas = list(Clinica.objects.all().order_by('nombre'))
+            es_admin = True
+        else:
+            clinicas = list(Clinica.objects.filter(estado=True).order_by('nombre'))
+            es_admin = False
+        
+        clinica_actual_id = request.session.get('clinica_id')
+        
+        context = {
+            'clinicas': clinicas,
+            'clinica_actual_id': clinica_actual_id,
+            'es_admin': es_admin,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request):
+        """Guardar la clínica seleccionada en la sesión"""
+        clinica_id = request.POST.get('clinica_id')
+        
+        if not clinica_id:
+            messages.error(request, 'Debe seleccionar una clínica.')
+            return redirect('cit:clinica-seleccionar')
+        
+        try:
+            # Admin puede seleccionar cualquier clínica, usuarios regulares solo activas
+            if request.user.is_staff and request.user.is_superuser:
+                clinica = Clinica.objects.get(pk=clinica_id)
+            else:
+                clinica = Clinica.objects.get(pk=clinica_id, estado=True)
+            
+            request.session['clinica_id'] = clinica.id
+            messages.success(request, f'Clínica "{clinica.nombre}" seleccionada.')
+            
+            # Redirigir a la página de inicio o la que estaba intentando acceder
+            next_url = request.GET.get('next', reverse('bases:home'))
+            return redirect(next_url)
+            
+        except Clinica.DoesNotExist:
+            messages.error(request, 'La clínica seleccionada no existe o está inactiva.')
+            return redirect('cit:clinica-seleccionar')
+
+
 # ============================================================================
 # VISTAS CRUD DE SUCURSALES
 # ============================================================================
@@ -1953,18 +2018,28 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
+        cubiculo_formset = context.get('cubiculo_formset')
 
-        if cubiculo_formset is None or cubiculo_formset.is_valid():
+        # Validar formset solo si viene en POST
+        formset_valid = True
+        if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            formset_valid = cubiculo_formset.is_valid()
+
+        if formset_valid:
             form.instance.uc = self.request.user
             self.object = form.save()
 
-            if cubiculo_formset:
+            # Guardar cubículos asociados
+            if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
                 cubiculo_formset.instance = self.object
                 cubiculos = cubiculo_formset.save(commit=False)
                 for cubiculo in cubiculos:
                     cubiculo.uc = self.request.user
+                    cubiculo.um = self.request.user.id
                     cubiculo.save()
+                # Guardar relaciones M2M si existieran
+                cubiculo_formset.save_m2m()
+                # Eliminar cubículos marcados para borrado
                 for obj in cubiculo_formset.deleted_objects:
                     obj.delete()
 
@@ -1973,6 +2048,7 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
                 f'Sucursal "{self.object.nombre}" creada exitosamente para {self.object.clinica.nombre}.'
             )
             return redirect(self.success_url)
+
         messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
         return self.form_invalid(form)
 
@@ -2015,19 +2091,29 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         from .forms import CubiculoFormSet
         context = self.get_context_data()
-        cubiculo_formset = context['cubiculo_formset'] if 'cubiculo_set-TOTAL_FORMS' in self.request.POST else None
+        cubiculo_formset = context.get('cubiculo_formset')
 
-        if cubiculo_formset is None or cubiculo_formset.is_valid():
+        # Validar formset solo si viene en POST
+        formset_valid = True
+        if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+            formset_valid = cubiculo_formset.is_valid()
+
+        if formset_valid:
             form.instance.um = self.request.user.id
             self.object = form.save()
 
-            if cubiculo_formset:
+            # Guardar cubículos asociados
+            if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
                 cubiculo_formset.instance = self.object
                 cubiculos = cubiculo_formset.save(commit=False)
                 for cubiculo in cubiculos:
                     if not cubiculo.pk:
                         cubiculo.uc = self.request.user
+                    cubiculo.um = self.request.user.id
                     cubiculo.save()
+                # Guardar relaciones M2M si existieran
+                cubiculo_formset.save_m2m()
+                # Eliminar cubículos marcados para borrado
                 for obj in cubiculo_formset.deleted_objects:
                     obj.delete()
 

@@ -159,6 +159,18 @@ class Cubiculo(ClaseModelo):
 
 # Paciente model moved to pacientes.models (SOOD-62 refactoring)
 
+class CitaManager(models.Manager):
+    """Manager personalizado para filtrar citas por clínica"""
+    
+    def para_clinica(self, clinica_id):
+        """Retorna solo citas de pacientes de la clínica especificada"""
+        return self.filter(paciente__clinica_id=clinica_id)
+    
+    def activas(self):
+        """Retorna solo citas no canceladas ni marcadas como no asistió"""
+        return self.exclude(estado__in=[Cita.ESTADO_CANCELADA, Cita.ESTADO_NO_ASISTIO])
+
+
 class Cita(ClaseModelo):
     """Modelo de Cita Odontológica"""
     
@@ -236,6 +248,9 @@ class Cita(ClaseModelo):
         blank=True,
         help_text='Razón por la cual se canceló la cita'
     )
+    
+    # Manager personalizado
+    objects = CitaManager()
     
     class Meta:
         verbose_name = 'Cita'

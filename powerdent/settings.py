@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'powerdent.middleware.ClinicaMiddleware',  # Multi-tenant segregation
 ]
 
 ROOT_URLCONF = 'powerdent.urls'
