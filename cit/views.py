@@ -14,6 +14,8 @@ import json
 
 from .models import Cita, Dentista, Paciente, Especialidad, Cubiculo, Clinica, Sucursal
 from .forms import CitaForm, CitaCancelForm, EspecialidadForm, SucursalForm
+from .services import citas_para_clinica, get_cita_para_clinica
+from core.services.tenants import get_clinica_from_request
 
 
 # ============================================================================
@@ -23,6 +25,7 @@ from .forms import CitaForm, CitaCancelForm, EspecialidadForm, SucursalForm
 class CitaListView(LoginRequiredMixin, ListView):
     """
     Vista para listar todas las citas con filtros y búsqueda.
+    Tenant-aware: filtra por clínica activa usando servicios.
     """
     model = Cita
     template_name = 'cit/cita_list.html'
@@ -30,23 +33,13 @@ class CitaListView(LoginRequiredMixin, ListView):
     paginate_by = 25
     
     def get_queryset(self):
-        """Optimizar consultas y aplicar filtros incluyendo clínica activa"""
-        # Obtener clínica activa desde sesión
-        clinica_id = self.request.session.get('clinica_id')
+        """Filtrar citas por clínica activa usando servicio tenant-aware"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Cita.objects.none()
         
-        # Filtrar por clínica activa
-        if clinica_id:
-            queryset = Cita.objects.para_clinica(clinica_id).select_related(
-                'paciente',
-                'dentista',
-                'dentista__usuario',
-                'especialidad',
-                'cubiculo',
-                'cubiculo__sucursal'
-            )
-        else:
-            # Sin clínica, no mostrar nada (el middleware debería redirigir)
-            queryset = Cita.objects.none()
+        # Obtener queryset base filtrado por clínica
+        queryset = citas_para_clinica(clinica)
         
         # Filtro por estado
         estado = self.request.GET.get('estado')
@@ -94,14 +87,22 @@ class CitaListView(LoginRequiredMixin, ListView):
                 Q(dentista__usuario__last_name__icontains=busqueda)
             )
         
-        return queryset.order_by('-fecha_hora')
+        return queryset
     
     def get_context_data(self, **kwargs):
         """Agregar datos adicionales al contexto"""
         context = super().get_context_data(**kwargs)
+        clinica = get_clinica_from_request(self.request)
         
-        # Lista de dentistas para el filtro
-        context['dentistas'] = Dentista.objects.filter(estado=True).select_related('usuario')
+        # Lista de dentistas para el filtro (solo los de la clínica activa)
+        if clinica:
+            # Obtener dentistas que tienen sucursales en la clínica
+            context['dentistas'] = Dentista.objects.filter(
+                estado=True,
+                sucursal_principal__clinica=clinica
+            ).select_related('usuario').distinct()
+        else:
+            context['dentistas'] = Dentista.objects.none()
         
         # Lista de especialidades para el filtro
         context['especialidades'] = Especialidad.objects.filter(estado=True)
@@ -123,30 +124,28 @@ class CitaListView(LoginRequiredMixin, ListView):
 class CitaDetailView(LoginRequiredMixin, DetailView):
     """
     Vista para mostrar los detalles de una cita.
+    Tenant-aware: valida que la cita pertenezca a la clínica activa.
     """
     model = Cita
     template_name = 'cit/cita_detail.html'
     context_object_name = 'cita'
     
+    def get_object(self):
+        """Obtener cita con validación de clínica activa"""
+        clinica = get_clinica_from_request(self.request)
+        pk = self.kwargs.get('pk')
+        return get_cita_para_clinica(pk, clinica)
+    
     def get_queryset(self):
-        """Optimizar consulta"""
-        return Cita.objects.select_related(
-            'paciente',
-            'dentista',
-            'dentista__usuario',
-            'especialidad',
-            'cubiculo',
-            'cubiculo__sucursal',
-            'uc'  # Agregar relación al usuario de creación
-        )
+        """Retornar queryset base (no se usa en detail view)"""
+        return Cita.objects.all()
     
     def get_context_data(self, **kwargs):
         """Agregar usuario de modificación al contexto"""
         context = super().get_context_data(**kwargs)
         cita = self.get_object()
         
-        # Obtener el usuario que modificó la cita si existe
-        if cita.um:
+        if cita and cita.um:
             from django.contrib.auth.models import User
             try:
                 usuario_modificacion = User.objects.get(id=cita.um)
@@ -162,10 +161,18 @@ class CitaDetailView(LoginRequiredMixin, DetailView):
 class CitaCreateView(LoginRequiredMixin, CreateView):
     """
     Vista para crear una nueva cita.
+    Tenant-aware: solo muestra pacientes y dentistas de la clínica activa.
     """
     model = Cita
     form_class = CitaForm
     template_name = 'cit/cita_form.html'
+    
+    def get_form_kwargs(self):
+        """Pasar clínica activa al formulario"""
+        kwargs = super().get_form_kwargs()
+        clinica = get_clinica_from_request(self.request)
+        kwargs['clinica'] = clinica
+        return kwargs
     
     def get_initial(self):
         """Valores iniciales del formulario"""
@@ -240,14 +247,28 @@ class CitaCreateView(LoginRequiredMixin, CreateView):
 class CitaUpdateView(LoginRequiredMixin, UpdateView):
     """
     Vista para editar una cita existente.
+    Tenant-aware: solo permite editar citas de la clínica activa.
     """
     model = Cita
     form_class = CitaForm
     template_name = 'cit/cita_form.html'
     
+    def get_form_kwargs(self):
+        """Pasar clínica activa al formulario"""
+        kwargs = super().get_form_kwargs()
+        clinica = get_clinica_from_request(self.request)
+        kwargs['clinica'] = clinica
+        return kwargs
+    
     def get_queryset(self):
-        """Optimizar consulta"""
-        return Cita.objects.select_related(
+        """Filtrar por clínica activa y optimizar consulta"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Cita.objects.none()
+        
+        return Cita.objects.filter(
+            paciente__clinica=clinica
+        ).select_related(
             'paciente',
             'dentista',
             'especialidad',
@@ -973,27 +994,33 @@ def buscar_pacientes(request):
     Retorna JSON con lista de pacientes que coinciden con la búsqueda.
     Compatible con Select2.
     Busca por: nombres, apellidos o cédula.
+    Tenant-aware: solo pacientes de la clínica activa.
     """
     query = request.GET.get('q', '').strip()
     page = int(request.GET.get('page', 1))
     
     from pacientes.models import Paciente
     
+    # Filtrar por clínica activa
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        return JsonResponse({'results': [], 'total_count': 0, 'pagination': {'more': False}})
+    
     if not query or len(query) < 1:
-        # Mostrar pacientes recientes si no hay búsqueda
+        # Mostrar pacientes recientes de la clínica si no hay búsqueda
         pacientes = Paciente.objects.filter(
-            estado=True
+            estado=True,
+            clinica=clinica
         ).order_by('-id')[:10]
-        print(f"[DEBUG] Sin query, mostrando recientes: {pacientes.count()} pacientes")
     else:
-        # Buscar en nombre, apellido o cédula
+        # Buscar en nombre, apellido o cédula dentro de la clínica
         pacientes = Paciente.objects.filter(
             Q(nombres__icontains=query) |
             Q(apellidos__icontains=query) |
             Q(cedula__icontains=query),
-            estado=True
+            estado=True,
+            clinica=clinica
         ).order_by('apellidos', 'nombres')
-        print(f"[DEBUG] Con query '{query}': {pacientes.count()} pacientes encontrados")
     
     # Paginación
     per_page = 10
@@ -1158,6 +1185,7 @@ class EspecialidadDeleteView(LoginRequiredMixin, DeleteView):
 class DentistaListView(LoginRequiredMixin, ListView):
     """
     Vista para listar dentistas con búsqueda y filtros.
+    Tenant-aware: solo muestra dentistas de la clínica activa.
     """
     model = Dentista
     template_name = 'cit/dentista_list.html'
@@ -1165,8 +1193,14 @@ class DentistaListView(LoginRequiredMixin, ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        """Optimizar consultas y aplicar filtros"""
-        queryset = Dentista.objects.select_related(
+        """Filtrar por clínica activa y aplicar búsqueda/filtros"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Dentista.objects.none()
+        
+        queryset = Dentista.objects.filter(
+            sucursal_principal__clinica=clinica
+        ).select_related(
             'usuario',
             'sucursal_principal',
             'sucursal_principal__clinica'
@@ -1177,7 +1211,7 @@ class DentistaListView(LoginRequiredMixin, ListView):
         if especialidad_id:
             queryset = queryset.filter(especialidades__id=especialidad_id)
         
-        # Filtro por sucursal
+        # Filtro por sucursal (ya restringido a la clínica)
         sucursal_id = self.request.GET.get('sucursal')
         if sucursal_id:
             queryset = queryset.filter(sucursal_principal_id=sucursal_id)
@@ -1195,12 +1229,21 @@ class DentistaListView(LoginRequiredMixin, ListView):
         return queryset.order_by('usuario__last_name', 'usuario__first_name')
     
     def get_context_data(self, **kwargs):
-        """Agregar datos adicionales al contexto"""
+        """Agregar datos adicionales al contexto (solo de la clínica)"""
         context = super().get_context_data(**kwargs)
+        clinica = get_clinica_from_request(self.request)
+        
         context['especialidades'] = Especialidad.objects.filter(estado=True)
         
+        # Solo sucursales de la clínica activa
         from .models import Sucursal
-        context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+        if clinica:
+            context['sucursales'] = Sucursal.objects.filter(
+                estado=True, 
+                clinica=clinica
+            ).select_related('clinica')
+        else:
+            context['sucursales'] = Sucursal.objects.none()
         
         return context
 
@@ -1255,8 +1298,7 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
             )
             comision_formset = ComisionDentistaFormSet(
                 self.request.POST,
-                instance=self.object,
-                form_kwargs={'especialidades_queryset': especialidades} if especialidades else {}
+                instance=self.object
             )
         else:
             default_sucursal = sucursales.first() if sucursales.exists() else None
@@ -1302,8 +1344,7 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
                 instance=self.object
             )
             comision_formset = ComisionDentistaFormSet(
-                instance=self.object,
-                form_kwargs={'especialidades_queryset': especialidades} if especialidades else {}
+                instance=self.object
             )
         
         context['disponibilidad_formset'] = disponibilidad_formset
@@ -1323,6 +1364,46 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
         if disponibilidad_formset.is_valid() and excepcion_formset.is_valid() and comision_formset.is_valid():
             # Guardar el dentista primero, pasando el usuario actual para uc
             self.object = form.save(user=self.request.user)
+            
+            # ========== AUTO-CREAR UsuarioClinica (SOOD-USU-007) ==========
+            try:
+                from usuarios.models import UsuarioClinica, RolUsuario
+                
+                # Obtener clínica del dentista
+                clinica = self.object.sucursal_principal.clinica if self.object.sucursal_principal else None
+                
+                if clinica:
+                    # Verificar si ya existe UsuarioClinica
+                    usuario_clinica, created = UsuarioClinica.objects.get_or_create(
+                        usuario=self.object.usuario,
+                        defaults={
+                            'clinica': clinica,
+                            'rol': RolUsuario.ODONTOLOGO,
+                            'activo': True
+                        }
+                    )
+                    
+                    if created:
+                        messages.info(
+                            self.request,
+                            f'✅ Usuario clínica creado automáticamente para Dr(a). {self.object.usuario.get_full_name()} con rol Odontólogo'
+                        )
+                    else:
+                        # Si ya existe, actualizar clínica y rol si es necesario
+                        if usuario_clinica.clinica != clinica or usuario_clinica.rol != RolUsuario.ODONTOLOGO:
+                            usuario_clinica.clinica = clinica
+                            usuario_clinica.rol = RolUsuario.ODONTOLOGO
+                            usuario_clinica.save()
+                            messages.info(
+                                self.request,
+                                f'✅ Usuario clínica actualizado para Dr(a). {self.object.usuario.get_full_name()}'
+                            )
+            except Exception as e:
+                messages.warning(
+                    self.request,
+                    f'⚠️ No se pudo crear UsuarioClinica automáticamente: {str(e)}'
+                )
+            # ============================================================
             
             # Guardar los formsets, excluyendo horarios vacíos e inactivos
             disponibilidad_formset.instance = self.object
@@ -1468,20 +1549,6 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
         else:
             context['excepcion_formset'] = ExcepcionDisponibilidadFormSet(
                 instance=self.object
-            )
-        
-        if 'comision_formset' in kwargs:
-            context['comision_formset'] = kwargs['comision_formset']
-        elif self.request.POST:
-            context['comision_formset'] = ComisionDentistaFormSet(
-                self.request.POST,
-                instance=self.object,
-                form_kwargs={'especialidades_queryset': especialidades}
-            )
-        else:
-            context['comision_formset'] = ComisionDentistaFormSet(
-                instance=self.object,
-                form_kwargs={'especialidades_queryset': especialidades}
             )
         
         # Agregar el tab activo al contexto (por defecto 'datos')
@@ -1920,19 +1987,24 @@ class ClinicaSelectView(LoginRequiredMixin, View):
 # ============================================================================
 
 class SucursalListView(LoginRequiredMixin, ListView):
-    """Vista para listar todas las sucursales"""
+    """
+    Vista para listar sucursales.
+    Tenant-aware: solo muestra sucursales de la clínica activa.
+    """
     model = Sucursal
     template_name = 'cit/sucursal_list.html'
     context_object_name = 'sucursales'
     paginate_by = 20
     
     def get_queryset(self):
-        queryset = Sucursal.objects.select_related('clinica').all()
+        """Filtrar por clínica activa y aplicar búsqueda"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Sucursal.objects.none()
         
-        # Filtro por clínica
-        clinica_id = self.request.GET.get('clinica')
-        if clinica_id:
-            queryset = queryset.filter(clinica_id=clinica_id)
+        queryset = Sucursal.objects.filter(
+            clinica=clinica
+        ).select_related('clinica')
         
         # Búsqueda general
         busqueda = self.request.GET.get('busqueda')
@@ -1943,7 +2015,7 @@ class SucursalListView(LoginRequiredMixin, ListView):
                 Q(telefono__icontains=busqueda)
             )
         
-        return queryset.order_by('clinica__nombre', 'nombre')
+        return queryset.order_by('nombre')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1957,10 +2029,8 @@ class SucursalListView(LoginRequiredMixin, ListView):
                 else:
                     sucursal.dias_badges = []
         
-        context['clinicas'] = Clinica.objects.filter(estado=True).order_by('nombre')
         context['total_sucursales'] = self.get_queryset().count()
         context['busqueda'] = self.request.GET.get('busqueda', '')
-        context['clinica_seleccionada'] = self.request.GET.get('clinica', '')
         return context
 
 
