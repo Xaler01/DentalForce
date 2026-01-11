@@ -13,32 +13,19 @@ from cit.models import (
     Clinica, Sucursal, Especialidad, Cubiculo,
     Dentista, Paciente, Cita
 )
+from cit.tests.base import MultiTenantTestCase
 
 
-class CheckDentistaDisponibilidadTest(TestCase):
+class CheckDentistaDisponibilidadTest(MultiTenantTestCase):
     """Tests para endpoint check_dentista_disponibilidad"""
 
     def setUp(self):
         """Configuración inicial"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
-        )
-        self.client.login(username='testuser', password='testpass123')
+        super().setUp()  # Get multi-tenant context
 
         # Crear datos de prueba
-        clinica = Clinica.objects.create(
-            nombre='PowerDent Test',
-            direccion='Av. Test',
-            telefono='02-1234567',
-            email='test@powerdent.com',
-            uc=self.user,
-            um=self.user.id
-        )
-
         self.sucursal = Sucursal.objects.create(
-            clinica=clinica,
+            clinica=self.clinica,
             nombre='Sucursal Test',
             direccion='Calle Test',
             telefono='02-7654321',
@@ -205,30 +192,16 @@ class CheckDentistaDisponibilidadTest(TestCase):
         self.assertTrue(data['disponible'])
 
 
-class CheckCubiculoDisponibilidadTest(TestCase):
+class CheckCubiculoDisponibilidadTest(MultiTenantTestCase):
     """Tests para endpoint check_cubiculo_disponibilidad"""
 
     def setUp(self):
         """Configuración inicial"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
-        )
-        self.client.login(username='testuser', password='testpass123')
+        super().setUp()  # Get multi-tenant context
 
         # Crear datos de prueba (similar a test anterior)
-        clinica = Clinica.objects.create(
-            nombre='PowerDent Test',
-            direccion='Av. Test',
-            telefono='02-1234567',
-            email='test@powerdent.com',
-            uc=self.user,
-            um=self.user.id
-        )
-
         self.sucursal = Sucursal.objects.create(
-            clinica=clinica,
+            clinica=self.clinica,
             nombre='Sucursal Test',
             direccion='Calle Test',
             telefono='02-7654321',
@@ -257,6 +230,7 @@ class CheckCubiculoDisponibilidadTest(TestCase):
             uc=self.user,
             um=self.user.id
         )
+
 
         user_dentista = User.objects.create_user(
             username='drdentista',

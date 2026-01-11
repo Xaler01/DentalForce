@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-door-open"></i> Lista de Cubículos
+        </h1>
+        <a href="{% url 'clinicas:cubiculo_create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nuevo Cubículo
+        </a>
+    </div>
+
+    <!-- Tabla de Cubículos -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> Cubículos Disponibles
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if object_list %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Número</th>
+                            <th>Sucursal</th>
+                            <th>Capacidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cubiculo in object_list %}
+                        <tr>
+                            <td>{{ cubiculo.nombre }}</td>
+                            <td>{{ cubiculo.numero }}</td>
+                            <td>{{ cubiculo.sucursal.nombre }}</td>
+                            <td>{{ cubiculo.capacidad }} personas</td>
+                            <td>
+                                {% if cubiculo.estado %}
+                                    <span class="badge badge-success">Activo</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'clinicas:cubiculo_detail' cubiculo.id %}" class="btn btn-sm btn-info" title="Ver">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'clinicas:cubiculo_update' cubiculo.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'clinicas:cubiculo_delete' cubiculo.id %}" class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> No hay cubículos registrados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

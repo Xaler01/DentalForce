@@ -15,6 +15,7 @@ from cit.forms import (
     DentistaForm, DisponibilidadDentistaForm,
     ExcepcionDisponibilidadForm
 )
+from cit.tests.base import MultiTenantTestCase
 
 
 class DentistaFormTest(TestCase):
@@ -239,29 +240,19 @@ class ExcepcionDisponibilidadFormTest(TestCase):
         self.assertFalse(form.is_valid())
 
 
-class DentistaViewsTest(TestCase):
+class DentistaViewsTest(MultiTenantTestCase):
     """Tests para las vistas de Dentista"""
     
     def setUp(self):
         """Configuración inicial"""
-        # Crear usuario de prueba
-        self.user = User.objects.create_user(
-            username='admin',
-            password='admin123',
-            is_staff=True,
-            is_superuser=True
-        )
-        self.client = Client()
-        self.client.login(username='admin', password='admin123')
+        super().setUp()  # Get multi-tenant context (user, clinica, client con session)
         
-        # Crear datos de prueba
-        self.clinica = Clinica.objects.create(
-            nombre='Clínica Test',
-            direccion='Calle 123',
-            telefono='0999999999',
-            email='clinica@test.com',
-            uc=self.user
-        )
+        # Upgrade user to staff/superuser
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+        
+        # Crear sucursal en la clínica del test
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,
             nombre='Sucursal Norte',

@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from bases.models import ClaseModelo
+from pacientes.models import Paciente
+from clinicas.models import Clinica
 
 
 class CategoriaEnfermedad(ClaseModelo):
@@ -173,7 +175,7 @@ class EnfermedadPaciente(ClaseModelo):
     ]
 
     paciente = models.ForeignKey(
-        'pacientes.Paciente',
+        Paciente,
         on_delete=models.CASCADE,
         related_name='enfermedades_paciente',
         help_text="Paciente que padece la enfermedad"
@@ -285,7 +287,7 @@ class AlertaPaciente(ClaseModelo):
     ]
     
     paciente = models.ForeignKey(
-        'pacientes.Paciente',
+        Paciente,
         on_delete=models.CASCADE,
         related_name='alertas',
         help_text="Paciente al que pertenece esta alerta"
@@ -408,4 +410,71 @@ class AlertaPaciente(ClaseModelo):
             'ROJO': 'fa-exclamation-circle',
         }
         return iconos.get(self.nivel, 'fa-info-circle')
+
+
+class ClinicaEnfermedad(ClaseModelo):
+    """
+    Configuración por clínica del catálogo global de Enfermedades.
+
+    Permite habilitar/deshabilitar u ocultar una enfermedad específica
+    para una clínica determinada, así como definir un nombre personalizado.
+
+    - No modifica el estado global de la enfermedad
+    - No afecta a otras clínicas
+    - Si no existe un registro para (clinica, enfermedad), se considera habilitada por defecto
+    """
+    clinica = models.ForeignKey(
+        Clinica,
+        on_delete=models.CASCADE,
+        related_name='config_enfermedades',
+        help_text='Clínica a la que aplica esta configuración'
+    )
+    enfermedad = models.ForeignKey(
+        Enfermedad,
+        on_delete=models.PROTECT,
+        related_name='configuraciones',
+        help_text='Enfermedad del catálogo global'
+    )
+    habilitada = models.BooleanField(
+        default=True,
+        help_text='Si está deshabilitada, no se muestra/usa en esta clínica'
+    )
+    ocultar = models.BooleanField(
+        default=False,
+        help_text='Si está activa pero oculta, no aparece en listados'
+    )
+    nombre_personalizado = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='Nombre alternativo usado por esta clínica (opcional)'
+    )
+    notas = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Notas internas sobre esta configuración'
+    )
+
+    class Meta:
+        verbose_name = 'Configuración de Enfermedad por Clínica'
+        verbose_name_plural = 'Configuraciones de Enfermedades por Clínica'
+        unique_together = [['clinica', 'enfermedad']]
+        ordering = ['clinica__nombre', 'enfermedad__nombre']
+        db_table = 'enf_clinica_enfermedad'
+        indexes = [
+            models.Index(fields=['clinica', 'habilitada', 'ocultar']),
+            models.Index(fields=['enfermedad', 'habilitada', 'ocultar'])
+        ]
+
+    def __str__(self):
+        base = self.nombre_personalizado or self.enfermedad.nombre
+        estado = 'habilitada' if self.habilitada else 'deshabilitada'
+        if self.ocultar:
+            estado += ', oculta'
+        return f"{self.clinica.nombre} → {base} ({estado})"
+
+    @property
+    def nombre_para_clinica(self):
+        return self.nombre_personalizado or self.enfermedad.nombre
+
 

@@ -6,7 +6,7 @@ from bases.models import ClaseModelo
 # Clinica and Sucursal are canonical models defined in the `clinicas` app.
 # Import them here so the `cit` module exposes the same classes and avoids
 # duplicate model definitions and DB/table mismatches.
-from clinicas.models import Clinica, Sucursal  # noqa: F401
+from clinicas.models import Clinica, Sucursal, Especialidad, Cubiculo  # noqa: F401
 
 # Paciente is canonical model defined in the `pacientes` app.
 # Import it here for backward compatibility with code that uses cit.models.Paciente
@@ -23,141 +23,9 @@ from personal.models import (  # noqa: F401
 
 # Create other models here.
 
-# `Clinica` and `Sucursal` are defined in the `clinicas` app and imported
-# above. Keep the canonical models in `clinicas.models` to avoid duplicate
+# `Clinica`, `Sucursal`, `Especialidad` y `Cubiculo` are defined in the `clinicas` app 
+# and imported above. Keep the canonical models in `clinicas.models` to avoid duplicate
 # definitions and DB/table mismatches.
-
-
-class Especialidad(ClaseModelo):
-    """
-    Modelo para representar una especialidad odontológica.
-    Define los tipos de servicios que puede ofrecer un dentista.
-    """
-    nombre = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name='Nombre de la Especialidad',
-        help_text='Ej: Ortodoncia, Endodoncia, Periodoncia'
-    )
-    descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada de la especialidad',
-        blank=True
-    )
-    duracion_default = models.PositiveIntegerField(
-        verbose_name='Duración por Defecto (minutos)',
-        help_text='Duración estimada de una cita de esta especialidad',
-        default=30
-    )
-    color_calendario = models.CharField(
-        max_length=7,
-        verbose_name='Color para Calendario',
-        help_text='Color en formato hexadecimal (Ej: #3498db)',
-        default='#3498db'
-    )
-    
-    class Meta:
-        verbose_name = 'Especialidad'
-        verbose_name_plural = 'Especialidades'
-        ordering = ['nombre']
-    
-    def __str__(self):
-        return self.nombre
-    
-    def clean(self):
-        """Validaciones personalizadas"""
-        from django.core.exceptions import ValidationError
-        
-        # Validar duración mínima
-        if self.duracion_default and self.duracion_default < 15:
-            raise ValidationError({
-                'duracion_default': 'La duración mínima debe ser de 15 minutos'
-            })
-        
-        # Validar formato de color hexadecimal
-        if self.color_calendario:
-            import re
-            if not re.match(r'^#[0-9A-Fa-f]{6}$', self.color_calendario):
-                raise ValidationError({
-                    'color_calendario': 'El color debe estar en formato hexadecimal (Ej: #3498db)'
-                })
-        
-        # Normalizar nombre
-        if self.nombre:
-            self.nombre = self.nombre.strip().title()
-
-
-class Cubiculo(ClaseModelo):
-    """
-    Modelo para representar un cubículo/consultorio dentro de una sucursal.
-    Cada cubículo es donde se realizan las atenciones odontológicas.
-    """
-    sucursal = models.ForeignKey(
-        Sucursal,
-        on_delete=models.CASCADE,
-        related_name='cubiculos',
-        verbose_name='Sucursal'
-    )
-    nombre = models.CharField(
-        max_length=100,
-        verbose_name='Nombre del Cubículo',
-        help_text='Ej: Consultorio 1, Sala de Cirugía'
-    )
-    descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción breve del cubículo',
-        blank=True
-    )
-    numero = models.PositiveSmallIntegerField(
-        verbose_name='Número',
-        help_text='Número identificador del cubículo',
-        null=True,
-        blank=True
-    )
-    capacidad = models.PositiveSmallIntegerField(
-        verbose_name='Capacidad',
-        help_text='Número de personas que pueden estar simultáneamente',
-        default=2
-    )
-    equipamiento = models.TextField(
-        verbose_name='Equipamiento',
-        help_text='Descripción del equipamiento disponible',
-        blank=True
-    )
-    
-    class Meta:
-        verbose_name = 'Cubículo'
-        verbose_name_plural = 'Cubículos'
-        ordering = ['sucursal', 'numero']
-        unique_together = [['sucursal', 'numero']]
-    
-    def __str__(self):
-        return f"{self.sucursal.nombre} - {self.nombre} (#{self.numero})"
-    
-    def clean(self):
-        """Validaciones personalizadas"""
-        from django.core.exceptions import ValidationError
-        
-        # Validar capacidad mínima (permite validar antes de llegar a la BD)
-        if self.capacidad is not None and self.capacidad < 1:
-            raise ValidationError({
-                'capacidad': 'La capacidad mínima debe ser de 1 persona'
-            })
-        
-        # Validar número positivo (permite validar antes de llegar a la BD)
-        if self.numero is not None and self.numero < 1:
-            raise ValidationError({
-                'numero': 'El número del cubículo debe ser mayor a 0'
-            })
-        
-        # Normalizar nombre
-        if self.nombre:
-            self.nombre = self.nombre.strip().title()
-
-
-# Dentista and related models moved to personal.models (SOOD-62 refactoring)
-
-# Paciente model moved to pacientes.models (SOOD-62 refactoring)
 
 class CitaManager(models.Manager):
     """Manager personalizado para filtrar citas por clínica"""

@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from cit.models import Clinica, Sucursal
 from cit.forms import ClinicaForm
 from datetime import time
+from cit.tests.base import MultiTenantTestCase
 
 
 class ClinicaModelTest(TestCase):
@@ -219,33 +220,22 @@ class ClinicaFormTest(TestCase):
         self.assertIn('telefono', form.errors)
 
 
-class ClinicaViewsTest(TestCase):
+class ClinicaViewsTest(MultiTenantTestCase):
     """Tests para las vistas de Clínica"""
     
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='admin',
-            password='admin123',
-            is_staff=True
-        )
-        self.client.login(username='admin', password='admin123')
+        super().setUp()  # Call parent setUp to get multi-tenant context
         
-        # Crear clínica de prueba
-        self.clinica = Clinica.objects.create(
-            nombre='Clínica Test',
-            direccion='Av. Test 123',
-            telefono='02-1234567',
-            email='test@clinica.com',
-            uc=self.user
-        )
+        # Upgrade user to staff for admin access
+        self.user.is_staff = True
+        self.user.save()
     
     def test_clinica_list_view(self):
         """Test: acceso a la vista de lista"""
         response = self.client.get(reverse('cit:clinica-list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Lista de Clínicas')
-        self.assertContains(response, 'Clínica Test')
+        self.assertContains(response, 'Clinica Test')
     
     def test_clinica_detail_view(self):
         """Test: acceso a la vista de detalle"""
@@ -253,8 +243,8 @@ class ClinicaViewsTest(TestCase):
             reverse('cit:clinica-detail', kwargs={'pk': self.clinica.pk})
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Clínica Test')
-        self.assertContains(response, 'test@clinica.com')
+        self.assertContains(response, 'Clinica Test')
+        self.assertContains(response, 'clinic@test.com')
     
     def test_clinica_create_view_get(self):
         """Test: acceso al formulario de creación"""

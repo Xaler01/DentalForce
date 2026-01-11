@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from bases.models import ClaseModelo
-from clinicas.models import Sucursal
+from clinicas.models import Sucursal, Especialidad
 
 # Forward declarations for circular import handling
 # These will be imported from cit at the end after Cita is defined
@@ -25,7 +25,7 @@ class Dentista(ClaseModelo):
         help_text='Usuario del sistema asociado al dentista'
     )
     especialidades = models.ManyToManyField(
-        'cit.Especialidad',
+        Especialidad,
         related_name='dentistas',
         verbose_name='Especialidades',
         help_text='Especialidades que practica el dentista'
@@ -242,7 +242,7 @@ class ComisionDentista(ClaseModelo):
         help_text='Dentista al que se le asigna la comisión'
     )
     especialidad = models.ForeignKey(
-        'cit.Especialidad',
+        Especialidad,
         on_delete=models.CASCADE,
         related_name='comisiones',
         verbose_name='Especialidad',

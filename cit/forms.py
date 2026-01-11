@@ -4,10 +4,11 @@ from django.utils import timezone
 from django.forms import inlineformset_factory
 from datetime import datetime, timedelta, date
 from .models import (
-    Cita, Dentista, Especialidad, Cubiculo, Paciente,
+    Cita, Especialidad, Cubiculo, Paciente,
     DisponibilidadDentista, ExcepcionDisponibilidad,
     ComisionDentista, Clinica, Sucursal
 )
+from personal.models import Dentista
 from django.contrib.auth.models import User
 
 
@@ -146,14 +147,33 @@ class CitaForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         """Personalizar inicialización del formulario"""
+        # Extraer clinica antes de super().__init__ si viene en kwargs
+        self.clinica = kwargs.pop('clinica', None)
         super().__init__(*args, **kwargs)
         
         # Configurar formato de entrada para datetime-local
         self.fields['fecha_hora'].input_formats = ['%Y-%m-%dT%H:%M']
 
-        # Filtrar catálogos para mostrar solo registros activos
-        self.fields['paciente'].queryset = Paciente.objects.filter(estado=True).order_by('apellidos', 'nombres')
-        self.fields['dentista'].queryset = Dentista.objects.filter(estado=True).select_related('usuario').order_by('usuario__last_name', 'usuario__first_name')
+        # Filtrar catálogos para mostrar solo registros activos Y de la clínica activa
+        if self.clinica:
+            self.fields['paciente'].queryset = Paciente.objects.filter(
+                estado=True, 
+                clinica=self.clinica
+            ).order_by('apellidos', 'nombres')
+            self.fields['dentista'].queryset = Dentista.objects.filter(
+                estado=True,
+                sucursal_principal__clinica=self.clinica
+            ).select_related('usuario').order_by('usuario__last_name', 'usuario__first_name')
+            # Filtrar cubículos por clínica (a través de sucursal)
+            self.fields['cubiculo'].queryset = Cubiculo.objects.filter(
+                estado=True,
+                sucursal__clinica=self.clinica
+            ).select_related('sucursal').order_by('sucursal__nombre', 'nombre')
+        else:
+            # Sin clínica, no mostrar nada (seguridad)
+            self.fields['paciente'].queryset = Paciente.objects.none()
+            self.fields['dentista'].queryset = Dentista.objects.none()
+            self.fields['cubiculo'].queryset = Cubiculo.objects.none()
         
         # Si hay un dentista seleccionado, mostrar solo sus especialidades
         dentista = self.instance.dentista if self.instance.pk else None
@@ -162,8 +182,6 @@ class CitaForm(forms.ModelForm):
         else:
             # Si no hay dentista, mostrar todas las especialidades activas
             self.fields['especialidad'].queryset = Especialidad.objects.filter(estado=True).order_by('nombre')
-        
-        self.fields['cubiculo'].queryset = Cubiculo.objects.filter(estado=True).select_related('sucursal').order_by('sucursal__nombre', 'nombre')
         
         # Si es edición, deshabilitar campos según el estado
         if self.instance.pk:
@@ -1170,6 +1188,18 @@ class ExcepcionDisponibilidadForm(forms.ModelForm):
         return cleaned_data
 
 
+
+# Inline Formsets para Dentista
+DisponibilidadDentistaFormSet = inlineformset_factory(
+    Dentista,
+    DisponibilidadDentista,
+    form=DisponibilidadDentistaForm,
+    extra=7,  # 7 días de la semana
+    max_num=14,  # Permitir hasta 2 horarios por día
+    can_delete=True
+)
+
+
 class ComisionDentistaForm(forms.ModelForm):
     """
     Formulario para gestionar comisiones de dentistas por especialidad.
@@ -1182,11 +1212,9 @@ class ComisionDentistaForm(forms.ModelForm):
         widgets = {
             'especialidad': forms.Select(attrs={
                 'class': 'form-control select2'
-                # No usar required=True aquí - se valida en clean()
             }),
             'tipo_comision': forms.Select(attrs={
                 'class': 'form-control tipo-comision-select'
-                # No usar required=True aquí - se valida en clean()
             }),
             'porcentaje': forms.NumberInput(attrs={
                 'class': 'form-control campo-porcentaje',
@@ -1228,15 +1256,7 @@ class ComisionDentistaForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
-        # Obtener especialidades_queryset si viene en kwargs
-        especialidades_queryset = kwargs.pop('especialidades_queryset', None)
         super().__init__(*args, **kwargs)
-        
-        # Si se proporciona un queryset de especialidades, usarlo
-        if especialidades_queryset is not None:
-            self.fields['especialidad'].queryset = especialidades_queryset
-        
-        # Configurar el campo activo con valor inicial False para nuevas comisiones
         if not self.instance.pk:
             self.fields['activo'].initial = False
             if 'porcentaje' not in self.initial:
@@ -1255,7 +1275,6 @@ class ComisionDentistaForm(forms.ModelForm):
         
         # Solo validar si la comisión está activa
         if not activo:
-            # Si está inactiva, no validar nada más, permitir guardarla
             return cleaned_data
         
         # Si está activa, validar que tenga especialidad
@@ -1275,7 +1294,6 @@ class ComisionDentistaForm(forms.ModelForm):
                 raise ValidationError({
                     'porcentaje': 'Debe especificar un porcentaje mayor a 0 cuando selecciona "Porcentaje"'
                 })
-            # Limpiar valor_fijo
             cleaned_data['valor_fijo'] = None
         
         elif tipo_comision == 'FIJO':
@@ -1283,42 +1301,27 @@ class ComisionDentistaForm(forms.ModelForm):
                 raise ValidationError({
                     'valor_fijo': 'Debe especificar un valor mayor a 0 cuando selecciona "Valor Fijo"'
                 })
-            # Limpiar porcentaje
             cleaned_data['porcentaje'] = None
-        
-        # Validar que no exista otra comisión activa para la misma especialidad (solo en edición)
-        # En creación, esta validación se hace en la vista para todo el formset
-        if self.instance.pk and self.instance.dentista:
-            from .models import ComisionDentista
-            existing = ComisionDentista.objects.filter(
-                dentista=self.instance.dentista,
-                especialidad=especialidad,
-                activo=True
-            ).exclude(pk=self.instance.pk)
-            
-            if existing.exists():
-                raise ValidationError({
-                    'activo': f'Ya existe una comisión activa para {especialidad.nombre}. '
-                             'Debe desactivarla antes de activar esta.'
-                })
         
         return cleaned_data
 
 
-# Inline Formsets para Dentista
-DisponibilidadDentistaFormSet = inlineformset_factory(
+ExcepcionDisponibilidadFormSet = inlineformset_factory(
     Dentista,
-    DisponibilidadDentista,
-    form=DisponibilidadDentistaForm,
-    extra=7,  # 7 días de la semana
-    max_num=14,  # Permitir hasta 2 horarios por día
-    can_delete=True
+    ExcepcionDisponibilidad,
+    form=ExcepcionDisponibilidadForm,
+    extra=1,
+    can_delete=False
 )
 
 
-# =========================================================================
-# FORMULARIOS DE CUBÍCULOS POR SUCURSAL
-# =========================================================================
+ComisionDentistaFormSet = inlineformset_factory(
+    Dentista,
+    ComisionDentista,
+    form=ComisionDentistaForm,
+    extra=1,
+    can_delete=True
+)
 
 class CubiculoForm(forms.ModelForm):
     class Meta:
@@ -1361,14 +1364,6 @@ ExcepcionDisponibilidadFormSet = inlineformset_factory(
     form=ExcepcionDisponibilidadForm,
     extra=1,  # Solo mostrar 1 fila vacía, se pueden agregar más con JavaScript
     can_delete=False  # No eliminar físicamente, desactivar con estado=False para mantener histórico
-)
-
-ComisionDentistaFormSet = inlineformset_factory(
-    Dentista,
-    ComisionDentista,
-    form=ComisionDentistaForm,
-    extra=1,  # Mostrar 1 fila vacía inicial
-    can_delete=True  # Permitir eliminar comisiones
 )
 
 

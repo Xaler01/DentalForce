@@ -19,6 +19,8 @@ from cit.models import Cita
 from enfermedades.forms import EnfermedadPacienteForm
 from enfermedades.models import EnfermedadPaciente, AlertaPaciente
 from enfermedades.utils import CalculadorAlerta
+from core.services.tenants import get_clinica_from_request
+from pacientes.services import pacientes_para_clinica, get_paciente_para_clinica
 
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -31,21 +33,12 @@ class PacienteListView(LoginRequiredMixin, ListView):
     login_url = 'login'
     
     def get_queryset(self):
-        """Filtrar pacientes según búsqueda y clínica activa"""
-        # Obtener clínica activa desde sesión
-        clinica_id = self.request.session.get('clinica_id')
-        
+        """Filtrar pacientes según búsqueda y clínica activa (tenant-aware service)"""
+        clinica = get_clinica_from_request(self.request)
         incluir_inactivos = self.request.GET.get('incluir_inactivos') == '1'
-        
-        # Filtrar por clínica activa
-        if clinica_id:
-            if incluir_inactivos:
-                qs = Paciente.objects.filter(clinica_id=clinica_id).order_by('apellidos', 'nombres')
-            else:
-                qs = Paciente.objects.para_clinica(clinica_id).order_by('apellidos', 'nombres')
-        else:
-            # Sin clínica, no mostrar nada (el middleware debería redirigir)
-            qs = Paciente.objects.none()
+        if not clinica:
+            return Paciente.objects.none()
+        qs = pacientes_para_clinica(clinica, incluir_inactivos).order_by('apellidos', 'nombres')
         
         form = PacienteBuscarForm(self.request.GET)
         if form.is_valid():
@@ -174,8 +167,8 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         return super(UpdateView, self).form_valid(form)
     
     def get_success_url(self):
-        """Redirigir al detalle del paciente"""
-        return reverse_lazy('pacientes:paciente-detail', kwargs={'pk': self.object.pk})
+        """Redirigir al listado de pacientes"""
+        return reverse_lazy('pacientes:paciente-list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -197,7 +190,10 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
     login_url = 'login'
 
     def get_queryset(self):
-        return Paciente.objects.filter(estado=True)
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Paciente.objects.none()
+        return Paciente.objects.filter(estado=True, clinica=clinica)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -263,6 +259,8 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
         context['alertas_historial'] = alertas_query[:30]
         
         context['title'] = f'Detalle de {self.object.get_nombre_completo()}'
+        # Garantizar disponibilidad de mensajes en contexto para tests
+        context['messages'] = messages.get_messages(self.request)
         return context
 
 
@@ -326,7 +324,8 @@ class PacienteEnfermedadAddView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def post(self, request, pk):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         form = EnfermedadPacienteForm(request.POST)
         if form.is_valid():
             try:
@@ -346,7 +345,8 @@ class PacienteEnfermedadDeleteView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def post(self, request, pk, ep_id):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         ep = get_object_or_404(EnfermedadPaciente, pk=ep_id, paciente=paciente)
         ep.delete()
         return JsonResponse({'success': True})
@@ -357,7 +357,8 @@ class PacienteAlertasDetallesAJAXView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def get(self, request, pk):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         
         # Calcular nivel de alerta y factores
         calculador = CalculadorAlerta(paciente)

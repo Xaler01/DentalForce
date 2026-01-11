@@ -9,7 +9,8 @@ from bases.views import SinPrivilegios
 from pacientes.models import Paciente
 from .models import CategoriaEnfermedad, Enfermedad, AlertaPaciente
 from .forms import CategoriaEnfermedadForm, EnfermedadForm
-from .utils import CalculadorAlerta
+from .utils import CalculadorAlerta, enfermedades_para_clinica
+from core.services.tenants import get_clinica_from_request
 
 
 class CategoriaEnfermedadListView(SinPrivilegios, generic.ListView):
@@ -70,6 +71,14 @@ class EnfermedadListView(SinPrivilegios, generic.ListView):
 	template_name = "enfermedades/enfermedad_list.html"
 	context_object_name = "enfermedades"
 	ordering = ["categoria__nombre", "nombre"]
+
+	def get_queryset(self):
+		"""Lista enfermedades respetando overrides por clínica activa."""
+		clinica = get_clinica_from_request(self.request)
+		if not clinica:
+			# Sin clínica activa, retornar vacío por seguridad
+			return Enfermedad.objects.none()
+		return enfermedades_para_clinica(clinica).select_related('categoria').order_by('categoria__nombre', 'nombre')
 
 
 class EnfermedadCreateView(SuccessMessageMixin, SinPrivilegios, generic.CreateView):

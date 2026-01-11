@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 from django.utils import timezone
 from django.db.models import Q
 
-from .models import Enfermedad, EnfermedadPaciente, AlertaPaciente
+from .models import Enfermedad, EnfermedadPaciente, AlertaPaciente, ClinicaEnfermedad
 
 
 class CalculadorAlerta:
@@ -277,6 +277,41 @@ class CalculadorAlerta:
             'requieren_interconsulta': self.get_enfermedades_requieren_interconsulta().count(),
             'es_vip': 1 if (self.paciente.es_vip or self._es_vip_por_facturacion()) else 0,
         }
+
+
+def enfermedades_para_clinica(clinica):
+    """
+    Retorna queryset de Enfermedades visibles para una clínica específica.
+
+    Reglas:
+    - Solo enfermedades con `estado=True` global
+    - Si existe ClinicaEnfermedad con `habilitada=False` u `ocultar=True`, se excluye
+    - Si no existe configuración para (clinica, enfermedad), se considera habilitada
+    """
+    qs = Enfermedad.objects.filter(estado=True)
+    # Excluir explícitamente deshabilitadas para la clínica
+    qs = qs.exclude(
+        configuraciones__clinica=clinica,
+        configuraciones__habilitada=False
+    )
+    # Excluir marcadas como ocultas para la clínica
+    qs = qs.exclude(
+        configuraciones__clinica=clinica,
+        configuraciones__ocultar=True
+    )
+    return qs
+
+
+def nombre_enfermedad_para_clinica(enfermedad, clinica):
+    """
+    Obtiene el nombre a mostrar de una enfermedad para una clínica,
+    considerando nombre personalizado si existe.
+    """
+    try:
+        cfg = ClinicaEnfermedad.objects.get(clinica=clinica, enfermedad=enfermedad)
+        return cfg.nombre_personalizado or enfermedad.nombre
+    except ClinicaEnfermedad.DoesNotExist:
+        return enfermedad.nombre
 
 
 class GestorAlertas:
