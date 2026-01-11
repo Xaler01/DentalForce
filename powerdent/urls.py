@@ -31,6 +31,7 @@ urlpatterns = [
     path('clinicas/', include(('clinicas.urls', 'clinicas'), namespace='clinicas')),
     path('pacientes/', include(('pacientes.urls', 'pacientes'), namespace='pacientes')),
     path('enfermedades/', include(('enfermedades.urls', 'enfermedades'), namespace='enfermedades')),  # SOOD-70
+    path('usuarios/', include(('usuarios.urls', 'usuarios'), namespace='usuarios')),  # SOOD-USU: Gestión de usuarios
 
     path('admin/', admin.site.urls),
     # path('', inicio, name='Inicio'),  # La ruta raíz ahora renderiza el index.html

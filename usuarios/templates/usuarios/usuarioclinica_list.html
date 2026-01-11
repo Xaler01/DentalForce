@@ -1,0 +1,132 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">📋 Usuarios de {% if clinica_actual %}{{ clinica_actual.nombre }}{% else %}Todas las Clínicas{% endif %}</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'usuarios:crear' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Crear Usuario
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="alert-messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            {% if usuarios %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Email</th>
+                            <th>Nombre Completo</th>
+                            <th>Clínica</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>
+                                <code>{{ usuario.usuario.email }}</code>
+                            </td>
+                            <td>
+                                {{ usuario.nombre_completo }}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ usuario.clinica.nombre }}</span>
+                            </td>
+                            <td>
+                                {% if usuario.es_admin %}
+                                    <span class="badge bg-danger">{{ usuario.get_rol_display }}</span>
+                                {% elif usuario.es_odontologo %}
+                                    <span class="badge bg-success">{{ usuario.get_rol_display }}</span>
+                                {% elif usuario.es_administrativo %}
+                                    <span class="badge bg-warning text-dark">{{ usuario.get_rol_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ usuario.get_rol_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if usuario.activo %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger"><i class="fas fa-times"></i> Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'usuarios:editar' usuario.usuario.id %}" class="btn btn-sm btn-info" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'usuarios:eliminar' usuario.id %}" class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay usuarios creados aún.
+                <a href="{% url 'usuarios:crear' %}">Crear el primer usuario</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Usuario{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h5>
+                </div>
+                <div class="card-body">
+                    <p>¿Estás seguro de que deseas marcar como inactivo al siguiente usuario?</p>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Usuario:</strong> {{ object.usuario.get_full_name }}<br>
+                        <strong>Email:</strong> <code>{{ object.usuario.email }}</code><br>
+                        <strong>Clínica:</strong> {{ object.clinica.nombre }}<br>
+                        <strong>Rol:</strong> {{ object.get_rol_display }}<br>
+                    </div>
+
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        El usuario será marcado como inactivo y no podrá acceder al sistema.
+                        Este cambio puede ser revertido desde el admin.
+                    </p>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sí, Marcar como Inactivo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'pacientes',
     'facturacion',
     'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
+    'usuarios',     # SOOD-USU: Sistema de usuarios, roles y perfiles por clínica
 ]
 
 
