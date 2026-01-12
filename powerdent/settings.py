@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'facturacion',
     'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
     'usuarios',     # SOOD-USU: Sistema de usuarios, roles y perfiles por clínica
+    'procedimientos',  # SOOD-CAT-101: Catálogo de procedimientos odontológicos
 ]
 
 
