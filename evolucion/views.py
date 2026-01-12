@@ -35,7 +35,7 @@ def lista_evoluciones(request):
     Listado de evoluciones del paciente con filtros.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     evoluciones = services.evoluciones_para_clinica(clinica.id)
@@ -84,7 +84,7 @@ def detalle_evolucion(request, pk):
     Detalle completo de una evolución.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
@@ -111,7 +111,7 @@ def nueva_evolucion(request, paciente_id):
     Crear una nueva evolución para un paciente.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     
@@ -151,7 +151,7 @@ def editar_evolucion(request, pk):
     Editar una evolución existente.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
@@ -197,7 +197,7 @@ def editar_procedimientos_evolucion(request, pk):
     Editar procedimientos de una evolución con formset.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
@@ -255,7 +255,7 @@ def lista_planes(request):
     Listado de planes de tratamiento.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     planes = services.planes_tratamiento_para_clinica(clinica.id)
@@ -296,7 +296,7 @@ def detalle_plan(request, pk):
     Detalle de un plan de tratamiento.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
@@ -323,7 +323,7 @@ def nuevo_plan(request, paciente_id):
     Crear un nuevo plan de tratamiento.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     
@@ -363,7 +363,7 @@ def editar_plan(request, pk):
     Editar un plan de tratamiento existente.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
@@ -400,7 +400,7 @@ def editar_procedimientos_plan(request, pk):
     Editar procedimientos de un plan con formset.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
@@ -434,7 +434,7 @@ def historia_clinica(request, paciente_id):
     Ver/editar historia clínica de un paciente.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     
@@ -442,7 +442,7 @@ def historia_clinica(request, paciente_id):
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)
     except Paciente.DoesNotExist:
         messages.error(request, 'Paciente no encontrado.')
-        return redirect('home')
+        return redirect('bases:home')
     
     # Obtener o crear historia clínica
     historia, created = paciente.historia_clinica_odontologica.select_related(
@@ -491,7 +491,7 @@ def detalle_historia_clinica(request, paciente_id):
     Ver detalle de historia clínica.
     """
     if not hasattr(request.user, 'clinica'):
-        return redirect('home')
+        return redirect('bases:home')
     
     clinica = request.user.clinica
     
@@ -499,7 +499,7 @@ def detalle_historia_clinica(request, paciente_id):
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)
     except Paciente.DoesNotExist:
         messages.error(request, 'Paciente no encontrado.')
-        return redirect('home')
+        return redirect('bases:home')
     
     try:
         historia = paciente.historia_clinica_odontologica
