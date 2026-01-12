@@ -44,7 +44,7 @@
                                 {% for hidden in form.hidden_fields %}
                                 {{ hidden }}
                                 {% endfor %}
-                                <td>
+                                <td class="procedimiento-cell">
                                     {{ form.procedimiento }}
                                     {% if form.procedimiento.errors %}
                                     <div class="invalid-feedback d-block">
@@ -88,23 +88,33 @@
     </div>
 </div>
 
-{% endblock %}
+{% endblock page_content %}
 
-{% block extra_js %}
+{% block js_page %}
 <script>
+console.log('Script cargado - verificando jQuery y Select2');
+console.log('jQuery disponible:', typeof jQuery !== 'undefined');
+console.log('Select2 disponible:', typeof jQuery().select2 !== 'undefined');
+
 $(document).ready(function() {
+    console.log('DOM ready - inicializando formset de procedimientos');
+    
     // Initialize Select2
-    const select2Opts = { theme: "bootstrap" };
+        const select2Opts = { theme: "bootstrap" };
     $('.select2').select2(select2Opts);
 
     const prefix = '{{ formset.prefix }}';
-    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val());
+        let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
+    
+    console.log('Prefix del formset:', prefix);
+    console.log('Total forms inicial:', totalForms);
 
     // Template for empty form
     const emptyFormHtml = `
     <tr class="formset-row">
         ${`{{ formset.empty_form.id|escapejs }}`}
-        <td>
+            ${`{{ formset.empty_form.evolucion|default:''|escapejs }}`}
+        <td class="procedimiento-cell">
             ${`{{ formset.empty_form.procedimiento|escapejs }}`}
         </td>
         <td>
@@ -120,16 +130,47 @@ $(document).ready(function() {
 
     $('#add-procedimiento').on('click', function(e) {
         e.preventDefault();
+        console.log('Botón Agregar procedimiento clickeado');
+        console.log('Total forms antes de agregar:', totalForms);
+        
         const newForm = emptyFormHtml.replace(/__prefix__/g, totalForms);
         $('#procedimientos-table tbody').append(newForm);
+        console.log('Nueva fila agregada a la tabla');
         
         // Init select2 for the newly added select
-        const newSelect = $(`#id_${prefix}-${totalForms}-procedimiento`);
-        newSelect.select2(select2Opts);
+        const selectId = `id_${prefix}-${totalForms}-procedimiento`;
+        console.log('Inicializando Select2 para:', selectId);
+        const newSelect = $(`#${selectId}`);
+        console.log('Elemento encontrado:', newSelect.length > 0);
         
-        totalForms += 1;
+        if (newSelect.length > 0) {
+            newSelect.select2(select2Opts);
+            console.log('Select2 inicializado correctamente');
+        } else {
+            console.error('No se encontró el elemento select con ID:', selectId);
+        }
+        
+            totalForms += 1;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
+        console.log('TOTAL_FORMS actualizado a:', totalForms);
     });
+    
+    console.log('Event listener del botón Agregar procedimiento registrado');
 });
 </script>
-{% endblock %}
+<style>
+/* Make procedimiento look like a clear boxed input */
+.procedimiento-cell .select2-container{ width: 100% !important; }
+.procedimiento-cell .select2-selection--single{
+    border: 1px solid #ced4da;
+    border-radius: .35rem;
+    min-height: calc(1.5em + .75rem + 2px);
+    display: flex;
+    align-items: center;
+    background: #fff;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+}
+.procedimiento-cell .select2-selection__rendered{ line-height: 1.25rem; }
+.procedimiento-cell .select2-selection__arrow{ height: 100%; }
+</style>
+{% endblock js_page %}

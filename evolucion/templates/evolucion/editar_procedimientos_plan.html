@@ -45,7 +45,7 @@
                                 {% for hidden in form.hidden_fields %}
                                 {{ hidden }}
                                 {% endfor %}
-                                <td>
+                                <td class="procedimiento-cell">
                                     {{ form.procedimiento }}
                                     {% if form.procedimiento.errors %}
                                     <div class="invalid-feedback d-block">
@@ -92,22 +92,30 @@
     </div>
 </div>
 
-{% endblock %}
+{% endblock page_content %}
 
-{% block extra_js %}
+{% block js_page %}
 <script>
+console.log('Script de plan cargado');
+
 $(document).ready(function() {
+    console.log('DOM ready - Plan de tratamiento');
+    
     // Initialize Select2
     const select2Opts = { theme: "bootstrap" };
     $('.select2').select2(select2Opts);
 
     const prefix = '{{ formset.prefix }}';
-    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val());
+    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
+    
+    console.log('Prefix plan:', prefix);
+    console.log('Total forms plan inicial:', totalForms);
 
     const emptyFormHtml = `
     <tr class="formset-row">
         ${`{{ formset.empty_form.id|escapejs }}`}
-        <td>
+        ${`{{ formset.empty_form.plan|default:''|escapejs }}`}
+        <td class="procedimiento-cell">
             ${`{{ formset.empty_form.procedimiento|escapejs }}`}
         </td>
         <td style="width: 80px;">
@@ -126,16 +134,42 @@ $(document).ready(function() {
 
     $('#add-procedimiento-plan').on('click', function(e) {
         e.preventDefault();
+        console.log('Botón Agregar procedimiento plan clickeado');
+        
         const newForm = emptyFormHtml.replace(/__prefix__/g, totalForms);
         $('#procedimientos-plan-table tbody').append(newForm);
+        console.log('Nueva fila agregada al plan');
         
         // Init select2 for the newly added select
-        const newSelect = $(`#id_${prefix}-${totalForms}-procedimiento`);
-        newSelect.select2(select2Opts);
+        const selectId = `id_${prefix}-${totalForms}-procedimiento`;
+        console.log('Inicializando Select2 plan para:', selectId);
+        const newSelect = $(`#${selectId}`);
+        
+        if (newSelect.length > 0) {
+            newSelect.select2(select2Opts);
+            console.log('Select2 plan inicializado');
+        } else {
+            console.error('No se encontró el select del plan:', selectId);
+        }
         
         totalForms += 1;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
+        console.log('TOTAL_FORMS plan actualizado a:', totalForms);
     });
 });
 </script>
-{% endblock %}
+<style>
+.procedimiento-cell .select2-container{ width: 100% !important; }
+.procedimiento-cell .select2-selection--single{
+    border: 1px solid #ced4da;
+    border-radius: .35rem;
+    min-height: calc(1.5em + .75rem + 2px);
+    display: flex;
+    align-items: center;
+    background: #fff;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+}
+.procedimiento-cell .select2-selection__rendered{ line-height: 1.25rem; }
+.procedimiento-cell .select2-selection__arrow{ height: 100%; }
+</style>
+{% endblock js_page %}
