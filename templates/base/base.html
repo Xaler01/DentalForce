@@ -93,9 +93,8 @@
       {% url 'enfermedades:categoria_list' as enf_categoria_list_url %}
       {% url 'enfermedades:enfermedad_list' as enf_enfermedad_list_url %}
       {% url 'enfermedades:dashboard_alertas' as dashboard_alertas_url %}
-      {% url 'evolucion:lista_evoluciones' as evolucion_list_url %}
+      {% url 'evolucion:lista' as evolucion_list_url %}
       {% url 'evolucion:lista_planes' as planes_list_url %}
-      {% url 'evolucion:lista_odontogramas' as odontogramas_list_url %}
       {% url 'facturacion:lista' as facturacion_list_url %}
       {% url 'facturacion:nueva' as facturacion_nueva_url %}
       {% url 'facturacion:reportes' as facturacion_reportes_url %}
@@ -201,7 +200,7 @@
         <div id="collapseEvoluciones" class="collapse" aria-labelledby="headingEvoluciones" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header"><i class="fas fa-tooth"></i> Seguimiento Clínico</h6>
-            <a class="collapse-item" href="{% url 'evolucion:lista_evoluciones' %}">
+            <a class="collapse-item" href="{% url 'evolucion:lista' %}">
               <i class="fas fa-fw fa-list"></i>
               <span>Lista de Evoluciones</span>
             </a>
@@ -209,9 +208,9 @@
               <i class="fas fa-fw fa-clipboard-list"></i>
               <span>Planes de Tratamiento</span>
             </a>
-            <a class="collapse-item" href="{% url 'evolucion:lista_odontogramas' %}">
-              <i class="fas fa-fw fa-diagram-project"></i>
-              <span>Odontogramas</span>
+            <a class="collapse-item" href="{% url 'evolucion:historia_clinica' %}">
+              <i class="fas fa-fw fa-file-medical"></i>
+              <span>Historia Clínica</span>
             </a>
           </div>
         </div>
