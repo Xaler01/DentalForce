@@ -1,0 +1,148 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - {{ clinica.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section { background-color: #f8f9fa; padding: 20px; margin-bottom: 20px; border-radius: 5px; }
+    .form-section h5 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2><i class="fas fa-file-invoice"></i> {{ titulo }}</h2>
+            <p class="text-muted">{{ clinica.nombre }}</p>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>Error:</strong>
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="form">
+                {% csrf_token %}
+
+                <!-- Datos de la factura -->
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle"></i> Datos de la Factura</h5>
+                    
+                    <div class="form-group">
+                        <label for="id_paciente">Paciente *</label>
+                        {{ form.paciente }}
+                        {% if form.paciente.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.paciente.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="id_sucursal">Sucursal</label>
+                            {{ form.sucursal }}
+                            {% if form.sucursal.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.sucursal.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="id_cita">Cita Asociada</label>
+                            {{ form.cita }}
+                            {% if form.cita.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.cita.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="id_fecha_emision">Fecha de Emisión *</label>
+                            {{ form.fecha_emision }}
+                            {% if form.fecha_emision.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_emision.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="id_fecha_vencimiento">Fecha de Vencimiento</label>
+                            {{ form.fecha_vencimiento }}
+                            {% if form.fecha_vencimiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_vencimiento.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_descuento">Descuento General ($)</label>
+                        {{ form.descuento }}
+                        {% if form.descuento.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.descuento.errors }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Descuento opcional que se aplica al total de la factura
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_observaciones">Observaciones</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.observaciones.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Crear Factura
+                    </button>
+                    <a href="{% url 'facturacion:lista' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+
+            <div class="alert alert-info mt-4">
+                <h5><i class="fas fa-lightbulb"></i> Información importante</h5>
+                <ul class="mb-0">
+                    <li>Los datos del paciente deben estar registrados en el sistema</li>
+                    <li>Después de crear la factura, podrá agregar servicios (items)</li>
+                    <li>El sistema generará automáticamente un número de factura único</li>
+                    <li>Podrá registrar pagos una vez que la factura esté creada</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+    select.form-control {
+        height: auto;
+        padding: 0.375rem 0.75rem;
+    }
+</style>
+{% endblock %}

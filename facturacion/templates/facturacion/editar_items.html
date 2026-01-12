@@ -1,0 +1,229 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Editar Items - {{ factura.numero_factura }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabla-items th { background-color: #34495e; color: white; }
+    .item-fila:hover { background-color: #f0f0f0; }
+    .resumen-card { background-color: #ecf0f1; border-left: 4px solid #3498db; padding: 15px; margin-top: 20px; }
+    .form-item { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2><i class="fas fa-boxes"></i> Items de Factura</h2>
+            <p class="text-muted">{{ factura.numero_factura }} - {{ factura.paciente.nombre_completo }}</p>
+        </div>
+    </div>
+
+    <!-- Resumen actual -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Subtotal</h6>
+                    <h4>${{ factura.subtotal|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">IVA (12%)</h6>
+                    <h4>${{ factura.iva_monto|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Descuento</h6>
+                    <h4>
+                        {% if factura.descuento %}
+                            -${{ factura.descuento|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="border-top: 4px solid #27ae60;">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total</h6>
+                    <h4 style="color: #27ae60;">${{ factura.total|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items actuales -->
+    {% if items %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Items Agregados ({{ items.count }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover tabla-items">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th width="10%" class="text-center">Cantidad</th>
+                            <th width="15%" class="text-right">Precio Unit.</th>
+                            <th width="10%" class="text-right">Descuento</th>
+                            <th width="15%" class="text-right">Subtotal</th>
+                            <th width="10%" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr class="item-fila">
+                            <td>{{ item.descripcion }}</td>
+                            <td class="text-center">{{ item.cantidad }}</td>
+                            <td class="text-right">${{ item.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-right">
+                                {% if item.descuento %}
+                                    -${{ item.descuento|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-right"><strong>${{ item.total|floatformat:2 }}</strong></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="eliminarItem({{ item.pk }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle"></i> No hay items agregados aún. Agregue servicios a continuación.
+    </div>
+    {% endif %}
+
+    <!-- Agregar nuevo item -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-plus-circle"></i> Agregar Nuevo Item</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="form-item">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_procedimiento">Procedimiento / Servicio</label>
+                    {{ form.procedimiento }}
+                    {% if form.procedimiento.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.procedimiento.errors }}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        Seleccione un procedimiento o agregue una descripción personalizada
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_descripcion">Descripción Personalizada (Opcional)</label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.descripcion.errors }}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        Si deja vacío, se usará el nombre del procedimiento
+                    </small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label for="id_cantidad">Cantidad *</label>
+                        {{ form.cantidad }}
+                        {% if form.cantidad.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cantidad.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="id_precio_unitario">Precio Unitario ($) *</label>
+                        {{ form.precio_unitario }}
+                        {% if form.precio_unitario.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.precio_unitario.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="id_descuento">Descuento ($)</label>
+                        {{ form.descuento }}
+                        {% if form.descuento.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.descuento.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Item
+                    </button>
+                    <a href="{% url 'facturacion:detalle' factura.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-check"></i> Terminar de Editar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'facturacion:lista' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Facturas
+        </a>
+    </div>
+</div>
+
+<script>
+function eliminarItem(itemId) {
+    if (confirm('¿Está seguro de que desea eliminar este item?')) {
+        $.ajax({
+            url: '{% url "facturacion:eliminar_item" factura.pk 999 %}'.replace('999', itemId),
+            type: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            success: function(data) {
+                location.reload();
+            },
+            error: function(xhr) {
+                alert('Error: ' + (xhr.responseJSON?.error || 'Error al eliminar'));
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
