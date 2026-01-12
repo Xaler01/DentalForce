@@ -24,8 +24,8 @@ class FacturaForm(forms.ModelForm):
             'sucursal',
             'cita',
             'fecha_emision',
-            'fecha_vencimiento',
             'descuento',
+            'iva_porcentaje',
             'observaciones'
         ]
         widgets = {
@@ -116,7 +116,7 @@ class ItemFacturaForm(forms.ModelForm):
             'descripcion',
             'cantidad',
             'precio_unitario',
-            'descuento'
+            'descuento_item'
         ]
         widgets = {
             'procedimiento': forms.Select(attrs={'class': 'form-control'}),
@@ -315,7 +315,7 @@ class BuscarFacturaForm(forms.Form):
     )
     
     estado = forms.ChoiceField(
-        choices=[('', 'Todos los estados')] + Factura.ESTADO_CHOICES,
+        choices=[('', 'Todos los estados')] + Factura.ESTADOS_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
