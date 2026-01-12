@@ -24,6 +24,7 @@ class EvolucionConsultaForm(forms.ModelForm):
         fields = [
             'fecha_consulta',
             'cita',
+            'dentista',
             'motivo_consulta',
             'hallazgos_clinicos',
             'recomendaciones',
@@ -36,9 +37,15 @@ class EvolucionConsultaForm(forms.ModelForm):
                     'type': 'date',
                     'class': 'form-control',
                     'required': True,
-                }
+                },
+                format='%Y-%m-%d'
             ),
             'cita': forms.Select(
+                attrs={
+                    'class': 'form-control select2',
+                }
+            ),
+            'dentista': forms.Select(
                 attrs={
                     'class': 'form-control select2',
                 }
@@ -76,7 +83,8 @@ class EvolucionConsultaForm(forms.ModelForm):
                 attrs={
                     'type': 'date',
                     'class': 'form-control',
-                }
+                },
+                format='%Y-%m-%d'
             ),
         }
     
@@ -93,6 +101,15 @@ class EvolucionConsultaForm(forms.ModelForm):
             ).select_related('paciente__clinica', 'dentista', 'especialidad', 'cubiculo')
             # Hacer cita opcional
             self.fields['cita'].required = False
+        
+        # Filtrar dentistas por clínica
+        if clinica:
+            from personal.models import Dentista
+            self.fields['dentista'].queryset = Dentista.objects.filter(
+                sucursal_principal__clinica=clinica
+            ).select_related('usuario').order_by('usuario__first_name')
+        
+        self.fields['dentista'].required = False
     
     def clean_fecha_consulta(self):
         """Valida que la fecha no sea en el futuro."""
@@ -500,7 +517,7 @@ ProcedimientoEnEvolucionFormSet = inlineformset_factory(
     EvolucionConsulta,
     ProcedimientoEnEvolucion,
     form=ProcedimientoEnEvolucionForm,
-    extra=1,
+    extra=0,
     can_delete=True,
 )
 
@@ -508,6 +525,6 @@ ProcedimientoEnPlanFormSet = inlineformset_factory(
     PlanTratamiento,
     ProcedimientoEnPlan,
     form=ProcedimientoEnPlanForm,
-    extra=1,
+    extra=0,
     can_delete=True,
 )

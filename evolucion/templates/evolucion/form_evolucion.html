@@ -46,6 +46,16 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="{{ form.dentista.id_for_label }}">{{ form.dentista.label }}</label>
+                    {{ form.dentista }}
+                    {% if form.dentista.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.dentista.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
                     <label for="{{ form.motivo_consulta.id_for_label }}">{{ form.motivo_consulta.label }}</label>
                     {{ form.motivo_consulta }}
                     {% if form.motivo_consulta.errors %}

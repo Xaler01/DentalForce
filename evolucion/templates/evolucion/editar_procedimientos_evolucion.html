@@ -29,7 +29,7 @@
                 {{ formset.management_form }}
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered" id="procedimientos-table">
                         <thead class="bg-light">
                             <tr>
                                 <th>Procedimiento</th>
@@ -41,6 +41,9 @@
                         <tbody>
                             {% for form in formset %}
                             <tr class="formset-row">
+                                {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                                {% endfor %}
                                 <td>
                                     {{ form.procedimiento }}
                                     {% if form.procedimiento.errors %}
@@ -69,8 +72,11 @@
                     </table>
                 </div>
                 
-                <div class="form-group mt-3">
-                    <button type="submit" class="btn btn-primary">
+                <div class="form-group mt-3 d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-primary mr-3" id="add-procedimiento">
+                        <i class="fas fa-plus"></i> Agregar procedimiento
+                    </button>
+                    <button type="submit" class="btn btn-primary mr-2">
                         <i class="fas fa-save"></i> Guardar Cambios
                     </button>
                     <a href="{% url 'evolucion:detalle' evolucion.pk %}" class="btn btn-secondary">
@@ -82,33 +88,48 @@
     </div>
 </div>
 
+{% endblock %}
+
 {% block extra_js %}
 <script>
 $(document).ready(function() {
     // Initialize Select2
-    $('.select2').select2({
-        theme: "bootstrap"
-    });
-    
-    // Add more forms functionality
-    var formCount = $('#id_procedimientos-TOTAL_FORMS').val();
-    
-    $('.add-form').on('click', function(e) {
+    const select2Opts = { theme: "bootstrap" };
+    $('.select2').select2(select2Opts);
+
+    const prefix = '{{ formset.prefix }}';
+    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val());
+
+    // Template for empty form
+    const emptyFormHtml = `
+    <tr class="formset-row">
+        ${`{{ formset.empty_form.id|escapejs }}`}
+        <td>
+            ${`{{ formset.empty_form.procedimiento|escapejs }}`}
+        </td>
+        <td>
+            ${`{{ formset.empty_form.cantidad|escapejs }}`}
+        </td>
+        <td>
+            ${`{{ formset.empty_form.observaciones|escapejs }}`}
+        </td>
+        <td class="text-center">
+            ${`{{ formset.empty_form.DELETE|escapejs }}`}
+        </td>
+    </tr>`;
+
+    $('#add-procedimiento').on('click', function(e) {
         e.preventDefault();
-        var newForm = $('#id_procedimientos-0').clone(true);
-        formCount++;
-        newForm.attr('id', 'id_procedimientos-' + formCount);
-        newForm.find(':input').each(function() {
-            var name = $(this).attr('name');
-            if(name) {
-                name = name.replace('-0-', '-' + formCount + '-');
-                $(this).attr({'name': name, 'id': 'id_' + name}).val('').removeAttr('checked');
-            }
-        });
-        newForm.insertBefore('#add-form-btn');
-        $('#id_procedimientos-TOTAL_FORMS').val(formCount);
+        const newForm = emptyFormHtml.replace(/__prefix__/g, totalForms);
+        $('#procedimientos-table tbody').append(newForm);
+        
+        // Init select2 for the newly added select
+        const newSelect = $(`#id_${prefix}-${totalForms}-procedimiento`);
+        newSelect.select2(select2Opts);
+        
+        totalForms += 1;
+        $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
     });
 });
 </script>
-{% endblock %}
 {% endblock %}

@@ -242,7 +242,18 @@ def editar_procedimientos_evolucion(request, pk):
         formset = ProcedimientoEnEvolucionFormSet(request.POST, instance=evolucion)
         
         if formset.is_valid():
-            formset.save()
+            procedimientos = formset.save(commit=False)
+            for procedimiento in procedimientos:
+                if not procedimiento.pk:  # nuevo
+                    procedimiento.uc = request.user
+                else:
+                    procedimiento.um = request.user
+                procedimiento.save()
+            # Guardar relaciones many-to-many si existieran
+            formset.save_m2m()
+            # Procesar eliminaciones
+            for obj in formset.deleted_objects:
+                obj.delete()
             messages.success(request, 'Procedimientos actualizados exitosamente.')
             return redirect('evolucion:detalle', pk=evolucion.pk)
     else:
@@ -405,7 +416,7 @@ def nuevo_plan(request, paciente_id):
                 plan.save()
             
             messages.success(request, 'Plan creado exitosamente.')
-            return redirect('evolucion:editar_plan', pk=plan.pk)
+            return redirect('evolucion:detalle_plan', pk=plan.pk)
     else:
         form = PlanTratamientoForm()
     
@@ -476,7 +487,17 @@ def editar_procedimientos_plan(request, pk):
         formset = ProcedimientoEnPlanFormSet(request.POST, instance=plan)
         
         if formset.is_valid():
-            formset.save()
+            procedimientos = formset.save(commit=False)
+            for procedimiento in procedimientos:
+                if not procedimiento.pk:  # Solo para nuevos
+                    procedimiento.uc = request.user
+                else:
+                    procedimiento.um = request.user
+                procedimiento.save()
+            formset.save_m2m()
+            # Procesar eliminaciones
+            for obj in formset.deleted_objects:
+                obj.delete()
             messages.success(request, 'Procedimientos actualizados exitosamente.')
             return redirect('evolucion:detalle_plan', pk=plan.pk)
     else:
