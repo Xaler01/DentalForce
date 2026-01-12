@@ -5,6 +5,15 @@
 .jira-docs/
 *.csv
 
+### Archivos Temporales (No subir) ###
+.tmp/
+.build/
+*.msg
+*.tmp
+.git_commit_msg
+commit_msg.txt
+*.bak
+
 ### Django ###
 *.log
 *.pot
