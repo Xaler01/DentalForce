@@ -27,6 +27,7 @@ from evolucion.forms import (
 )
 from evolucion import services
 from pacientes.models import Paciente
+from core.services.tenants import get_clinica_from_request
 
 
 @login_required
@@ -34,10 +35,11 @@ def lista_evoluciones(request):
     """
     Listado de evoluciones del paciente con filtros.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     evoluciones = services.evoluciones_para_clinica(clinica.id)
     
     # Formulario de búsqueda
@@ -79,14 +81,41 @@ def lista_evoluciones(request):
 
 
 @login_required
+def seleccionar_paciente_evolucion(request):
+    """
+    Selecciona un paciente para crear una nueva evolución.
+    """
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
+    
+    if request.method == 'POST':
+        paciente_id = request.POST.get('paciente_id')
+        if paciente_id:
+            return redirect('evolucion:nueva', paciente_id=paciente_id)
+        else:
+            messages.error(request, 'Debe seleccionar un paciente.')
+    
+    pacientes = Paciente.objects.filter(clinica=clinica).order_by('nombres')
+    
+    context = {
+        'pacientes': pacientes,
+    }
+    
+    return render(request, 'evolucion/seleccionar_paciente.html', context)
+
+
+@login_required
 def detalle_evolucion(request, pk):
     """
     Detalle completo de una evolución.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
     
     if not evolucion:
@@ -110,10 +139,11 @@ def nueva_evolucion(request, paciente_id):
     """
     Crear una nueva evolución para un paciente.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     
     try:
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)
@@ -150,10 +180,11 @@ def editar_evolucion(request, pk):
     """
     Editar una evolución existente.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
     
     if not evolucion:
@@ -196,10 +227,11 @@ def editar_procedimientos_evolucion(request, pk):
     """
     Editar procedimientos de una evolución con formset.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     evolucion = services.obtener_evolucion_para_clinica(pk, clinica.id)
     
     if not evolucion:
@@ -231,10 +263,9 @@ def eliminar_procedimiento_evolucion(request, evolucion_pk, procedimiento_pk):
     """
     Eliminar un procedimiento de una evolución (AJAX).
     """
-    if not hasattr(request.user, 'clinica'):
+    clinica = get_clinica_from_request(request)
+    if not clinica:
         return JsonResponse({'success': False, 'message': 'No autorizado'}, status=403)
-    
-    clinica = request.user.clinica
     
     success = services.eliminar_procedimiento_de_evolucion(
         evolucion_pk,
@@ -250,14 +281,42 @@ def eliminar_procedimiento_evolucion(request, evolucion_pk, procedimiento_pk):
 
 
 @login_required
+def seleccionar_paciente_plan(request):
+    """
+    Selecciona un paciente para crear un nuevo plan de tratamiento.
+    """
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
+    
+    if request.method == 'POST':
+        paciente_id = request.POST.get('paciente_id')
+        if paciente_id:
+            return redirect('evolucion:nuevo_plan', paciente_id=paciente_id)
+        else:
+            messages.error(request, 'Debe seleccionar un paciente.')
+    
+    pacientes = Paciente.objects.filter(clinica=clinica).order_by('nombres')
+    
+    context = {
+        'pacientes': pacientes,
+        'tipo': 'plan',
+    }
+    
+    return render(request, 'evolucion/seleccionar_paciente.html', context)
+
+
+@login_required
 def lista_planes(request):
     """
     Listado de planes de tratamiento.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     planes = services.planes_tratamiento_para_clinica(clinica.id)
     
     # Filtros
@@ -295,10 +354,11 @@ def detalle_plan(request, pk):
     """
     Detalle de un plan de tratamiento.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
     
     if not plan:
@@ -322,10 +382,11 @@ def nuevo_plan(request, paciente_id):
     """
     Crear un nuevo plan de tratamiento.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     
     try:
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)
@@ -362,10 +423,11 @@ def editar_plan(request, pk):
     """
     Editar un plan de tratamiento existente.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
     
     if not plan:
@@ -399,10 +461,11 @@ def editar_procedimientos_plan(request, pk):
     """
     Editar procedimientos de un plan con formset.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     plan = services.obtener_plan_para_clinica(pk, clinica.id)
     
     if not plan:
@@ -433,10 +496,11 @@ def historia_clinica(request, paciente_id):
     """
     Ver/editar historia clínica de un paciente.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     
     try:
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)
@@ -490,10 +554,11 @@ def detalle_historia_clinica(request, paciente_id):
     """
     Ver detalle de historia clínica.
     """
-    if not hasattr(request.user, 'clinica'):
-        return redirect('bases:home')
+    clinica = get_clinica_from_request(request)
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
-    clinica = request.user.clinica
     
     try:
         paciente = Paciente.objects.get(pk=paciente_id, clinica=clinica)

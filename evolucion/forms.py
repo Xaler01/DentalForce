@@ -90,7 +90,7 @@ class EvolucionConsultaForm(forms.ModelForm):
             from cit.models import Cita
             self.fields['cita'].queryset = Cita.objects.filter(
                 paciente=paciente
-            ).select_related('clinica', 'dentista', 'especialidad', 'cubiculo')
+            ).select_related('paciente__clinica', 'dentista', 'especialidad', 'cubiculo')
             # Hacer cita opcional
             self.fields['cita'].required = False
     
@@ -371,13 +371,13 @@ class BuscarEvolucionForm(forms.Form):
                 clinica=clinica
             ).order_by('nombres')
             
-            # Filtrar dentistas por clínica
+            # Filtrar dentistas por clínica (a través de sucursal)
             self.fields['dentista'].queryset = Dentista.objects.filter(
-                clinica=clinica
-            ).order_by('user__first_name')
+                sucursal_principal__clinica=clinica
+            ).order_by('usuario__first_name')
         else:
             self.fields['paciente'].queryset = Paciente.objects.all().order_by('nombres')
-            self.fields['dentista'].queryset = Dentista.objects.all().order_by('user__first_name')
+            self.fields['dentista'].queryset = Dentista.objects.all().order_by('usuario__first_name')
     
     def clean(self):
         """Valida que fecha_desde sea anterior a fecha_hasta."""

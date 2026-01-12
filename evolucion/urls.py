@@ -6,6 +6,7 @@ app_name = 'evolucion'
 urlpatterns = [
     # Evoluciones
     path('', views.lista_evoluciones, name='lista'),
+    path('nueva/', views.seleccionar_paciente_evolucion, name='seleccionar_paciente'),
     path('nueva/<int:paciente_id>/', views.nueva_evolucion, name='nueva'),
     path('<int:pk>/', views.detalle_evolucion, name='detalle'),
     path('<int:pk>/editar/', views.editar_evolucion, name='editar'),
@@ -15,6 +16,7 @@ urlpatterns = [
     
     # Planes de tratamiento
     path('planes/', views.lista_planes, name='lista_planes'),
+    path('planes/nuevo/', views.seleccionar_paciente_plan, name='seleccionar_paciente_plan'),
     path('planes/nuevo/<int:paciente_id>/', views.nuevo_plan, name='nuevo_plan'),
     path('planes/<int:pk>/', views.detalle_plan, name='detalle_plan'),
     path('planes/<int:pk>/editar/', views.editar_plan, name='editar_plan'),

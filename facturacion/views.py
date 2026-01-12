@@ -18,6 +18,7 @@ from .forms import FacturaForm, ItemFacturaForm, PagoForm, BuscarFacturaForm
 from . import services
 from pacientes.models import Paciente
 from clinicas.models import Clinica
+from core.services.tenants import get_clinica_from_request
 
 
 @login_required
@@ -25,12 +26,11 @@ def lista_facturas(request):
     """
     Lista todas las facturas de la clínica activa del usuario
     """
-    # Obtener clínica del usuario (asumiendo que User tiene relación con Clinica)
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     # Formulario de búsqueda
     form = BuscarFacturaForm(request.GET, clinica=clinica)
@@ -88,11 +88,11 @@ def detalle_factura(request, pk):
     """
     Muestra el detalle de una factura específica
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     # Obtener factura validando que pertenece a la clínica
     factura = services.get_factura_para_clinica(pk, clinica.id)
@@ -120,11 +120,11 @@ def nueva_factura(request):
     """
     Crea una nueva factura para la clínica
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     if request.method == 'POST':
         form = FacturaForm(request.POST, clinica=clinica)
@@ -164,11 +164,11 @@ def editar_items_factura(request, pk):
     """
     Permite agregar/editar items de una factura
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     factura = services.get_factura_para_clinica(pk, clinica.id)
     
@@ -219,7 +219,7 @@ def eliminar_item_factura(request, factura_pk, item_pk):
     """
     Elimina un item de la factura
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
         return JsonResponse({'error': 'Usuario sin clínica'}, status=403)
@@ -257,11 +257,11 @@ def registrar_pago(request, pk):
     """
     Registra un pago para una factura
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     factura = services.get_factura_para_clinica(pk, clinica.id)
     
@@ -315,7 +315,7 @@ def anular_factura(request, pk):
     """
     Anula una factura
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
         return JsonResponse({'error': 'Usuario sin clínica'}, status=403)
@@ -347,11 +347,11 @@ def reporte_facturas(request):
     """
     Genera reportes de facturación
     """
-    clinica = request.user.clinica if hasattr(request.user, 'clinica') else None
+    clinica = get_clinica_from_request(request)
     
     if not clinica:
-        messages.error(request, "Usuario no tiene una clínica asignada")
-        return redirect('bases:home')
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
     
     # Obtener parámetros de fecha
     fecha_desde = request.GET.get('fecha_desde')
@@ -366,8 +366,8 @@ def reporte_facturas(request):
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
         clinica_id=clinica.id,
-        fecha_desde=fecha_desde,
-        fecha_hasta=fecha_hasta
+        fecha_inicio=fecha_desde,
+        fecha_fin=fecha_hasta
     )
     
     context = {
