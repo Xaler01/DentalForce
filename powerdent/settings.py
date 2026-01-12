@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
     'usuarios',     # SOOD-USU: Sistema de usuarios, roles y perfiles por clínica
     'procedimientos',  # SOOD-CAT-101: Catálogo de procedimientos odontológicos
+    'evolucion',    # SOOD-EVO-201: Módulo de evolución odontológica
 ]
 
 
