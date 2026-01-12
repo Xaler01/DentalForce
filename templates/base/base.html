@@ -93,6 +93,12 @@
       {% url 'enfermedades:categoria_list' as enf_categoria_list_url %}
       {% url 'enfermedades:enfermedad_list' as enf_enfermedad_list_url %}
       {% url 'enfermedades:dashboard_alertas' as dashboard_alertas_url %}
+      {% url 'evolucion:lista_evoluciones' as evolucion_list_url %}
+      {% url 'evolucion:lista_planes' as planes_list_url %}
+      {% url 'evolucion:lista_odontogramas' as odontogramas_list_url %}
+      {% url 'facturacion:lista' as facturacion_list_url %}
+      {% url 'facturacion:nueva' as facturacion_nueva_url %}
+      {% url 'facturacion:reportes' as facturacion_reportes_url %}
 
 
       <!-- REORGANIZED MENU FOR RECEPCIONISTA/AGENDADOR USER -->
@@ -182,6 +188,31 @@
               <span>Sucursales</span>
             </a>
             {% endif %}
+          </div>
+        </div>
+      </li>
+
+      <!-- Nav Item - EVOLUCIONES Y ODONTOGRAMA -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseEvoluciones" aria-expanded="false" aria-controls="collapseEvoluciones">
+          <i class="fas fa-fw fa-tooth" style="color: #3498db;"></i>
+          <span>Evoluciones</span>
+        </a>
+        <div id="collapseEvoluciones" class="collapse" aria-labelledby="headingEvoluciones" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header"><i class="fas fa-tooth"></i> Seguimiento Clínico</h6>
+            <a class="collapse-item" href="{% url 'evolucion:lista_evoluciones' %}">
+              <i class="fas fa-fw fa-list"></i>
+              <span>Lista de Evoluciones</span>
+            </a>
+            <a class="collapse-item" href="{% url 'evolucion:lista_planes' %}">
+              <i class="fas fa-fw fa-clipboard-list"></i>
+              <span>Planes de Tratamiento</span>
+            </a>
+            <a class="collapse-item" href="{% url 'evolucion:lista_odontogramas' %}">
+              <i class="fas fa-fw fa-diagram-project"></i>
+              <span>Odontogramas</span>
+            </a>
           </div>
         </div>
       </li>
@@ -287,6 +318,31 @@
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header">Entradas</h6>
             <a class="collapse-item" href="{% url 'cmp:compras_list' %}"><i class="fas fa-fw fa-truck"></i><span>Compras</span></a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Nav Item - FACTURACIÓN (Collapsed by Default) -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseFacturacion" aria-expanded="false" aria-controls="collapseFacturacion">
+          <i class="fas fa-fw fa-receipt" style="color: #e67e22;"></i>
+          <span>Facturación</span>
+        </a>
+        <div id="collapseFacturacion" class="collapse" aria-labelledby="headingFacturacion" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header"><i class="fas fa-receipt"></i> Gestión de Facturación</h6>
+            <a class="collapse-item" href="{% url 'facturacion:lista' %}">
+              <i class="fas fa-fw fa-list"></i>
+              <span>Lista de Facturas</span>
+            </a>
+            <a class="collapse-item" href="{% url 'facturacion:nueva' %}">
+              <i class="fas fa-fw fa-plus-circle"></i>
+              <span>Nueva Factura</span>
+            </a>
+            <a class="collapse-item" href="{% url 'facturacion:reportes' %}">
+              <i class="fas fa-fw fa-chart-bar"></i>
+              <span>Reportes</span>
+            </a>
           </div>
         </div>
       </li>
