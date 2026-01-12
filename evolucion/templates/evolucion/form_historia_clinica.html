@@ -1,0 +1,158 @@
+{% extends "base/base.html" %}
+
+{% block title %}Historia Clínica - {{ paciente.nombres }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">📋 Historia Clínica Odontológica</h1>
+            <p class="text-muted">Paciente: {{ paciente.nombres }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'pacientes:detalle' paciente.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.antecedentes_medicos.id_for_label }}">{{ form.antecedentes_medicos.label }}</label>
+                        {{ form.antecedentes_medicos }}
+                        {% if form.antecedentes_medicos.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.antecedentes_medicos.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.antecedentes_odontologicos.id_for_label }}">{{ form.antecedentes_odontologicos.label }}</label>
+                        {{ form.antecedentes_odontologicos }}
+                        {% if form.antecedentes_odontologicos.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.antecedentes_odontologicos.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.alergias.id_for_label }}">{{ form.alergias.label }}</label>
+                        {{ form.alergias }}
+                        {% if form.alergias.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.alergias.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.medicamentos_actuales.id_for_label }}">{{ form.medicamentos_actuales.label }}</label>
+                        {{ form.medicamentos_actuales }}
+                        {% if form.medicamentos_actuales.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.medicamentos_actuales.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Checkboxes -->
+                <div class="card mb-3">
+                    <div class="card-header">Hábitos Personales</div>
+                    <div class="card-body">
+                        <div class="form-check">
+                            {{ form.fuma }}
+                            <label class="form-check-label" for="{{ form.fuma.id_for_label }}">
+                                {{ form.fuma.label }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.consume_alcohol }}
+                            <label class="form-check-label" for="{{ form.consume_alcohol.id_for_label }}">
+                                {{ form.consume_alcohol.label }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.bruxismo }}
+                            <label class="form-check-label" for="{{ form.bruxismo.id_for_label }}">
+                                {{ form.bruxismo.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hygiene -->
+                <div class="card mb-3">
+                    <div class="card-header">Higiene Oral</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="{{ form.frecuencia_cepillado.id_for_label }}">{{ form.frecuencia_cepillado.label }}</label>
+                            {{ form.frecuencia_cepillado }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.usa_seda_dental }}
+                            <label class="form-check-label" for="{{ form.usa_seda_dental.id_for_label }}">
+                                {{ form.usa_seda_dental.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Clinical Exam -->
+                <div class="card mb-3">
+                    <div class="card-header">Examen Clínico</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="{{ form.estado_encias.id_for_label }}">{{ form.estado_encias.label }}</label>
+                            {{ form.estado_encias }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.presencia_sarro }}
+                            <label class="form-check-label" for="{{ form.presencia_sarro.id_for_label }}">
+                                {{ form.presencia_sarro.label }}
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            {{ form.presencia_caries }}
+                            <label class="form-check-label" for="{{ form.presencia_caries.id_for_label }}">
+                                {{ form.presencia_caries.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Observations -->
+                <div class="form-group">
+                    <label for="{{ form.observaciones_clinicas.id_for_label }}">{{ form.observaciones_clinicas.label }}</label>
+                    {{ form.observaciones_clinicas }}
+                    {% if form.observaciones_clinicas.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.observaciones_clinicas.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Historia Clínica
+                    </button>
+                    <a href="{% url 'pacientes:detalle' paciente.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

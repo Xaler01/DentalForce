@@ -1,0 +1,138 @@
+{% extends "base/base.html" %}
+{% load custom_filters %}
+
+{% block title %}{{ evolucion.paciente.nombres }} - Evolución del {{ evolucion.fecha_consulta|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1 class="h2">📋 Evolución de {{ evolucion.paciente.nombres }}</h1>
+            <p class="text-muted">Fecha: {{ evolucion.fecha_consulta|date:"d/m/Y" }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:editar' evolucion.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'evolucion:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Patient Info -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-circle"></i> Información del Paciente
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Paciente:</strong> {{ evolucion.paciente.nombres }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Cédula:</strong> {{ evolucion.paciente.cedula }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Teléfono:</strong> {{ evolucion.paciente.telefono }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Evolucion Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-file-medical"></i> Información de la Consulta
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-uppercase text-muted">Motivo de Consulta</h5>
+                    <p>{{ evolucion.motivo_consulta }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-uppercase text-muted">Dentista</h5>
+                    <p>
+                        {% if evolucion.dentista %}
+                            {{ evolucion.dentista.user.first_name }} {{ evolucion.dentista.user.last_name }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if evolucion.hallazgos_clinicos %}
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <h5 class="text-uppercase text-muted">Hallazgos Clínicos</h5>
+                    <p>{{ evolucion.hallazgos_clinicos|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if evolucion.recomendaciones %}
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <h5 class="text-uppercase text-muted">Recomendaciones</h5>
+                    <p>{{ evolucion.recomendaciones|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if evolucion.fecha_proximo_control %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-calendar-check"></i> <strong>Próxima Cita:</strong> {{ evolucion.fecha_proximo_control|date:"d/m/Y" }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Procedures -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-tools"></i> Procedimientos Realizados
+                <span class="badge badge-primary">{{ procedimientos.count }}</span>
+            </div>
+            <a href="{% url 'evolucion:editar_procedimientos' evolucion.pk %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+        </div>
+        <div class="card-body">
+            {% if procedimientos %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Procedimiento</th>
+                            <th>Cantidad</th>
+                            <th class="text-center">Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proc in procedimientos %}
+                        <tr>
+                            <td><strong>{{ proc.procedimiento.codigo }}</strong><br>{{ proc.procedimiento.nombre }}</td>
+                            <td><span class="badge badge-secondary">{{ proc.cantidad }}</span></td>
+                            <td>{{ proc.observaciones|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No hay procedimientos registrados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

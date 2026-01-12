@@ -1,0 +1,204 @@
+{% extends "base/base.html" %}
+
+{% block title %}Historia Clínica - {{ paciente.nombres }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">📋 Historia Clínica Odontológica</h1>
+            <p class="text-muted">Paciente: {{ paciente.nombres }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:historia_clinica' paciente.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'pacientes:detalle' paciente.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    {% if historia %}
+    <!-- Antecedentes -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-history"></i> Antecedentes
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-muted">Antecedentes Médicos</h5>
+                    <p>{{ historia.antecedentes_medicos|default:"-"|linebreaks }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-muted">Antecedentes Odontológicos</h5>
+                    <p>{{ historia.antecedentes_odontologicos|default:"-"|linebreaks }}</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-muted">Alergias</h5>
+                    <p>{{ historia.alergias|default:"-"|linebreaks }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h5 class="text-muted">Medicamentos Actuales</h5>
+                    <p>{{ historia.medicamentos_actuales|default:"-"|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hábitos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-check"></i> Hábitos Personales
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <strong>Fuma:</strong> 
+                    {% if historia.fuma %}
+                        <span class="badge badge-danger">Sí</span>
+                    {% else %}
+                        <span class="badge badge-success">No</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-2">
+                    <strong>Consume Alcohol:</strong>
+                    {% if historia.consume_alcohol %}
+                        <span class="badge badge-danger">Sí</span>
+                    {% else %}
+                        <span class="badge badge-success">No</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-2">
+                    <strong>Bruxismo:</strong>
+                    {% if historia.bruxismo %}
+                        <span class="badge badge-warning">Sí</span>
+                    {% else %}
+                        <span class="badge badge-success">No</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Higiene Oral -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-tooth"></i> Higiene Oral
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <strong>Frecuencia de Cepillado:</strong> {{ historia.frecuencia_cepillado|default:"-" }}
+                </div>
+                <div class="col-md-6 mb-2">
+                    <strong>Usa Seda Dental:</strong>
+                    {% if historia.usa_seda_dental %}
+                        <span class="badge badge-success">Sí</span>
+                    {% else %}
+                        <span class="badge badge-secondary">No</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Examen Clínico -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-stethoscope"></i> Examen Clínico
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h5 class="text-muted">Estado de Encías</h5>
+                    <p>{{ historia.estado_encias|default:"-"|linebreaks }}</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <strong>Presencia de Sarro:</strong>
+                    {% if historia.presencia_sarro %}
+                        <span class="badge badge-danger">Sí</span>
+                    {% else %}
+                        <span class="badge badge-success">No</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-2">
+                    <strong>Presencia de Caries:</strong>
+                    {% if historia.presencia_caries %}
+                        <span class="badge badge-danger">Sí</span>
+                    {% else %}
+                        <span class="badge badge-success">No</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Observaciones -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-notes-medical"></i> Observaciones Clínicas
+        </div>
+        <div class="card-body">
+            {{ historia.observaciones_clinicas|default:"-"|linebreaks }}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> No hay historia clínica registrada para este paciente.
+        <a href="{% url 'evolucion:historia_clinica' paciente.pk %}" class="alert-link">Crear ahora</a>
+    </div>
+    {% endif %}
+    
+    <!-- Resumen -->
+    {% if resumen %}
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-bar-chart"></i> Resumen de Evoluciones
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-primary">{{ resumen.total_evoluciones }}</h3>
+                        <p class="text-muted">Total Evoluciones</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-warning">{{ resumen.total_planes }}</h3>
+                        <p class="text-muted">Planes de Tratamiento</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-info">{{ resumen.planes_activos }}</h3>
+                        <p class="text-muted">Planes Activos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h3 class="text-success">
+                            {% if resumen.proxima_cita %}
+                                {{ resumen.proxima_cita|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </h3>
+                        <p class="text-muted">Próxima Cita</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

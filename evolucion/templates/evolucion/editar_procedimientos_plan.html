@@ -1,0 +1,99 @@
+{% extends "base/base.html" %}
+
+{% block title %}Editar Procedimientos - {{ plan.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">Editar Procedimientos del Plan</h1>
+            <p class="text-muted">Plan: {{ plan.nombre }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:detalle_plan' plan.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-tools"></i> Procedimientos
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Procedimiento</th>
+                                <th>Orden</th>
+                                <th>Precio</th>
+                                <th>Observaciones</th>
+                                <th class="text-center" style="width: 80px;">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr class="formset-row">
+                                <td>
+                                    {{ form.procedimiento }}
+                                    {% if form.procedimiento.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.procedimiento.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td style="width: 80px;">
+                                    {{ form.orden }}
+                                </td>
+                                <td style="width: 100px;">
+                                    {{ form.precio }}
+                                    {% if form.precio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.precio.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.observaciones }}
+                                </td>
+                                <td class="text-center">
+                                    {{ form.DELETE }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Procedimientos
+                    </button>
+                    <a href="{% url 'evolucion:detalle_plan' plan.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: "bootstrap"
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base/base.html" %}
+
+{% block title %}Editar Procedimientos - Evolución {% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">{{ titulo }}</h1>
+            <p class="text-muted">Evolución del {{ evolucion.fecha_consulta|date:"d/m/Y" }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:detalle' evolucion.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-tools"></i> Procedimientos en Evolución
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Procedimiento</th>
+                                <th>Cantidad</th>
+                                <th>Observaciones</th>
+                                <th class="text-center">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr class="formset-row">
+                                <td>
+                                    {{ form.procedimiento }}
+                                    {% if form.procedimiento.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.procedimiento.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.cantidad }}
+                                    {% if form.cantidad.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.cantidad.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.observaciones }}
+                                </td>
+                                <td class="text-center">
+                                    {{ form.DELETE }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <a href="{% url 'evolucion:detalle' evolucion.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: "bootstrap"
+    });
+    
+    // Add more forms functionality
+    var formCount = $('#id_procedimientos-TOTAL_FORMS').val();
+    
+    $('.add-form').on('click', function(e) {
+        e.preventDefault();
+        var newForm = $('#id_procedimientos-0').clone(true);
+        formCount++;
+        newForm.attr('id', 'id_procedimientos-' + formCount);
+        newForm.find(':input').each(function() {
+            var name = $(this).attr('name');
+            if(name) {
+                name = name.replace('-0-', '-' + formCount + '-');
+                $(this).attr({'name': name, 'id': 'id_' + name}).val('').removeAttr('checked');
+            }
+        });
+        newForm.insertBefore('#add-form-btn');
+        $('#id_procedimientos-TOTAL_FORMS').val(formCount);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
