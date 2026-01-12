@@ -49,12 +49,10 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <h5 class="text-uppercase text-muted">Motivo de Consulta</h5>
-                    <p>{{ evolucion.motivo_consulta }}</p>
+                    <p><strong>Motivo de Consulta:</strong><br>{{ evolucion.motivo_consulta }}</p>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <h5 class="text-uppercase text-muted">Dentista</h5>
-                    <p>
+                    <p><strong>Dentista:</strong><br>
                         {% if evolucion.dentista %}
                             {{ evolucion.dentista.user.first_name }} {{ evolucion.dentista.user.last_name }}
                         {% else %}
@@ -67,8 +65,7 @@
             {% if evolucion.hallazgos_clinicos %}
             <div class="row">
                 <div class="col-md-12 mb-3">
-                    <h5 class="text-uppercase text-muted">Hallazgos Clínicos</h5>
-                    <p>{{ evolucion.hallazgos_clinicos|linebreaks }}</p>
+                    <p><strong>Hallazgos Clínicos:</strong><br>{{ evolucion.hallazgos_clinicos|linebreaks }}</p>
                 </div>
             </div>
             {% endif %}
@@ -76,8 +73,7 @@
             {% if evolucion.recomendaciones %}
             <div class="row">
                 <div class="col-md-12 mb-3">
-                    <h5 class="text-uppercase text-muted">Recomendaciones</h5>
-                    <p>{{ evolucion.recomendaciones|linebreaks }}</p>
+                    <p><strong>Recomendaciones:</strong><br>{{ evolucion.recomendaciones|linebreaks }}</p>
                 </div>
             </div>
             {% endif %}
