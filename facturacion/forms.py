@@ -33,10 +33,6 @@ class FacturaForm(forms.ModelForm):
                 'type': 'date',
                 'class': 'form-control'
             }),
-            'fecha_vencimiento': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control'
-            }),
             'paciente': forms.Select(attrs={'class': 'form-control'}),
             'sucursal': forms.Select(attrs={'class': 'form-control'}),
             'cita': forms.Select(attrs={'class': 'form-control'}),
@@ -52,12 +48,13 @@ class FacturaForm(forms.ModelForm):
             }),
         }
     
-    def __init__(self, *args, clinica=None, **kwargs):
+    def __init__(self, *args, clinica=None, paciente=None, **kwargs):
         """
-        Inicializa el formulario con filtrado por clínica
+        Inicializa el formulario con filtrado por clínica y paciente
         
         Args:
             clinica: Instancia de Clinica para filtrar opciones
+            paciente: Instancia de Paciente para filtrar citas
         """
         super().__init__(*args, **kwargs)
         self.clinica = clinica
@@ -74,13 +71,20 @@ class FacturaForm(forms.ModelForm):
                 clinica=clinica
             )
             
-            # Si hay cita, filtrar por clínica
-            if 'cita' in self.fields:
-                from cit.models import Cita
+        # Filtrar citas por paciente seleccionado
+        if 'cita' in self.fields:
+            from cit.models import Cita
+            if paciente:
+                self.fields['cita'].queryset = Cita.objects.filter(
+                    paciente=paciente
+                ).order_by('-fecha_hora')
+            elif clinica:
                 self.fields['cita'].queryset = Cita.objects.filter(
                     paciente__clinica=clinica
-                )
-                self.fields['cita'].required = False
+                ).order_by('-fecha_hora')
+            else:
+                self.fields['cita'].queryset = Cita.objects.none()
+            self.fields['cita'].required = False
     
     def clean_paciente(self):
         """Valida que el paciente pertenezca a la clínica"""

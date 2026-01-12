@@ -147,6 +147,13 @@ def nueva_factura(request):
             
             except Exception as e:
                 messages.error(request, f"Error al crear factura: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        else:
+            # Log de errores de formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error en {field}: {error}")
     else:
         form = FacturaForm(clinica=clinica)
     
@@ -357,8 +364,9 @@ def reporte_facturas(request):
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
     
+    # Por defecto: desde HOY hasta HOY (para reporte diario)
     if not fecha_desde:
-        fecha_desde = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        fecha_desde = datetime.now().strftime('%Y-%m-%d')
     
     if not fecha_hasta:
         fecha_hasta = datetime.now().strftime('%Y-%m-%d')
@@ -379,3 +387,37 @@ def reporte_facturas(request):
     
     return render(request, 'facturacion/reporte_facturas.html', context)
 
+
+@login_required
+def obtener_citas_paciente(request):
+    """
+    Retorna las citas de un paciente en formato JSON para AJAX
+    Usado para filtrar citas dinámicamente en el formulario de factura
+    """
+    clinica = get_clinica_from_request(request)
+    paciente_id = request.GET.get('paciente_id')
+    
+    if not clinica or not paciente_id:
+        return JsonResponse({'error': 'Parámetros inválidos'}, status=400)
+    
+    try:
+        from cit.models import Cita
+        
+        # Obtener citas del paciente en la clínica
+        citas = Cita.objects.filter(
+            paciente_id=paciente_id,
+            paciente__clinica=clinica
+        ).order_by('-fecha_hora').values('id', 'numero_cita', 'fecha_hora', 'estado')
+        
+        # Limitar a últimas 10 citas
+        citas = list(citas[:10])
+        
+        # Formatear fechas
+        for cita in citas:
+            fecha_hora = cita['fecha_hora']
+            cita['fecha_hora_display'] = fecha_hora.strftime('%d/%m/%Y %H:%M')
+        
+        return JsonResponse({'citas': citas})
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
