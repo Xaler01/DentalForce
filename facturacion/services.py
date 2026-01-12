@@ -1,128 +1,314 @@
 """
-Servicios para el módulo de Facturación (SOOD-FAC-301)
-Proporciona funciones tenant-aware para gestión de facturas y pagos.
+Servicios de Facturación - Funciones tenant-aware
 
-NOTA: Este módulo se expandirá con modelos de Invoice, Payment, etc.
-Por ahora proporciona la estructura base para aislamiento por clínica.
+Este módulo proporciona servicios para la gestión de facturación
+con soporte completo para multi-tenancy. Todas las funciones
+validan que el usuario tenga acceso a la clínica especificada.
 """
-from django.db.models import Sum, Count
+from decimal import Decimal
+from django.db import transaction
+from django.utils import timezone
+from .models import Factura, ItemFactura, Pago
+from pacientes.models import Paciente
 from clinicas.models import Clinica
+from procedimientos.models import ProcedimientoOdontologico
 
 
-def facturas_para_clinica(clinica, estado=None):
+def facturas_para_clinica(clinica_id):
     """
-    Retorna facturas filtradas por clínica activa.
+    Obtiene todas las facturas de una clínica específica
     
     Args:
-        clinica: Instancia de Clinica
-        estado: (opcional) Estado de la factura
-    
+        clinica_id: ID de la clínica
+        
     Returns:
-        QuerySet de Factura (cuando el modelo esté implementado)
-    
-    NOTA: Placeholder para cuando se implemente modelo de Factura
+        QuerySet de facturas filtradas por clínica
     """
-    # TODO: Implementar cuando se cree modelo Factura
-    # if not clinica:
-    #     return Factura.objects.none()
-    # 
-    # qs = Factura.objects.filter(clinica=clinica)
-    # if estado:
-    #     qs = qs.filter(estado=estado)
-    # 
-    # return qs.select_related('clinica', 'paciente', 'dentista').order_by('-fecha')
-    
-    return None
+    return Factura.objects.para_clinica(clinica_id)
 
 
-def get_factura_para_clinica(pk, clinica):
+def get_factura_para_clinica(pk, clinica_id):
     """
-    Obtiene una factura específica validando que pertenece a la clínica activa.
+    Obtiene una factura específica validando que pertenezca a la clínica
     
     Args:
         pk: ID de la factura
-        clinica: Instancia de Clinica para validación de acceso
-    
+        clinica_id: ID de la clínica
+        
     Returns:
-        Instancia de Factura o None si no existe o no pertenece a la clínica
-    
-    NOTA: Placeholder para cuando se implemente modelo de Factura
+        Objeto Factura si existe y pertenece a la clínica
+        
+    Raises:
+        Factura.DoesNotExist: Si no existe o no pertenece a la clínica
     """
-    # TODO: Implementar cuando se cree modelo Factura
-    # if not clinica:
-    #     return None
-    # 
-    # try:
-    #     return Factura.objects.filter(
-    #         pk=pk,
-    #         clinica=clinica
-    #     ).first()
-    # except Factura.DoesNotExist:
-    #     return None
-    
-    return None
+    return Factura.objects.para_clinica(clinica_id).get(pk=pk)
 
 
-def totales_clinica(clinica):
+def facturas_pendientes_clinica(clinica_id):
     """
-    Calcula totales de facturación para una clínica.
+    Obtiene todas las facturas pendientes de pago de una clínica
     
     Args:
-        clinica: Instancia de Clinica
-    
+        clinica_id: ID de la clínica
+        
     Returns:
-        dict con claves: total_ingresos, total_pagado, total_pendiente, facturas_emitidas
-    
-    NOTA: Placeholder para cuando se implemente modelo de Factura
+        QuerySet de facturas pendientes
     """
-    if not clinica:
-        return {
-            'total_ingresos': 0,
-            'total_pagado': 0,
-            'total_pendiente': 0,
-            'facturas_emitidas': 0
-        }
+    return Factura.objects.para_clinica(clinica_id).pendientes()
+
+
+def facturas_pagadas_clinica(clinica_id):
+    """
+    Obtiene todas las facturas pagadas de una clínica
     
-    # TODO: Implementar cuando se cree modelo Factura
-    # qs = Factura.objects.filter(clinica=clinica, estado__in=['EMITIDA', 'PAGADA'])
-    # 
-    # totales = qs.aggregate(
-    #     total=Sum('monto'),
-    #     pagado=Sum('monto_pagado'),
-    #     cantidad=Count('id')
-    # )
-    # 
-    # return {
-    #     'total_ingresos': totales['total'] or 0,
-    #     'total_pagado': totales['pagado'] or 0,
-    #     'total_pendiente': (totales['total'] or 0) - (totales['pagado'] or 0),
-    #     'facturas_emitidas': totales['cantidad'] or 0
-    # }
+    Args:
+        clinica_id: ID de la clínica
+        
+    Returns:
+        QuerySet de facturas pagadas
+    """
+    return Factura.objects.para_clinica(clinica_id).pagadas()
+
+
+def crear_factura_para_paciente(paciente_id, clinica_id, items_data, 
+                                cita_id=None, descuento=Decimal('0.00'),
+                                observaciones=''):
+    """
+    Crea una nueva factura para un paciente
+    
+    Args:
+        paciente_id: ID del paciente
+        clinica_id: ID de la clínica
+        items_data: Lista de dicts con estructura:
+            [
+                {
+                    'procedimiento_id': int,
+                    'cantidad': int,
+                    'precio_unitario': Decimal,
+                    'descuento_item': Decimal (opcional),
+                    'descripcion': str (opcional)
+                },
+                ...
+            ]
+        cita_id: ID de cita relacionada (opcional)
+        descuento: Descuento total de factura (opcional)
+        observaciones: Notas sobre la factura (opcional)
+        
+    Returns:
+        Objeto Factura creado
+        
+    Raises:
+        Paciente.DoesNotExist: Si el paciente no existe
+        Clinica.DoesNotExist: Si la clínica no existe
+        ValueError: Si el paciente no pertenece a la clínica
+    """
+    # Validar paciente y clínica
+    paciente = Paciente.objects.get(pk=paciente_id)
+    clinica = Clinica.objects.get(pk=clinica_id)
+    
+    if paciente.clinica_id != clinica.id:
+        raise ValueError(
+            f"El paciente {paciente} no pertenece a la clínica {clinica}"
+        )
+    
+    # Validar que existan todos los procedimientos
+    procedimientos_ids = [item['procedimiento_id'] for item in items_data]
+    procedimientos = ProcedimientoOdontologico.objects.filter(
+        pk__in=procedimientos_ids
+    )
+    
+    if procedimientos.count() != len(set(procedimientos_ids)):
+        raise ValueError("Uno o más procedimientos no existen")
+    
+    # Crear factura
+    with transaction.atomic():
+        factura = Factura.objects.create(
+            paciente=paciente,
+            clinica=clinica,
+            cita_id=cita_id,
+            descuento=descuento,
+            observaciones=observaciones,
+            estado=Factura.ESTADO_PENDIENTE
+        )
+        
+        # Crear ítems
+        for item_data in items_data:
+            procedimiento = ProcedimientoOdontologico.objects.get(
+                pk=item_data['procedimiento_id']
+            )
+            
+            ItemFactura.objects.create(
+                factura=factura,
+                procedimiento=procedimiento,
+                cantidad=item_data['cantidad'],
+                precio_unitario=item_data['precio_unitario'],
+                descuento_item=item_data.get('descuento_item', Decimal('0.00')),
+                descripcion=item_data.get('descripcion', ''),
+                total=Decimal('0.00')  # Se calcula en save()
+            )
+        
+        # Recalcular totales
+        factura.calcular_totales()
+    
+    return factura
+
+
+def registrar_pago(factura_id, clinica_id, monto, forma_pago, 
+                   referencia='', observaciones=''):
+    """
+    Registra un pago contra una factura
+    
+    Args:
+        factura_id: ID de la factura
+        clinica_id: ID de la clínica (para validación)
+        monto: Monto a pagar
+        forma_pago: Forma de pago (EFE, TAR, TRA, CHE, SEG, OTR)
+        referencia: Referencia del pago (opcional)
+        observaciones: Notas sobre el pago (opcional)
+        
+    Returns:
+        Objeto Pago creado
+        
+    Raises:
+        Factura.DoesNotExist: Si la factura no existe
+        ValueError: Si la factura no pertenece a la clínica
+    """
+    factura = get_factura_para_clinica(factura_id, clinica_id)
+    
+    pago = Pago.objects.create(
+        factura=factura,
+        monto=monto,
+        forma_pago=forma_pago,
+        referencia_pago=referencia,
+        observaciones=observaciones,
+        fecha_pago=timezone.now().date()
+    )
+    
+    return pago
+
+
+def obtener_saldo_pendiente(factura_id, clinica_id):
+    """
+    Obtiene el saldo pendiente de una factura
+    
+    Args:
+        factura_id: ID de la factura
+        clinica_id: ID de la clínica (para validación)
+        
+    Returns:
+        Decimal con el saldo pendiente
+    """
+    factura = get_factura_para_clinica(factura_id, clinica_id)
+    
+    total_pagado = sum(
+        (pago.monto for pago in factura.pagos.all()),
+        Decimal('0.00')
+    )
+    
+    return factura.total - total_pagado
+
+
+def obtener_ingresos_clinica(clinica_id, fecha_inicio=None, fecha_fin=None):
+    """
+    Obtiene los ingresos totales de una clínica en un período
+    
+    Args:
+        clinica_id: ID de la clínica
+        fecha_inicio: Fecha de inicio (opcional, por defecto mes actual)
+        fecha_fin: Fecha de fin (opcional, por defecto hoy)
+        
+    Returns:
+        Dict con estadísticas de ingresos
+    """
+    from django.db.models import Sum
+    from datetime import date
+    
+    # Si no se especifican fechas, usar el mes actual
+    if not fecha_inicio:
+        today = date.today()
+        fecha_inicio = date(today.year, today.month, 1)
+    if not fecha_fin:
+        fecha_fin = timezone.now().date()
+    
+    # Obtener facturas del período
+    facturas = Factura.objects.para_clinica(clinica_id).filter(
+        fecha_emision__gte=fecha_inicio,
+        fecha_emision__lte=fecha_fin
+    )
+    
+    # Calcular totales
+    ingresos_totales = facturas.aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0.00')
+    
+    facturas_pagadas = facturas.filter(estado=Factura.ESTADO_PAGADA)
+    pagos_realizados = facturas_pagadas.aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0.00')
+    
+    # Cuentas por cobrar
+    cuentas_por_cobrar = ingresos_totales - pagos_realizados
     
     return {
-        'total_ingresos': 0,
-        'total_pagado': 0,
-        'total_pendiente': 0,
-        'facturas_emitidas': 0
+        'periodo_inicio': fecha_inicio,
+        'periodo_fin': fecha_fin,
+        'facturas_emitidas': facturas.count(),
+        'facturas_pagadas': facturas_pagadas.count(),
+        'facturas_pendientes': facturas.filter(
+            estado=Factura.ESTADO_PENDIENTE
+        ).count(),
+        'ingresos_totales': ingresos_totales,
+        'pagos_realizados': pagos_realizados,
+        'cuentas_por_cobrar': cuentas_por_cobrar,
     }
 
 
-def kpis_facturacion_clinica(clinica):
+def obtener_resumen_paciente(paciente_id, clinica_id):
     """
-    Calcula KPIs de facturación para una clínica (para dashboards).
+    Obtiene un resumen de facturación de un paciente
     
     Args:
-        clinica: Instancia de Clinica
-    
+        paciente_id: ID del paciente
+        clinica_id: ID de la clínica
+        
     Returns:
-        dict con KPIs: tasa_cobranza, promedio_factura, dias_pago_promedio, etc.
-    
-    NOTA: Placeholder para análisis futuro
+        Dict con resumen de facturación
     """
-    if not clinica:
-        return {}
+    from django.db.models import Sum, Count
     
-    # TODO: Implementar cuando se cree modelo de Factura y Pago
-    # Incluir: tasa_cobranza, promedio_factura, dias_pago_promedio, etc.
+    # Validar que paciente pertenezca a clínica
+    paciente = Paciente.objects.get(pk=paciente_id)
+    if paciente.clinica_id != clinica_id:
+        raise ValueError(
+            f"El paciente {paciente} no pertenece a la clínica {clinica_id}"
+        )
     
-    return {}
+    facturas = Factura.objects.para_clinica(clinica_id).filter(
+        paciente=paciente
+    )
+    
+    total_gastado = facturas.aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0.00')
+    
+    total_pagado = Pago.objects.filter(
+        factura__paciente=paciente
+    ).aggregate(
+        total=Sum('monto')
+    )['total'] or Decimal('0.00')
+    
+    return {
+        'paciente': paciente,
+        'total_facturas': facturas.count(),
+        'facturas_pagadas': facturas.filter(
+            estado=Factura.ESTADO_PAGADA
+        ).count(),
+        'facturas_pendientes': facturas.filter(
+            estado=Factura.ESTADO_PENDIENTE
+        ).count(),
+        'total_gastado': total_gastado,
+        'total_pagado': total_pagado,
+        'saldo_pendiente': total_gastado - total_pagado,
+    }
+
+
