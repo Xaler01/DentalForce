@@ -443,18 +443,22 @@ def reporte_facturas(request):
     if not fecha_hasta:
         fecha_hasta = today.strftime('%Y-%m-%d')
     
+    # Convertir strings a objetos date para la consulta
+    from datetime import datetime as dt_class, date as date_class
+    fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
+    fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+    
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
         clinica_id=clinica.id,
-        fecha_inicio=fecha_desde,
-        fecha_fin=fecha_hasta
+        fecha_inicio=fecha_desde_date,
+        fecha_fin=fecha_hasta_date
     )
     
     # Obtener también las facturas del período para mostrar en tabla
-    from datetime import datetime as dt
     facturas_periodo = Factura.objects.para_clinica(clinica.id).filter(
-        fecha_emision__gte=fecha_desde,
-        fecha_emision__lte=fecha_hasta
+        fecha_emision__gte=fecha_desde_date,
+        fecha_emision__lte=fecha_hasta_date
     ).exclude(estado=Factura.ESTADO_ANULADA).order_by('-fecha_emision')
     
     context = {
