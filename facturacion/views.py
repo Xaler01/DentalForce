@@ -481,6 +481,7 @@ def reporte_facturas(request):
     
     context = {
         'clinica': clinica,
+        'nombre_clinica': clinica.nombre,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
         'fecha_desde_formato': fecha_desde_formato,

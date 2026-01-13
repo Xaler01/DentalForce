@@ -392,10 +392,10 @@ function exportarCSV() {
         const filas = tabla.querySelectorAll('tr');
         filas.forEach(fila => {
             const celdas = fila.querySelectorAll('td');
-            // Evitar la fila de TOTALES
+            // Evitar la fila de TOTALES y verificar que tenga datos
             if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
                 const row = [
-                    celdas[0].textContent.trim(), // Número
+                    celdas[0].querySelector('a') ? celdas[0].querySelector('a').textContent.trim() : celdas[0].textContent.trim(), // Número
                     celdas[1].textContent.trim(), // Fecha
                     celdas[2].textContent.trim(), // Paciente
                     celdas[3].textContent.trim(), // Subtotal
@@ -404,7 +404,10 @@ function exportarCSV() {
                     celdas[6].textContent.trim(), // Saldo
                     celdas[7].textContent.trim().replace(/\n/g, '')  // Estado (limpiar saltos de línea)
                 ];
-                rows.push(row);
+                // Solo agregar si tiene número de factura (evitar filas vacías)
+                if (row[0].length > 0) {
+                    rows.push(row);
+                }
             }
         });
     }
@@ -416,13 +419,14 @@ function exportarCSV() {
         csvContent += row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',') + '\n';
     });
     
-    // Crear archivo y descargar con formato de fechas correcto
+    // Crear archivo y descargar con nombre de clínica + período
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const nombreClinica = '{{ nombre_clinica }}'.replace(/\s+/g, '_');
     const fechaDesde = '{{ fecha_desde_formato }}';
     const fechaHasta = '{{ fecha_hasta_formato }}';
-    const nombreArchivo = `{{ nombre_clinica }}_REP_FACTURACION_${fechaDesde}_al_${fechaHasta}.csv`.replace(/\s+/g, '_');
+    const nombreArchivo = `${nombreClinica}_REP_FACTURACION_${fechaDesde}_al_${fechaHasta}.csv`;
     
     link.setAttribute('href', url);
     link.setAttribute('download', nombreArchivo);
@@ -434,14 +438,13 @@ function exportarCSV() {
     // Notificar éxito
     Swal.fire({
         title: 'CSV Exportado',
-        text: 'El archivo ' + nombreArchivo + ' ha sido descargado correctamente.',
+        text: 'Archivo ' + nombreArchivo + ' descargado correctamente.',
         icon: 'success',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#27ae60',
         timer: 3000
     });
 }
-</script>
 
 <style>
     @media print {
