@@ -10,7 +10,10 @@
     .stat-card.pagadas { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
     .stat-card.pendientes { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
     .chart-container { position: relative; height: 400px; margin-bottom: 30px; }
-    .tabla-reporte th { background-color: #34495e; color: white; }
+    .tabla-reporte th { background-color: #34495e; color: white; font-size: 12px; }
+    .tabla-reporte td { font-size: 12px; white-space: nowrap; }
+    .tabla-reporte { font-size: 12px; }
+    .table-responsive { overflow-x: auto; }
 </style>
 {% endblock %}
 
@@ -227,14 +230,14 @@
                 <table class="table table-sm tabla-reporte">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Fecha</th>
-                            <th>Paciente</th>
-                            <th class="text-right">Subtotal</th>
-                            <th class="text-right">Total</th>
-                            <th class="text-right">Pagado</th>
-                            <th class="text-right">Saldo</th>
-                            <th>Estado</th>
+                            <th style="min-width: 110px;">Número</th>
+                            <th style="min-width: 90px;">Fecha</th>
+                            <th style="min-width: 150px;">Paciente</th>
+                            <th class="text-right" style="min-width: 90px;">Subtotal</th>
+                            <th class="text-right" style="min-width: 90px;">Total</th>
+                            <th class="text-right" style="min-width: 90px;">Pagado</th>
+                            <th class="text-right" style="min-width: 90px;">Saldo</th>
+                            <th style="min-width: 85px;">Estado</th>
                         </tr>
                     </thead>
                     <tbody>

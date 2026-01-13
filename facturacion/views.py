@@ -397,8 +397,8 @@ def imprimir_factura(request, pk):
         pagos = factura.pagos.all().order_by('-fecha_pago')
         total_pagado = factura.total_pagado
     
-    # Nombre del archivo PDF
-    fecha_impresion = datetime.now().strftime('%Y%m%d')
+    # Nombre del archivo PDF con fecha y hora
+    fecha_impresion = datetime.now().strftime('%Y%m%d_%H%M%S')
     nombre_paciente = f"{factura.paciente.apellidos}_{factura.paciente.nombres}".replace(' ', '_')
     nombre_archivo = f"{factura.numero_factura}_{nombre_paciente}_{fecha_impresion}.pdf"
     
