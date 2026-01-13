@@ -361,8 +361,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function exportarCSV() {
     const csv = "Reporte de Facturación\n";
-    const now = new Date().toLocaleString();
-    alert('Función de exportación CSV en desarrollo.\nReporte generado: ' + now);
+    const now = new Date().toLocaleString('es-CO');
+    Swal.fire({
+        title: 'Exportar CSV',
+        text: 'Función de exportación CSV en desarrollo.\nReporte generado: ' + now,
+        icon: 'info',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#27ae60'
+    });
 }
 </script>
 
