@@ -241,25 +241,43 @@ def obtener_ingresos_clinica(clinica_id, fecha_inicio=None, fecha_fin=None):
         total=Sum('total')
     )['total'] or Decimal('0.00')
     
-    facturas_pagadas = facturas.filter(estado=Factura.ESTADO_PAGADA)
-    pagos_realizados = facturas_pagadas.aggregate(
-        total=Sum('total')
+    # Obtener pagos realizados (suma de todos los pagos en el período)
+    from .models import Pago
+    pagos_realizados = Pago.objects.filter(
+        factura__in=facturas
+    ).aggregate(
+        total=Sum('monto')
     )['total'] or Decimal('0.00')
+    
+    # Facturas pagadas (estado PAG)
+    facturas_pagadas = facturas.filter(estado=Factura.ESTADO_PAGADA)
+    facturas_pendientes = facturas.filter(estado=Factura.ESTADO_PENDIENTE)
     
     # Cuentas por cobrar
     cuentas_por_cobrar = ingresos_totales - pagos_realizados
+    
+    # Calcular tasas
+    tasa_cobranza = ((pagos_realizados / ingresos_totales) * 100) if ingresos_totales > 0 else Decimal('0.00')
+    tasa_pagadas = ((sum(f.total for f in facturas_pagadas) / ingresos_totales) * 100) if ingresos_totales > 0 else Decimal('0.00')
+    tasa_pendientes = ((sum(f.total for f in facturas_pendientes) / ingresos_totales) * 100) if ingresos_totales > 0 else Decimal('0.00')
     
     return {
         'periodo_inicio': fecha_inicio,
         'periodo_fin': fecha_fin,
         'facturas_emitidas': facturas.count(),
         'facturas_pagadas': facturas_pagadas.count(),
-        'facturas_pendientes': facturas.filter(
-            estado=Factura.ESTADO_PENDIENTE
-        ).count(),
+        'facturas_pendientes': facturas_pendientes.count(),
+        # Compatibilidad con template (usar "ingresos" y "total_pagado")
+        'ingresos': ingresos_totales,
         'ingresos_totales': ingresos_totales,
+        'total_pagado': pagos_realizados,
         'pagos_realizados': pagos_realizados,
+        'total_pendiente': cuentas_por_cobrar,
         'cuentas_por_cobrar': cuentas_por_cobrar,
+        # Tasas
+        'tasa_cobranza': tasa_cobranza,
+        'tasa_pagadas': tasa_pagadas,
+        'tasa_pendientes': tasa_pendientes,
     }
 
 

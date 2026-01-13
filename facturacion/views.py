@@ -64,10 +64,11 @@ def lista_facturas(request):
     # Ordenar por fecha más reciente
     facturas = facturas.order_by('-fecha_emision', '-id')
     
-    # Calcular totales
+    # Calcular totales (EXCLUYENDO facturas anuladas)
+    facturas_activas = facturas.exclude(estado='ANU')
     total_facturas = facturas.count()
-    total_monto = sum(f.total for f in facturas)
-    total_pagado = sum(f.total_pagado for f in facturas)
+    total_monto = sum(f.total for f in facturas_activas)
+    total_pagado = sum(f.total_pagado for f in facturas_activas)
     total_pendiente = total_monto - total_pagado
     
     context = {
@@ -301,6 +302,11 @@ def registrar_pago(request, pk):
             
             except Exception as e:
                 messages.error(request, f"Error al registrar pago: {str(e)}")
+        else:
+            # Mostrar errores de validación
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = PagoForm(factura=factura)
     
@@ -325,28 +331,84 @@ def anular_factura(request, pk):
     clinica = get_clinica_from_request(request)
     
     if not clinica:
-        return JsonResponse({'error': 'Usuario sin clínica'}, status=403)
+        messages.error(request, "Usuario sin clínica")
+        return redirect('clinicas:seleccionar')
     
     factura = services.get_factura_para_clinica(pk, clinica.id)
     
     if not factura:
-        return JsonResponse({'error': 'Factura no encontrada'}, status=404)
+        messages.error(request, "Factura no encontrada")
+        return redirect('facturacion:lista')
     
     # Solo permitir anular facturas pendientes
     if factura.estado != Factura.ESTADO_PENDIENTE:
-        return JsonResponse({'error': 'Solo se pueden anular facturas pendientes'}, status=403)
+        messages.error(request, "Solo se pueden anular facturas pendientes")
+        return redirect('facturacion:detalle', pk=pk)
     
-    try:
-        factura.estado = Factura.ESTADO_ANULADA
-        factura.um = request.user
-        factura.save()
+    if request.method == 'POST':
+        try:
+            factura.estado = Factura.ESTADO_ANULADA
+            factura.save(update_fields=['estado', 'fm'])
+            
+            messages.success(request, f"Factura {factura.numero_factura} anulada exitosamente")
+            return redirect('facturacion:detalle', pk=pk)
         
-        messages.success(request, f"Factura {factura.numero_factura} anulada exitosamente")
-        
-        return JsonResponse({'success': True})
+        except Exception as e:
+            messages.error(request, f"Error al anular factura: {str(e)}")
+            return redirect('facturacion:detalle', pk=pk)
     
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    # Si es GET, mostrar confirmación
+    return redirect('facturacion:detalle', pk=pk)
+
+
+@login_required
+def imprimir_factura(request, pk):
+    """
+    Vista dedicada para imprimir factura con nombre personalizado
+    """
+    from datetime import datetime
+    
+    clinica = get_clinica_from_request(request)
+    
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
+    
+    factura = services.get_factura_para_clinica(pk, clinica.id)
+    
+    if not factura:
+        messages.error(request, "Factura no encontrada")
+        return redirect('facturacion:lista')
+    
+    # Obtener pagos
+    pagos = []
+    total_pagado = Decimal('0.00')
+    
+    if factura.estado in [Factura.ESTADO_PENDIENTE, Factura.ESTADO_PAGADA]:
+        pagos = factura.pagos.all().order_by('-fecha_pago')
+        total_pagado = factura.total_pagado
+    
+    # Nombre del archivo PDF
+    fecha_impresion = datetime.now().strftime('%Y%m%d')
+    nombre_paciente = f"{factura.paciente.apellidos}_{factura.paciente.nombres}".replace(' ', '_')
+    nombre_archivo = f"{factura.numero_factura}_{nombre_paciente}_{fecha_impresion}.pdf"
+    
+    context = {
+        'factura': factura,
+        'clinica': clinica,
+        'items': factura.items.all(),
+        'pagos': pagos,
+        'total_pagado': total_pagado,
+        'saldo_pendiente': factura.total - total_pagado,
+        'nombre_archivo': nombre_archivo,
+    }
+    
+    response = render(request, 'facturacion/imprimir_factura.html', context)
+    
+    # Agregar header para sugerir nombre de archivo al imprimir
+    response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
+    
+    return response
 
 
 @login_required

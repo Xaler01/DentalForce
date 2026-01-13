@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Acciones
     path('<int:pk>/anular/', views.anular_factura, name='anular'),
+    path('<int:pk>/imprimir/', views.imprimir_factura, name='imprimir'),
     
     # Reportes
     path('reportes/', views.reporte_facturas, name='reportes'),

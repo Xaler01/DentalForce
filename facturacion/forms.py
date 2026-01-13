@@ -165,23 +165,29 @@ class ItemFacturaForm(forms.ModelForm):
         
         # Si hay factura, filtrar solo procedimientos de la última evolución del paciente
         if factura and factura.paciente:
-            from evolucion.models import Evolucion, ProcedimientoEvolucion
-            
-            # Obtener última evolución del paciente
-            ultima_evolucion = Evolucion.objects.filter(
-                paciente=factura.paciente
-            ).order_by('-fecha_atencion').first()
-            
-            if ultima_evolucion:
-                # Obtener procedimientos de esa evolución
-                procedimientos_evolucion = ProcedimientoEvolucion.objects.filter(
-                    evolucion=ultima_evolucion
-                ).values_list('procedimiento_id', flat=True)
+            try:
+                # Importación lazy para evitar circular imports
+                from evolucion.models import EvolucionConsulta, ProcedimientoEnEvolucion
                 
-                # Filtrar solo esos procedimientos
-                self.fields['procedimiento'].queryset = self.fields['procedimiento'].queryset.filter(
-                    id__in=procedimientos_evolucion
-                )
+                # Obtener última evolución del paciente
+                ultima_evolucion = EvolucionConsulta.objects.filter(
+                    paciente=factura.paciente
+                ).order_by('-fecha_consulta').first()
+                
+                if ultima_evolucion:
+                    # Obtener procedimientos de esa evolución
+                    procedimientos_evolucion = ProcedimientoEnEvolucion.objects.filter(
+                        evolucion=ultima_evolucion
+                    ).values_list('procedimiento_id', flat=True)
+                    
+                    # Filtrar solo esos procedimientos
+                    if procedimientos_evolucion:
+                        self.fields['procedimiento'].queryset = self.fields['procedimiento'].queryset.filter(
+                            id__in=procedimientos_evolucion
+                        )
+            except ImportError:
+                # Si el módulo evolucion no está disponible, continuar sin filtrar
+                pass
     
     def clean_cantidad(self):
         """Valida que la cantidad sea positiva"""
@@ -313,15 +319,7 @@ class PagoForm(forms.ModelForm):
     def clean_referencia_pago(self):
         """Valida referencia según forma de pago"""
         referencia = self.cleaned_data.get('referencia_pago')
-        forma_pago = self.cleaned_data.get('forma_pago')
-        
-        # Si es transferencia, tarjeta o cheque, la referencia es recomendable
-        if forma_pago in [Pago.FORMA_TRANSFERENCIA, Pago.FORMA_TARJETA, Pago.FORMA_CHEQUE]:
-            if not referencia:
-                raise ValidationError(
-                    f"Para pagos con {forma_pago}, se recomienda incluir una referencia"
-                )
-        
+        # Referencia es opcional, solo advertir pero no bloquear
         return referencia
 
 

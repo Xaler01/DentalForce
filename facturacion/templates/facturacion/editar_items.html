@@ -89,8 +89,8 @@
                             <td class="text-center">{{ item.cantidad }}</td>
                             <td class="text-right">${{ item.precio_unitario|floatformat:2 }}</td>
                             <td class="text-right">
-                                {% if item.descuento %}
-                                    -${{ item.descuento|floatformat:2 }}
+                                {% if item.descuento_item %}
+                                    -${{ item.descuento_item|floatformat:2 }}
                                 {% else %}
                                     -
                                 {% endif %}
@@ -211,19 +211,43 @@
 
 <script>
 function eliminarItem(itemId) {
-    if (confirm('¿Está seguro de que desea eliminar este item?')) {
-        $.ajax({
-            url: '{% url "facturacion:eliminar_item" factura.pk 999 %}'.replace('999', itemId),
-            type: 'POST',
-            headers: {'X-CSRFToken': '{{ csrf_token }}'},
-            success: function(data) {
-                location.reload();
-            },
-            error: function(xhr) {
-                alert('Error: ' + (xhr.responseJSON?.error || 'Error al eliminar'));
-            }
-        });
-    }
+    Swal.fire({
+        title: '¿Eliminar Item?',
+        text: '¿Está seguro de que desea eliminar este item de la factura?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{% url "facturacion:eliminar_item" factura.pk 999 %}'.replace('999', itemId),
+                type: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                success: function(data) {
+                    Swal.fire({
+                        title: 'Éxito',
+                        text: 'Item eliminado correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error: ' + (xhr.responseJSON?.error || 'Error al eliminar'),
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        }
+    });
 }
 </script>
 {% endblock %}
