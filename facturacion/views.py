@@ -189,7 +189,7 @@ def editar_items_factura(request, pk):
         return redirect('facturacion:detalle', pk=pk)
     
     if request.method == 'POST':
-        form = ItemFacturaForm(request.POST)
+        form = ItemFacturaForm(request.POST, factura=factura)
         
         if form.is_valid():
             try:
@@ -207,7 +207,7 @@ def editar_items_factura(request, pk):
             except Exception as e:
                 messages.error(request, f"Error al agregar item: {str(e)}")
     else:
-        form = ItemFacturaForm()
+        form = ItemFacturaForm(factura=factura)
     
     items = factura.items.all()
     
@@ -289,11 +289,11 @@ def registrar_pago(request, pk):
                 # Usar el servicio para registrar el pago
                 pago = services.registrar_pago(
                     factura_id=factura.id,
+                    clinica_id=clinica.id,
                     monto=form.cleaned_data['monto'],
                     forma_pago=form.cleaned_data['forma_pago'],
-                    referencia_pago=form.cleaned_data.get('referencia_pago'),
-                    observaciones=form.cleaned_data.get('observaciones'),
-                    usuario=request.user
+                    referencia=form.cleaned_data.get('referencia_pago', ''),
+                    observaciones=form.cleaned_data.get('observaciones', '')
                 )
                 
                 messages.success(request, f"Pago de ${pago.monto:.2f} registrado exitosamente")

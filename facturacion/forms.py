@@ -152,6 +152,7 @@ class ItemFacturaForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        factura = kwargs.pop('factura', None)
         super().__init__(*args, **kwargs)
         
         # Hacer descripción opcional (se llena desde procedimiento)
@@ -161,6 +162,26 @@ class ItemFacturaForm(forms.ModelForm):
         self.fields['procedimiento'].queryset = ProcedimientoOdontologico.objects.filter(
             estado=True
         ).order_by('nombre')
+        
+        # Si hay factura, filtrar solo procedimientos de la última evolución del paciente
+        if factura and factura.paciente:
+            from evolucion.models import Evolucion, ProcedimientoEvolucion
+            
+            # Obtener última evolución del paciente
+            ultima_evolucion = Evolucion.objects.filter(
+                paciente=factura.paciente
+            ).order_by('-fecha_atencion').first()
+            
+            if ultima_evolucion:
+                # Obtener procedimientos de esa evolución
+                procedimientos_evolucion = ProcedimientoEvolucion.objects.filter(
+                    evolucion=ultima_evolucion
+                ).values_list('procedimiento_id', flat=True)
+                
+                # Filtrar solo esos procedimientos
+                self.fields['procedimiento'].queryset = self.fields['procedimiento'].queryset.filter(
+                    id__in=procedimientos_evolucion
+                )
     
     def clean_cantidad(self):
         """Valida que la cantidad sea positiva"""

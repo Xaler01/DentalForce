@@ -95,12 +95,12 @@ class Factura(ClaseModelo):
         verbose_name='Sucursal',
         help_text='Sucursal donde se emitió la factura (opcional)'
     )
-    cita = models.OneToOneField(
+    cita = models.ForeignKey(
         Cita,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='factura',
+        related_name='facturas',
         verbose_name='Cita Relacionada',
         help_text='Cita que origina la factura (opcional)'
     )

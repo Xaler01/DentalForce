@@ -180,11 +180,11 @@
                     </div>
 
                     <div class="form-group col-md-4">
-                        <label for="id_descuento">Descuento ($)</label>
-                        {{ form.descuento }}
-                        {% if form.descuento.errors %}
+                        <label for="id_descuento_item">Descuento ($)</label>
+                        {{ form.descuento_item }}
+                        {% if form.descuento_item.errors %}
                         <div class="invalid-feedback d-block">
-                            {{ form.descuento.errors }}
+                            {{ form.descuento_item.errors }}
                         </div>
                         {% endif %}
                     </div>
