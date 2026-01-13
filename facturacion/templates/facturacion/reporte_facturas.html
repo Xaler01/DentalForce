@@ -249,7 +249,7 @@
                                 </a>
                             </td>
                             <td>{{ factura.fecha_emision|date:"d/m/Y" }}</td>
-                            <td>{{ factura.paciente.nombre_completo }}</td>
+                            <td>{{ factura.paciente.apellidos }}, {{ factura.paciente.nombres }}</td>
                             <td class="text-right">${{ factura.subtotal|floatformat:2 }}</td>
                             <td class="text-right"><strong>${{ factura.total|floatformat:2 }}</strong></td>
                             <td class="text-right" style="color: #27ae60;">${{ factura.total_pagado|floatformat:2 }}</td>
