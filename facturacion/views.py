@@ -442,18 +442,23 @@ def reporte_facturas(request):
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
     
-    # Por defecto: desde el primer día del mes actual hasta hoy
+    # Por defecto: usar TODAS las facturas (sin límite de fecha)
+    # Si el usuario especifica fechas, usarlas
     today = datetime.now()
-    if not fecha_desde:
-        fecha_desde = datetime(today.year, today.month, 1).strftime('%Y-%m-%d')
     
-    if not fecha_hasta:
+    if fecha_desde and fecha_hasta:
+        # Usuario especificó fechas
+        from datetime import datetime as dt_class
+        fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
+        fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+    else:
+        # Por defecto: usar todo el año (desde enero del año actual)
+        # Esto asegura que se muestren todas las facturas del año
+        fecha_desde = datetime(today.year, 1, 1).strftime('%Y-%m-%d')
         fecha_hasta = today.strftime('%Y-%m-%d')
-    
-    # Convertir strings a objetos date para la consulta
-    from datetime import datetime as dt_class, date as date_class
-    fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
-    fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+        from datetime import datetime as dt_class
+        fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
+        fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
     
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
