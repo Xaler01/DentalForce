@@ -449,11 +449,19 @@ def reporte_facturas(request):
         fecha_fin=fecha_hasta
     )
     
+    # Obtener también las facturas del período para mostrar en tabla
+    from datetime import datetime as dt
+    facturas_periodo = Factura.objects.para_clinica(clinica.id).filter(
+        fecha_emision__gte=fecha_desde,
+        fecha_emision__lte=fecha_hasta
+    ).exclude(estado=Factura.ESTADO_ANULADA).order_by('-fecha_emision')
+    
     context = {
         'clinica': clinica,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
         'resumen': resumen,
+        'facturas': facturas_periodo,
     }
     
     return render(request, 'facturacion/reporte_facturas.html', context)

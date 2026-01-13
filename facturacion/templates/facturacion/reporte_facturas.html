@@ -215,6 +215,69 @@
             <i class="fas fa-arrow-left"></i> Volver
         </a>
     </div>
+
+    <!-- Tabla de Facturas del Período -->
+    {% if facturas %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-receipt"></i> Facturas del Período ({{ fecha_desde }} al {{ fecha_hasta }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm tabla-reporte">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Paciente</th>
+                            <th class="text-right">Subtotal</th>
+                            <th class="text-right">Total</th>
+                            <th class="text-right">Pagado</th>
+                            <th class="text-right">Saldo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factura in facturas %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'facturacion:detalle' factura.pk %}">
+                                    {{ factura.numero_factura }}
+                                </a>
+                            </td>
+                            <td>{{ factura.fecha_emision|date:"d/m/Y" }}</td>
+                            <td>{{ factura.paciente.nombre_completo }}</td>
+                            <td class="text-right">${{ factura.subtotal|floatformat:2 }}</td>
+                            <td class="text-right"><strong>${{ factura.total|floatformat:2 }}</strong></td>
+                            <td class="text-right" style="color: #27ae60;">${{ factura.total_pagado|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #f39c12;">${{ factura.saldo_pendiente|floatformat:2 }}</td>
+                            <td>
+                                {% if factura.estado == 'PEN' %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                {% elif factura.estado == 'PAG' %}
+                                    <span class="badge badge-success">Pagada</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Anulada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #ecf0f1; font-weight: bold;">
+                            <td colspan="3">TOTALES DEL PERÍODO</td>
+                            <td class="text-right">${{ resumen.ingresos|floatformat:2 }}</td>
+                            <td class="text-right">${{ resumen.ingresos|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #27ae60;">${{ resumen.total_pagado|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #f39c12;">${{ resumen.total_pendiente|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Chart.js -->
