@@ -263,6 +263,16 @@ def obtener_ingresos_clinica(clinica_id, fecha_inicio=None, fecha_fin=None):
     tasa_pagadas = ((sum(f.total for f in facturas_pagadas) / ingresos_totales) * 100) if ingresos_totales > 0 else Decimal('0.00')
     tasa_pendientes = ((sum(f.total for f in facturas_pendientes) / ingresos_totales) * 100) if ingresos_totales > 0 else Decimal('0.00')
     
+    # Distribución por formas de pago
+    formas_pago_stats = {}
+    for forma_codigo, forma_nombre in Pago.FORMAS_PAGO_CHOICES:
+        monto = Pago.objects.filter(
+            factura__in=facturas,
+            forma_pago=forma_codigo
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+        if monto > 0:
+            formas_pago_stats[forma_nombre] = float(monto)
+    
     return {
         'periodo_inicio': fecha_inicio,
         'periodo_fin': fecha_fin,
@@ -280,6 +290,8 @@ def obtener_ingresos_clinica(clinica_id, fecha_inicio=None, fecha_fin=None):
         'tasa_cobranza': tasa_cobranza,
         'tasa_pagadas': tasa_pagadas,
         'tasa_pendientes': tasa_pendientes,
+        # Distribuciones para gráficos
+        'formas_pago_stats': formas_pago_stats,
     }
 
 

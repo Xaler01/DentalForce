@@ -309,16 +309,20 @@ $(document).ready(function() {
         }
     });
 
-    // Gráfico de formas de pago (placeholder)
+    // Gráfico de formas de pago
     const ctxFormas = document.getElementById('chartFormasPago').getContext('2d');
+    const formasPagoData = {{ resumen.formas_pago_stats|safe }};
+    const formasLabels = Object.keys(formasPagoData);
+    const formasValues = Object.values(formasPagoData);
+    
     new Chart(ctxFormas, {
         type: 'bar',
         data: {
-            labels: ['Efectivo', 'Tarjeta', 'Transferencia'],
+            labels: formasLabels.length > 0 ? formasLabels : ['Sin datos'],
             datasets: [{
                 label: 'Monto por Forma de Pago',
-                data: [{{ resumen.total_pagado|floatformat:0 }}, 0, 0],
-                backgroundColor: '#667eea',
+                data: formasValues.length > 0 ? formasValues : [0],
+                backgroundColor: ['#667eea', '#f093fb', '#4facfe', '#fa709a', '#fee140', '#43e97b'],
                 borderColor: '#5568d3',
                 borderWidth: 1
             }]
@@ -331,7 +335,14 @@ $(document).ready(function() {
                 legend: { display: false }
             },
             scales: {
-                x: { beginAtZero: true }
+                x: { 
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
             }
         }
     });

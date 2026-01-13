@@ -397,10 +397,12 @@ def imprimir_factura(request, pk):
         pagos = factura.pagos.all().order_by('-fecha_pago')
         total_pagado = factura.total_pagado
     
-    # Nombre del archivo PDF con fecha y hora
-    fecha_impresion = datetime.now().strftime('%Y%m%d_%H%M%S')
-    nombre_paciente = f"{factura.paciente.apellidos}_{factura.paciente.nombres}".replace(' ', '_')
-    nombre_archivo = f"{factura.numero_factura}_{nombre_paciente}_{fecha_impresion}.pdf"
+    # Nombre del archivo PDF con fecha y hora completa
+    fecha_impresion_display = datetime.now().strftime('%d/%m/%Y %H:%M')
+    fecha_impresion_archivo = datetime.now().strftime('%Y%m%d_%H%M%S')
+    nombre_paciente = f"{factura.paciente.apellidos}, {factura.paciente.nombres}"
+    nombre_paciente_archivo = f"{factura.paciente.apellidos}_{factura.paciente.nombres}".replace(' ', '_')
+    nombre_archivo = f"{factura.numero_factura}_{nombre_paciente_archivo}_{fecha_impresion_archivo}.pdf"
     
     context = {
         'factura': factura,
@@ -410,6 +412,8 @@ def imprimir_factura(request, pk):
         'total_pagado': total_pagado,
         'saldo_pendiente': factura.total - total_pagado,
         'nombre_archivo': nombre_archivo,
+        'fecha_impresion_display': fecha_impresion_display,
+        'nombre_paciente_completo': nombre_paciente,
     }
     
     response = render(request, 'facturacion/imprimir_factura.html', context)

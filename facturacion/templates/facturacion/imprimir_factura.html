@@ -322,9 +322,9 @@
         <!-- Footer -->
         <div style="margin-top: 40px; text-align: center; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
             <p><strong>{{ clinica.nombre }}</strong> - RUC: {{ clinica.ruc }}</p>
-            <p style="font-size: 9pt; margin: 5px 0;">Impreso el {% now "d/m/Y H:i:s" %}</p>
+            <p style="font-size: 9pt; margin: 5px 0;">Impreso el {{ fecha_impresion_display }}</p>
             <p style="margin: 5px 0; font-size: 9pt; color: #999;">
-                <small><strong>Archivo:</strong> {{ nombre_archivo }}</small>
+                <small><strong>Archivo:</strong> {{ factura.numero_factura }} - {{ nombre_paciente_completo }} - {{ fecha_impresion_display }}</small>
             </p>
         </div>
     </div>
