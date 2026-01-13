@@ -232,11 +232,11 @@ def obtener_ingresos_clinica(clinica_id, fecha_inicio=None, fecha_fin=None):
     if not fecha_fin:
         fecha_fin = timezone.now().date()
     
-    # Obtener facturas del período
+    # Obtener facturas del período (excluyendo anuladas)
     facturas = Factura.objects.para_clinica(clinica_id).filter(
         fecha_emision__gte=fecha_inicio,
         fecha_emision__lte=fecha_fin
-    )
+    ).exclude(estado=Factura.ESTADO_ANULADA)
     
     # Calcular totales
     ingresos_totales = facturas.aggregate(

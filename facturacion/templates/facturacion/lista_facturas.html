@@ -137,12 +137,7 @@
                             <td><strong>${{ factura.total|floatformat:2 }}</strong></td>
                             <td>${{ factura.total_pagado|floatformat:2 }}</td>
                             <td>
-                                {% widthratio factura.total 1 1 as total_num %}
-                                {% widthratio factura.total_pagado 1 1 as pagado_num %}
-                                {% widthratio total_num 1 1 as saldo %}
-                                {% with saldo=factura.total|add:"-"|add:factura.total_pagado %}
-                                    ${{ saldo|floatformat:2 }}
-                                {% endwith %}
+                                ${{ factura.saldo_pendiente|floatformat:2 }}
                             </td>
                             <td>
                                 {% if factura.estado == 'PEN' %}
