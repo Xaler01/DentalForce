@@ -451,6 +451,8 @@ def reporte_facturas(request):
         from datetime import datetime as dt_class
         fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
         fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+        fecha_desde_formato = fecha_desde_date.strftime('%d%m%Y')
+        fecha_hasta_formato = fecha_hasta_date.strftime('%d%m%Y')
     else:
         # Por defecto: hoy a mañana
         fecha_desde = today.strftime('%Y-%m-%d')
@@ -458,6 +460,8 @@ def reporte_facturas(request):
         from datetime import datetime as dt_class
         fecha_desde_date = today.date()
         fecha_hasta_date = tomorrow.date()
+        fecha_desde_formato = fecha_desde_date.strftime('%d%m%Y')
+        fecha_hasta_formato = fecha_hasta_date.strftime('%d%m%Y')
     
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
@@ -479,6 +483,8 @@ def reporte_facturas(request):
         'clinica': clinica,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
+        'fecha_desde_formato': fecha_desde_formato,
+        'fecha_hasta_formato': fecha_hasta_formato,
         'resumen': resumen,
         'facturas': facturas_periodo,
         'formas_pago_json': formas_pago_json,
