@@ -153,7 +153,7 @@ def crear_factura_para_paciente(paciente_id, clinica_id, items_data,
     return factura
 
 
-def registrar_pago(factura_id, clinica_id, monto, forma_pago, 
+def registrar_pago(factura_id, clinica_id, usuario, monto, forma_pago, 
                    referencia='', observaciones=''):
     """
     Registra un pago contra una factura
@@ -161,6 +161,7 @@ def registrar_pago(factura_id, clinica_id, monto, forma_pago,
     Args:
         factura_id: ID de la factura
         clinica_id: ID de la clínica (para validación)
+        usuario: Usuario que registra el pago (para auditoría)
         monto: Monto a pagar
         forma_pago: Forma de pago (EFE, TAR, TRA, CHE, SEG, OTR)
         referencia: Referencia del pago (opcional)
@@ -181,7 +182,8 @@ def registrar_pago(factura_id, clinica_id, monto, forma_pago,
         forma_pago=forma_pago,
         referencia_pago=referencia,
         observaciones=observaciones,
-        fecha_pago=timezone.now().date()
+        fecha_pago=timezone.now().date(),
+        uc=usuario
     )
     
     return pago

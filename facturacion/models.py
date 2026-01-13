@@ -181,8 +181,9 @@ class Factura(ClaseModelo):
     @property
     def total_pagado(self):
         """Calcula el total pagado de la factura"""
+        # Usar select_related para evitar N+1 queries
         return sum(
-            pago.monto for pago in self.pagos.all()
+            pago.monto for pago in self.pagos.all().select_related()
         ) or Decimal('0.00')
     
     @property

@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponseForbidden
 from django.db import transaction
 from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -265,6 +266,9 @@ def registrar_pago(request, pk):
     """
     Registra un pago para una factura
     """
+    import logging
+    logger = logging.getLogger('facturacion')
+    
     clinica = get_clinica_from_request(request)
     
     if not clinica:
@@ -287,15 +291,20 @@ def registrar_pago(request, pk):
         
         if form.is_valid():
             try:
-                # Usar el servicio para registrar el pago
+                logger.info(f"Registrando pago para factura {factura.id}: ${form.cleaned_data['monto']}")
+                
+                # Usar el servicio para registrar el pago, pasando el usuario
                 pago = services.registrar_pago(
                     factura_id=factura.id,
                     clinica_id=clinica.id,
+                    usuario=request.user,
                     monto=form.cleaned_data['monto'],
                     forma_pago=form.cleaned_data['forma_pago'],
                     referencia=form.cleaned_data.get('referencia_pago', ''),
                     observaciones=form.cleaned_data.get('observaciones', '')
                 )
+                
+                logger.info(f"Pago registrado exitosamente: {pago.id} - ${pago.monto}")
                 
                 messages.success(request, f"Pago de ${pago.monto:.2f} registrado exitosamente")
                 return redirect('facturacion:detalle', pk=pk)
