@@ -390,11 +390,8 @@ function exportarCSV() {
     // Buscar SOLO las filas del tbody, no del tfoot
     const filasData = document.querySelectorAll('table tbody tr');
     
-    console.log('Filas encontradas:', filasData.length); // Debug
-    
     filasData.forEach(fila => {
         const celdas = fila.querySelectorAll('td');
-        console.log('Celdas en fila:', celdas.length); // Debug
         
         if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
             // Extraer número de factura (puede estar en un enlace)
@@ -418,13 +415,10 @@ function exportarCSV() {
             
             // Solo agregar si tiene número de factura
             if (row[0].length > 0) {
-                console.log('Fila agregada:', row); // Debug
                 rows.push(row);
             }
         }
     });
-    
-    console.log('Total filas procesadas:', rows.length); // Debug
     
     // Generar contenido CSV
     let csvContent = '\uFEFF'; // BOM para Excel
@@ -432,8 +426,6 @@ function exportarCSV() {
     rows.forEach(row => {
         csvContent += row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',') + '\n';
     });
-    
-    console.log('CSV Content:', csvContent); // Debug
     
     // Crear archivo y descargar con nombre de clínica + período
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
