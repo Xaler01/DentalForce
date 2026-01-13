@@ -25,6 +25,7 @@ urlpatterns = [
     
     # Reportes
     path('reportes/', views.reporte_facturas, name='reportes'),
+    path('reportes/imprimir/', views.imprimir_reporte_facturas, name='imprimir_reporte'),
     
     # AJAX
     path('api/citas-paciente/', views.obtener_citas_paciente, name='api_citas_paciente'),

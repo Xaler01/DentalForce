@@ -1,0 +1,362 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ nombre_clinica }} - Reporte de Facturación - {{ fecha_reporte_display }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reporte-container {
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 20px;
+        background: white;
+    }
+    
+    .reporte-header {
+        border-bottom: 2px solid #34495e;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .reporte-header h1 {
+        font-size: 20px;
+        font-weight: bold;
+        color: #34495e;
+        margin-bottom: 5px;
+    }
+    
+    .reporte-header p {
+        margin: 3px 0;
+        font-size: 11pt;
+        color: #555;
+    }
+    
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    
+    .stat-card h6 {
+        font-size: 10pt;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card h3 {
+        font-size: 16pt;
+        font-weight: bold;
+        color: #34495e;
+        margin: 5px 0;
+    }
+    
+    .stat-card small {
+        font-size: 9pt;
+        color: #999;
+    }
+    
+    .chart-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .chart-card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+    .chart-card h6 {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #34495e;
+        margin-bottom: 10px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .tabla-reporte {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 10pt;
+    }
+    
+    .tabla-reporte th {
+        background-color: #34495e;
+        color: white;
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    
+    .tabla-reporte td {
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+    }
+    
+    .tabla-reporte tbody tr:nth-child(even) {
+        background-color: #f5f5f5;
+    }
+    
+    .tabla-reporte tfoot tr {
+        background-color: #ecf0f1;
+        font-weight: bold;
+    }
+    
+    .text-right {
+        text-align: right;
+    }
+    
+    .footer {
+        margin-top: 30px;
+        padding-top: 15px;
+        border-top: 1px solid #ddd;
+        font-size: 9pt;
+        color: #999;
+        text-align: center;
+    }
+    
+    @media print {
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .reporte-container {
+            max-width: 100%;
+            padding: 0;
+            box-shadow: none;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .chart-container {
+            page-break-inside: avoid;
+        }
+        .tabla-reporte {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="reporte-container">
+    <!-- Header -->
+    <div class="reporte-header">
+        <h1><i class="fas fa-chart-line"></i> Reporte de Facturación</h1>
+        <p><strong>Clínica:</strong> {{ nombre_clinica }}</p>
+        <p><strong>Período:</strong> {{ fecha_desde }} al {{ fecha_hasta }}</p>
+        <p><strong>Fecha de Generación:</strong> {{ fecha_reporte_display }}</p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stat-row">
+        <div class="stat-card">
+            <h6>Ingresos Totales</h6>
+            <h3>${{ resumen.ingresos|floatformat:2 }}</h3>
+            <small>{{ resumen.facturas_emitidas }} facturas</small>
+        </div>
+        <div class="stat-card">
+            <h6>Recaudado</h6>
+            <h3 style="color: #27ae60;">${{ resumen.total_pagado|floatformat:2 }}</h3>
+            <small>{{ resumen.facturas_pagadas }} pagadas</small>
+        </div>
+        <div class="stat-card">
+            <h6>Cuentas por Cobrar</h6>
+            <h3 style="color: #e74c3c;">${{ resumen.total_pendiente|floatformat:2 }}</h3>
+            <small>{{ resumen.facturas_pendientes }} pendientes</small>
+        </div>
+        <div class="stat-card">
+            <h6>Tasa de Cobranza</h6>
+            <h3 style="color: #f39c12;">
+                {% if resumen.ingresos > 0 %}
+                    {{ resumen.tasa_cobranza|floatformat:1 }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </h3>
+            <small>Del total facturado</small>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="chart-row">
+        <div class="chart-card">
+            <h6><i class="fas fa-chart-pie"></i> Distribución de Estado</h6>
+            <div class="chart-container">
+                <canvas id="chartEstado"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h6><i class="fas fa-chart-bar"></i> Formas de Pago</h6>
+            <div class="chart-container">
+                <canvas id="chartFormasPago"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Facturas -->
+    {% if facturas %}
+    <div>
+        <h6 style="font-size: 12pt; font-weight: bold; color: #34495e; margin-bottom: 10px;">
+            <i class="fas fa-receipt"></i> Facturas del Período
+        </h6>
+        <div style="overflow-x: auto;">
+            <table class="tabla-reporte">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Fecha</th>
+                        <th>Paciente</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-right">Pagado</th>
+                        <th class="text-right">Saldo</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for factura in facturas %}
+                    <tr>
+                        <td>{{ factura.numero_factura }}</td>
+                        <td>{{ factura.fecha_emision|date:"d/m/Y" }}</td>
+                        <td>{{ factura.paciente.nombre_completo }}</td>
+                        <td class="text-right">${{ factura.subtotal|floatformat:2 }}</td>
+                        <td class="text-right"><strong>${{ factura.total|floatformat:2 }}</strong></td>
+                        <td class="text-right" style="color: #27ae60;">${{ factura.total_pagado|floatformat:2 }}</td>
+                        <td class="text-right" style="color: #f39c12;">${{ factura.saldo_pendiente|floatformat:2 }}</td>
+                        <td>
+                            {% if factura.estado == 'PEN' %}
+                                <span style="background-color: #f39c12; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9pt;">Pendiente</span>
+                            {% elif factura.estado == 'PAG' %}
+                                <span style="background-color: #27ae60; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9pt;">Pagada</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>TOTALES</strong></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"><strong>${{ resumen.ingresos|floatformat:2 }}</strong></td>
+                        <td class="text-right"><strong style="color: #27ae60;">${{ resumen.total_pagado|floatformat:2 }}</strong></td>
+                        <td class="text-right"><strong style="color: #f39c12;">${{ resumen.total_pendiente|floatformat:2 }}</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>{{ nombre_clinica }}</strong></p>
+        <p>Reporte generado automáticamente el {{ fecha_reporte_display }}</p>
+        <p style="margin-top: 15px; font-size: 8pt; color: #ccc;">
+            Archivo: {{ nombre_clinica|upper }}_REPFACTURACION_{{ fecha_reporte_display|date:"Ymd" }}.pdf
+        </p>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cambiar el título del documento para que se use como nombre de archivo
+    const nombreArchivo = '{{ nombre_clinica }}_RepFacturacion_{{ fecha_reporte_display|date:"Y-m-d" }}'.replace(/[/:]/g, '-').replace(/\s+/g, '_');
+    document.title = nombreArchivo;
+    
+    // Gráfico de estados
+    const ctxEstado = document.getElementById('chartEstado');
+    if (ctxEstado) {
+        new Chart(ctxEstado, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pagadas', 'Pendientes'],
+                datasets: [{
+                    data: [{{ resumen.total_pagado|floatformat:2 }}, {{ resumen.total_pendiente|floatformat:2 }}],
+                    backgroundColor: ['#27ae60', '#e74c3c'],
+                    borderColor: ['#229954', '#c0392b'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': $' + context.parsed.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de formas de pago
+    const ctxFormas = document.getElementById('chartFormasPago');
+    if (ctxFormas) {
+        const formasPagoData = {{ formas_pago_json|safe }};
+        const formasLabels = Object.keys(formasPagoData);
+        const formasValues = Object.values(formasPagoData);
+        
+        new Chart(ctxFormas, {
+            type: 'bar',
+            data: {
+                labels: formasLabels.length > 0 ? formasLabels : ['Sin datos'],
+                datasets: [{
+                    label: 'Monto por Forma de Pago',
+                    data: formasValues.length > 0 ? formasValues : [0],
+                    backgroundColor: ['#667eea', '#f093fb', '#4facfe', '#fa709a', '#fee140', '#43e97b'],
+                    borderColor: '#5568d3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Auto-imprimir después de cargar los gráficos
+    setTimeout(function() {
+        window.print();
+    }, 1000);
+});
+</script>
+{% endblock %}

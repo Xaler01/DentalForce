@@ -442,9 +442,9 @@ def reporte_facturas(request):
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
     
-    # Por defecto: usar TODAS las facturas (sin límite de fecha)
-    # Si el usuario especifica fechas, usarlas
+    # Por defecto: desde hoy hasta mañana (para incluir facturas del día de hoy)
     today = datetime.now()
+    tomorrow = today + timedelta(days=1)
     
     if fecha_desde and fecha_hasta:
         # Usuario especificó fechas
@@ -452,13 +452,12 @@ def reporte_facturas(request):
         fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
         fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
     else:
-        # Por defecto: usar todo el año (desde enero del año actual)
-        # Esto asegura que se muestren todas las facturas del año
-        fecha_desde = datetime(today.year, 1, 1).strftime('%Y-%m-%d')
-        fecha_hasta = today.strftime('%Y-%m-%d')
+        # Por defecto: hoy a mañana
+        fecha_desde = today.strftime('%Y-%m-%d')
+        fecha_hasta = tomorrow.strftime('%Y-%m-%d')
         from datetime import datetime as dt_class
-        fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
-        fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+        fecha_desde_date = today.date()
+        fecha_hasta_date = tomorrow.date()
     
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
@@ -486,6 +485,77 @@ def reporte_facturas(request):
     }
     
     return render(request, 'facturacion/reporte_facturas.html', context)
+
+
+@login_required
+def imprimir_reporte_facturas(request):
+    """
+    Vista para imprimir/previsualizar reporte de facturas con nombre personalizado
+    """
+    import json
+    
+    clinica = get_clinica_from_request(request)
+    
+    if not clinica:
+        messages.error(request, "No tiene clínica seleccionada")
+        return redirect('clinicas:seleccionar')
+    
+    # Obtener parámetros de fecha
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    # Por defecto: desde hoy hasta mañana
+    today = datetime.now()
+    tomorrow = today + timedelta(days=1)
+    
+    if fecha_desde and fecha_hasta:
+        from datetime import datetime as dt_class
+        fecha_desde_date = dt_class.strptime(fecha_desde, '%Y-%m-%d').date()
+        fecha_hasta_date = dt_class.strptime(fecha_hasta, '%Y-%m-%d').date()
+    else:
+        fecha_desde = today.strftime('%Y-%m-%d')
+        fecha_hasta = tomorrow.strftime('%Y-%m-%d')
+        from datetime import datetime as dt_class
+        fecha_desde_date = today.date()
+        fecha_hasta_date = tomorrow.date()
+    
+    # Usar el servicio para obtener ingresos
+    resumen = services.obtener_ingresos_clinica(
+        clinica_id=clinica.id,
+        fecha_inicio=fecha_desde_date,
+        fecha_fin=fecha_hasta_date
+    )
+    
+    # Convertir formas_pago_stats a JSON
+    formas_pago_json = json.dumps(resumen.get('formas_pago_stats', {}))
+    
+    # Obtener facturas del período
+    facturas_periodo = Factura.objects.para_clinica(clinica.id).filter(
+        fecha_emision__gte=fecha_desde_date,
+        fecha_emision__lte=fecha_hasta_date
+    ).exclude(estado=Factura.ESTADO_ANULADA).order_by('-fecha_emision')
+    
+    # Nombre del archivo PDF
+    fecha_reporte = today.strftime('%Y%m%d')
+    nombre_clinica = clinica.nombre.replace(' ', '_')
+    nombre_archivo = f"{nombre_clinica}_RepFacturacion_{fecha_reporte}.pdf"
+    
+    context = {
+        'clinica': clinica,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'resumen': resumen,
+        'facturas': facturas_periodo,
+        'formas_pago_json': formas_pago_json,
+        'nombre_archivo': nombre_archivo,
+        'nombre_clinica': clinica.nombre,
+        'fecha_reporte_display': today.strftime('%d/%m/%Y'),
+    }
+    
+    response = render(request, 'facturacion/imprimir_reporte_facturas.html', context)
+    response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
+    
+    return response
 
 
 @login_required

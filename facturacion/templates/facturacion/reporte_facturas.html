@@ -208,9 +208,9 @@
 
     <!-- Botones de acción -->
     <div class="mt-4 mb-4">
-        <button onclick="window.print()" class="btn btn-info">
-            <i class="fas fa-print"></i> Imprimir
-        </button>
+        <a href="{% url 'facturacion:imprimir_reporte' %}?fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="btn btn-info" target="_blank">
+            <i class="fas fa-print"></i> Ver e Imprimir
+        </a>
         <button onclick="exportarCSV()" class="btn btn-success">
             <i class="fas fa-download"></i> Descargar CSV
         </button>
