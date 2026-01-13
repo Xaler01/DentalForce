@@ -319,14 +319,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gráfico de estados
     const ctxEstado = document.getElementById('chartEstado');
     if (ctxEstado) {
+        const totalPagado = parseFloat('{{ resumen.total_pagado|floatformat:2 }}');
+        const totalPendiente = parseFloat('{{ resumen.total_pendiente|floatformat:2 }}');
+        
         new Chart(ctxEstado, {
             type: 'doughnut',
             data: {
                 labels: ['Pagadas', 'Pendientes'],
                 datasets: [{
-                    data: [{{ resumen.total_pagado|floatformat:2 }}, {{ resumen.total_pendiente|floatformat:2 }}],
-                    backgroundColor: ['#27ae60', '#e74c3c'],
-                    borderColor: ['#229954', '#c0392b'],
+                    data: [totalPagado, totalPendiente],
+                    backgroundColor: ['#27ae60', '#f39c12'],
+                    borderColor: ['#229954', '#e67e22'],
                     borderWidth: 2
                 }]
             },
@@ -334,7 +337,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { 
+                        position: 'bottom',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        return {
+                                            text: label,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: value === 0,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    }
                 }
             }
         });
