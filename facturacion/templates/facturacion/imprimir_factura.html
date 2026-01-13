@@ -330,6 +330,9 @@
     </div>
     
     <script>
+        // Cambiar el título del documento para que se use como nombre de archivo al imprimir
+        document.title = '{{ factura.numero_factura }}_{{ nombre_paciente_completo }}_{{ fecha_impresion_display }}'.replace(/[/:]/g, '-').replace(/\s+/g, '_');
+        
         // Auto-imprimir al cargar
         window.onload = function() {
             setTimeout(function() {

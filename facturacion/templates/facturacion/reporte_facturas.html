@@ -286,66 +286,77 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Gráfico de estados
-    const ctxEstado = document.getElementById('chartEstado').getContext('2d');
-    new Chart(ctxEstado, {
-        type: 'doughnut',
-        data: {
-            labels: ['Pagadas', 'Pendientes'],
-            datasets: [{
-                data: [{{ resumen.total_pagado }}, {{ resumen.total_pendiente }}],
-                backgroundColor: ['#27ae60', '#f39c12'],
-                borderColor: ['#229954', '#e67e22'],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
-    });
-
-    // Gráfico de formas de pago
-    const ctxFormas = document.getElementById('chartFormasPago').getContext('2d');
-    const formasPagoData = {{ resumen.formas_pago_stats|safe }};
-    const formasLabels = Object.keys(formasPagoData);
-    const formasValues = Object.values(formasPagoData);
-    
-    new Chart(ctxFormas, {
-        type: 'bar',
-        data: {
-            labels: formasLabels.length > 0 ? formasLabels : ['Sin datos'],
-            datasets: [{
-                label: 'Monto por Forma de Pago',
-                data: formasValues.length > 0 ? formasValues : [0],
-                backgroundColor: ['#667eea', '#f093fb', '#4facfe', '#fa709a', '#fee140', '#43e97b'],
-                borderColor: '#5568d3',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: { display: false }
+    const ctxEstado = document.getElementById('chartEstado');
+    if (ctxEstado) {
+        new Chart(ctxEstado, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pagadas', 'Pendientes'],
+                datasets: [{
+                    data: [{{ resumen.total_pagado|floatformat:2 }}, {{ resumen.total_pendiente|floatformat:2 }}],
+                    backgroundColor: ['#27ae60', '#f39c12'],
+                    borderColor: ['#229954', '#e67e22'],
+                    borderWidth: 2
+                }]
             },
-            scales: {
-                x: { 
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toFixed(2);
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': $' + context.parsed.toFixed(2);
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
+
+    // Gráfico de formas de pago
+    const ctxFormas = document.getElementById('chartFormasPago');
+    if (ctxFormas) {
+        const formasPagoData = {{ formas_pago_json|safe }};
+        const formasLabels = Object.keys(formasPagoData);
+        const formasValues = Object.values(formasPagoData);
+        
+        new Chart(ctxFormas, {
+            type: 'bar',
+            data: {
+                labels: formasLabels.length > 0 ? formasLabels : ['Sin datos'],
+                datasets: [{
+                    label: 'Monto por Forma de Pago',
+                    data: formasValues.length > 0 ? formasValues : [0],
+                    backgroundColor: ['#667eea', '#f093fb', '#4facfe', '#fa709a', '#fee140', '#43e97b'],
+                    borderColor: '#5568d3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
 
 function exportarCSV() {

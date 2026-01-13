@@ -429,6 +429,9 @@ def reporte_facturas(request):
     """
     Genera reportes de facturación
     """
+    import json
+    from django.core.serializers.json import DjangoJSONEncoder
+    
     clinica = get_clinica_from_request(request)
     
     if not clinica:
@@ -459,6 +462,9 @@ def reporte_facturas(request):
         fecha_fin=fecha_hasta_date
     )
     
+    # Convertir formas_pago_stats a JSON para JavaScript
+    formas_pago_json = json.dumps(resumen.get('formas_pago_stats', {}))
+    
     # Obtener también las facturas del período para mostrar en tabla
     facturas_periodo = Factura.objects.para_clinica(clinica.id).filter(
         fecha_emision__gte=fecha_desde_date,
@@ -471,6 +477,7 @@ def reporte_facturas(request):
         'fecha_hasta': fecha_hasta,
         'resumen': resumen,
         'facturas': facturas_periodo,
+        'formas_pago_json': formas_pago_json,
     }
     
     return render(request, 'facturacion/reporte_facturas.html', context)
