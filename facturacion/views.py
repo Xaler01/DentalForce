@@ -535,15 +535,19 @@ def imprimir_reporte_facturas(request):
         fecha_emision__lte=fecha_hasta_date
     ).exclude(estado=Factura.ESTADO_ANULADA).order_by('-fecha_emision')
     
-    # Nombre del archivo PDF
+    # Nombre del archivo PDF con formato de fechas DD-MM-YYYY
     fecha_reporte = today.strftime('%Y%m%d')
     nombre_clinica = clinica.nombre.replace(' ', '_')
-    nombre_archivo = f"{nombre_clinica}_RepFacturacion_{fecha_reporte}.pdf"
+    fecha_desde_formato = dt_class.strptime(fecha_desde, '%Y-%m-%d').strftime('%d%m%Y')
+    fecha_hasta_formato = dt_class.strptime(fecha_hasta, '%Y-%m-%d').strftime('%d%m%Y')
+    nombre_archivo = f"{nombre_clinica}_REP_FACTURACION_{fecha_desde_formato}_al_{fecha_hasta_formato}.pdf"
     
     context = {
         'clinica': clinica,
         'fecha_desde': fecha_desde,
         'fecha_hasta': fecha_hasta,
+        'fecha_desde_formato': fecha_desde_formato,
+        'fecha_hasta_formato': fecha_hasta_formato,
         'resumen': resumen,
         'facturas': facturas_periodo,
         'formas_pago_json': formas_pago_json,

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ nombre_clinica|upper }}_REPFACTURACION_{{ fecha_desde|date:"Ymd" }}_{{ fecha_hasta|date:"Ymd" }}</title>
+    <title>{{ nombre_clinica|upper }}_REP_FACTURACION_{{ fecha_desde_formato }}_al_{{ fecha_hasta_formato }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
@@ -305,15 +305,15 @@
         <p><strong>{{ nombre_clinica }}</strong></p>
         <p>Reporte generado automáticamente el {{ fecha_reporte_display }}</p>
         <p style="margin-top: 10px; font-size: 8pt; color: #ccc;">
-            Archivo: {{ nombre_clinica|upper }}_REPFACTURACION_{{ fecha_desde|date:"Ymd" }}_{{ fecha_hasta|date:"Ymd" }}.pdf
+            Archivo: {{ nombre_clinica|upper }}_REP_FACTURACION_{{ fecha_desde_formato }}_al_{{ fecha_hasta_formato }}.pdf
         </p>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Cambiar el título del documento para nombre del archivo con período
-    const nombreArchivo = '{{ nombre_clinica }}_RepFacturacion_{{ fecha_desde|date:"Ymd" }}_{{ fecha_hasta|date:"Ymd" }}'.replace(/[/:]/g, '-').replace(/\s+/g, '_');
+    // Cambiar el título del documento para nombre del archivo con período legible
+    const nombreArchivo = '{{ nombre_clinica|upper }}_REP_FACTURACION_{{ fecha_desde_formato }}_al_{{ fecha_hasta_formato }}'.replace(/\s+/g, '_');
     document.title = nombreArchivo;
     
     // Gráfico de estados
