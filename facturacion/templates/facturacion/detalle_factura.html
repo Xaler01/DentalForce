@@ -212,9 +212,7 @@
                 <div class="col-md-4">
                     <p class="text-muted">Saldo Pendiente</p>
                     <h4 style="color: #f39c12;">
-                        {% with saldo=factura.total|add:"-"|add:factura.total_pagado %}
-                            ${{ saldo|floatformat:2 }}
-                        {% endwith %}
+                        ${{ factura.saldo_pendiente|floatformat:2 }}
                     </h4>
                 </div>
             </div>
