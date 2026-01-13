@@ -385,32 +385,46 @@ function exportarCSV() {
     // Crear encabezados
     const headers = ['Número', 'Fecha', 'Paciente', 'Subtotal', 'Total', 'Pagado', 'Saldo', 'Estado'];
     
-    // Recolectar datos de la tabla - Buscar tabla por su estructura, no clase
+    // Recolectar datos de la tabla
     const rows = [];
-    const tabla = document.querySelector('table tbody');
-    if (tabla) {
-        const filas = tabla.querySelectorAll('tr');
-        filas.forEach(fila => {
-            const celdas = fila.querySelectorAll('td');
-            // Evitar la fila de TOTALES y verificar que tenga datos
-            if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
-                const row = [
-                    celdas[0].querySelector('a') ? celdas[0].querySelector('a').textContent.trim() : celdas[0].textContent.trim(), // Número
-                    celdas[1].textContent.trim(), // Fecha
-                    celdas[2].textContent.trim(), // Paciente
-                    celdas[3].textContent.trim(), // Subtotal
-                    celdas[4].textContent.trim(), // Total
-                    celdas[5].textContent.trim(), // Pagado
-                    celdas[6].textContent.trim(), // Saldo
-                    celdas[7].textContent.trim().replace(/\n/g, '')  // Estado (limpiar saltos de línea)
-                ];
-                // Solo agregar si tiene número de factura (evitar filas vacías)
-                if (row[0].length > 0) {
-                    rows.push(row);
-                }
+    // Buscar SOLO las filas del tbody, no del tfoot
+    const filasData = document.querySelectorAll('table tbody tr');
+    
+    console.log('Filas encontradas:', filasData.length); // Debug
+    
+    filasData.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        console.log('Celdas en fila:', celdas.length); // Debug
+        
+        if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
+            // Extraer número de factura (puede estar en un enlace)
+            const numeroCelda = celdas[0];
+            let numero = numeroCelda.querySelector('a') ? numeroCelda.querySelector('a').textContent.trim() : numeroCelda.textContent.trim();
+            
+            // Extraer estado (está dentro de un badge span)
+            const estadoCelda = celdas[7];
+            let estado = estadoCelda.querySelector('span') ? estadoCelda.querySelector('span').textContent.trim() : estadoCelda.textContent.trim();
+            
+            const row = [
+                numero,
+                celdas[1].textContent.trim(),
+                celdas[2].textContent.trim(),
+                celdas[3].textContent.trim(),
+                celdas[4].textContent.trim(),
+                celdas[5].textContent.trim(),
+                celdas[6].textContent.trim(),
+                estado
+            ];
+            
+            // Solo agregar si tiene número de factura
+            if (row[0].length > 0) {
+                console.log('Fila agregada:', row); // Debug
+                rows.push(row);
             }
-        });
-    }
+        }
+    });
+    
+    console.log('Total filas procesadas:', rows.length); // Debug
     
     // Generar contenido CSV
     let csvContent = '\uFEFF'; // BOM para Excel
@@ -418,6 +432,8 @@ function exportarCSV() {
     rows.forEach(row => {
         csvContent += row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',') + '\n';
     });
+    
+    console.log('CSV Content:', csvContent); // Debug
     
     // Crear archivo y descargar con nombre de clínica + período
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
