@@ -118,9 +118,9 @@ class Factura(ClaseModelo):
         max_digits=5,
         decimal_places=2,
         verbose_name='Porcentaje IVA',
-        default=Decimal('12.00'),
+        default=Decimal('15.00'),
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text='Porcentaje de IVA a aplicar (por defecto 12%)'
+        help_text='Porcentaje de IVA a aplicar (por defecto 15% - Ecuador)'
     )
     iva_monto = models.DecimalField(
         max_digits=10,
@@ -177,6 +177,18 @@ class Factura(ClaseModelo):
     
     def __str__(self):
         return f"{self.numero_factura} - {self.paciente} ({self.get_estado_display()})"
+    
+    @property
+    def total_pagado(self):
+        """Calcula el total pagado de la factura"""
+        return sum(
+            pago.monto for pago in self.pagos.all()
+        ) or Decimal('0.00')
+    
+    @property
+    def saldo_pendiente(self):
+        """Calcula el saldo pendiente de pago"""
+        return self.total - self.total_pagado
     
     def calcular_totales(self):
         """Recalcula subtotal, IVA y total a partir de ítems"""

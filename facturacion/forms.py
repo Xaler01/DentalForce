@@ -143,7 +143,7 @@ class ItemFacturaForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0'
             }),
-            'descuento': forms.NumberInput(attrs={
+            'descuento_item': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0',
