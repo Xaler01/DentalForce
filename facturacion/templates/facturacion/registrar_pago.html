@@ -148,7 +148,7 @@
                             <tbody>
                                 {% for pago in pagos %}
                                 <tr>
-                                    <td>{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
                                     <td>
                                         <span class="forma-pago-badge" style="background-color: #e8f4f8;">
                                             {{ pago.get_forma_pago_display }}
