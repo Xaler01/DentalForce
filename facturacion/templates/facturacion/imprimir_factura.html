@@ -236,7 +236,7 @@
                         <td style="text-align: center;">{{ item.cantidad }}</td>
                         <td class="text-right">${{ item.precio_unitario|floatformat:2 }}</td>
                         <td class="text-right">{% if item.descuento_item %}-${{ item.descuento_item|floatformat:2 }}{% else %}-{% endif %}</td>
-                        <td class="text-right"><strong>${{ item.subtotal|floatformat:2 }}</strong></td>
+                        <td class="text-right"><strong>${{ item.total|floatformat:2 }}</strong></td>
                     </tr>
                     {% endfor %}
                 </tbody>

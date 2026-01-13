@@ -435,12 +435,13 @@ def reporte_facturas(request):
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
     
-    # Por defecto: desde HOY hasta HOY (para reporte diario)
+    # Por defecto: desde el primer día del mes actual hasta hoy
+    today = datetime.now()
     if not fecha_desde:
-        fecha_desde = datetime.now().strftime('%Y-%m-%d')
+        fecha_desde = datetime(today.year, today.month, 1).strftime('%Y-%m-%d')
     
     if not fecha_hasta:
-        fecha_hasta = datetime.now().strftime('%Y-%m-%d')
+        fecha_hasta = today.strftime('%Y-%m-%d')
     
     # Usar el servicio para obtener ingresos
     resumen = services.obtener_ingresos_clinica(
