@@ -385,14 +385,15 @@ function exportarCSV() {
     // Crear encabezados
     const headers = ['Número', 'Fecha', 'Paciente', 'Subtotal', 'Total', 'Pagado', 'Saldo', 'Estado'];
     
-    // Recolectar datos de la tabla
+    // Recolectar datos de la tabla - Buscar tabla por su estructura, no clase
     const rows = [];
-    const tabla = document.querySelector('.table tbody');
+    const tabla = document.querySelector('table tbody');
     if (tabla) {
         const filas = tabla.querySelectorAll('tr');
         filas.forEach(fila => {
             const celdas = fila.querySelectorAll('td');
-            if (celdas.length >= 8) {
+            // Evitar la fila de TOTALES
+            if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
                 const row = [
                     celdas[0].textContent.trim(), // Número
                     celdas[1].textContent.trim(), // Fecha
@@ -401,7 +402,7 @@ function exportarCSV() {
                     celdas[4].textContent.trim(), // Total
                     celdas[5].textContent.trim(), // Pagado
                     celdas[6].textContent.trim(), // Saldo
-                    celdas[7].textContent.trim()  // Estado
+                    celdas[7].textContent.trim().replace(/\n/g, '')  // Estado (limpiar saltos de línea)
                 ];
                 rows.push(row);
             }
@@ -415,13 +416,13 @@ function exportarCSV() {
         csvContent += row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',') + '\n';
     });
     
-    // Crear archivo y descargar
+    // Crear archivo y descargar con formato de fechas correcto
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    const fechaDesde = '{{ fecha_desde|date:"Ymd" }}';
-    const fechaHasta = '{{ fecha_hasta|date:"Ymd" }}';
-    const nombreArchivo = `{{ nombre_clinica }}_RepFacturacion_${fechaDesde}_${fechaHasta}.csv`.replace(/\s+/g, '_');
+    const fechaDesde = '{{ fecha_desde_formato }}';
+    const fechaHasta = '{{ fecha_hasta_formato }}';
+    const nombreArchivo = `{{ nombre_clinica }}_REP_FACTURACION_${fechaDesde}_al_${fechaHasta}.csv`.replace(/\s+/g, '_');
     
     link.setAttribute('href', url);
     link.setAttribute('download', nombreArchivo);
