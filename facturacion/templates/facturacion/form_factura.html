@@ -77,17 +77,32 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="id_descuento">Descuento General ($)</label>
-                        {{ form.descuento }}
-                        {% if form.descuento.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.descuento.errors }}
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="id_descuento">Descuento General ($)</label>
+                            {{ form.descuento }}
+                            {% if form.descuento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.descuento.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Descuento opcional que se aplica al total
+                            </small>
                         </div>
-                        {% endif %}
-                        <small class="form-text text-muted">
-                            Descuento opcional que se aplica al total de la factura
-                        </small>
+
+                        <div class="form-group col-md-6">
+                            <label for="id_iva_porcentaje">Porcentaje IVA (%)</label>
+                            {{ form.iva_porcentaje }}
+                            {% if form.iva_porcentaje.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.iva_porcentaje.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Por defecto: 12%
+                            </small>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -144,23 +159,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const pacienteSelect = document.getElementById('id_paciente');
     const citaSelect = document.getElementById('id_cita');
     
+    console.log('Inicializando filtrado de citas...', {
+        pacienteSelect: !!pacienteSelect,
+        citaSelect: !!citaSelect
+    });
+    
     if (pacienteSelect && citaSelect) {
         pacienteSelect.addEventListener('change', function() {
             const pacienteId = this.value;
+            console.log('Paciente seleccionado:', pacienteId);
             
             if (!pacienteId) {
                 // Si no hay paciente, limpiar citas
                 citaSelect.innerHTML = '<option value="">-- Seleccionar cita (opcional) --</option>';
+                console.log('Paciente vacío, limpiando citas');
                 return;
             }
             
+            // Mostrar estado cargando
+            citaSelect.innerHTML = '<option value="">-- Cargando citas... --</option>';
+            
+            // Construir URL correctamente
+            const url = new URL('{% url "facturacion:api_citas_paciente" %}', window.location.origin);
+            url.searchParams.append('paciente_id', pacienteId);
+            
+            console.log('Fetching citas from:', url.toString());
+            
             // Obtener citas del paciente vía AJAX
-            fetch(`{% url 'facturacion:api_citas_paciente' %}?paciente_id=${pacienteId}`)
-                .then(response => response.json())
+            fetch(url.toString())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Datos recibidos:', data);
+                    
                     if (data.error) {
-                        console.error('Error:', data.error);
-                        citaSelect.innerHTML = '<option value="">-- Error cargando citas --</option>';
+                        console.error('Error en respuesta:', data.error);
+                        citaSelect.innerHTML = `<option value="">-- Error: ${data.error} --</option>`;
                         return;
                     }
                     
@@ -168,18 +207,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     let html = '<option value="">-- Seleccionar cita (opcional) --</option>';
                     
                     if (data.citas && data.citas.length > 0) {
+                        console.log('Citas encontradas:', data.citas.length);
                         data.citas.forEach(cita => {
-                            html += `<option value="${cita.id}">Cita #${cita.numero_cita} - ${cita.fecha_hora_display}</option>`;
+                            html += `<option value="${cita.id}">Cita ${cita.numero_cita} - ${cita.fecha_hora_display}</option>`;
                         });
+                    } else {
+                        html += '<option value="">-- No hay citas disponibles --</option>';
+                        console.log('No hay citas disponibles para este paciente');
                     }
                     
                     citaSelect.innerHTML = html;
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    citaSelect.innerHTML = '<option value="">-- Error cargando citas --</option>';
+                    console.error('Error en fetch:', error);
+                    citaSelect.innerHTML = `<option value="">-- Error cargando: ${error.message} --</option>`;
                 });
+        });
+        
+        // Disparar cambio si hay paciente preseleccionado
+        if (pacienteSelect.value) {
+            pacienteSelect.dispatchEvent(new Event('change'));
+        }
+    } else {
+        console.warn('Elementos no encontrados:', {
+            pacienteSelect: pacienteSelect ? 'ok' : 'FALTA',
+            citaSelect: citaSelect ? 'ok' : 'FALTA'
         });
     }
 });
-</script>{% endblock %}
+</script>
+{% endblock %}

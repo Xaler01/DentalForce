@@ -41,6 +41,11 @@ class FacturaForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0'
             }),
+            'iva_porcentaje': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,

@@ -394,30 +394,46 @@ def obtener_citas_paciente(request):
     Retorna las citas de un paciente en formato JSON para AJAX
     Usado para filtrar citas dinámicamente en el formulario de factura
     """
-    clinica = get_clinica_from_request(request)
-    paciente_id = request.GET.get('paciente_id')
-    
-    if not clinica or not paciente_id:
-        return JsonResponse({'error': 'Parámetros inválidos'}, status=400)
-    
     try:
+        clinica = get_clinica_from_request(request)
+        paciente_id = request.GET.get('paciente_id')
+        
+        if not clinica or not paciente_id:
+            return JsonResponse({'error': 'Parámetros inválidos', 'citas': []})
+        
         from cit.models import Cita
+        from pacientes.models import Paciente
         
-        # Obtener citas del paciente en la clínica
+        # Primero validar que el paciente existe y pertenece a la clínica
+        try:
+            paciente = Paciente.objects.get(id=paciente_id, clinica=clinica)
+        except Paciente.DoesNotExist:
+            return JsonResponse({'error': 'Paciente no encontrado', 'citas': []})
+        
+        # Obtener citas del paciente
+        # Solo mostrar citas que no están canceladas o no asistidas
         citas = Cita.objects.filter(
-            paciente_id=paciente_id,
-            paciente__clinica=clinica
-        ).order_by('-fecha_hora').values('id', 'numero_cita', 'fecha_hora', 'estado')
+            paciente=paciente
+        ).exclude(
+            estado__in=['CAN', 'NAS']  # Excluir canceladas y no asistidas
+        ).order_by('-fecha_hora').values('id', 'fecha_hora', 'estado')
         
-        # Limitar a últimas 10 citas
-        citas = list(citas[:10])
-        
-        # Formatear fechas
-        for cita in citas:
+        # Limitar a últimas 20 citas
+        citas_list = []
+        for cita in citas[:20]:
             fecha_hora = cita['fecha_hora']
-            cita['fecha_hora_display'] = fecha_hora.strftime('%d/%m/%Y %H:%M')
+            citas_list.append({
+                'id': cita['id'],
+                'numero_cita': f"#{cita['id']}",
+                'fecha_hora': fecha_hora.strftime('%Y-%m-%d %H:%M'),
+                'fecha_hora_display': fecha_hora.strftime('%d/%m/%Y %H:%M'),
+                'estado': cita['estado']
+            })
         
-        return JsonResponse({'citas': citas})
+        return JsonResponse({'citas': citas_list, 'success': True})
     
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        return JsonResponse({'error': error_msg, 'citas': [], 'success': False})
