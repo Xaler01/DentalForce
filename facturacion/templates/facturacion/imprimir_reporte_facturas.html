@@ -1,10 +1,12 @@
-{% extends 'base/base.html' %}
-{% load static %}
-
-{% block title %}{{ nombre_clinica }} - Reporte de Facturación - {{ fecha_reporte_display }}{% endblock %}
-
-{% block extra_css %}
-<style>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ nombre_clinica|upper }}_REPFACTURACION_{{ fecha_reporte_display|date:"Ymd_His" }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
     * {
         margin: 0;
         padding: 0;
@@ -22,7 +24,7 @@
     
     .reporte-container {
         max-width: 210mm;
-        height: auto;
+        min-height: 297mm;
         margin: 0 auto;
         padding: 20px;
         background: white;
@@ -31,88 +33,93 @@
     
     .header {
         border-bottom: 2px solid #333;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
     }
     
     .header h1 {
-        font-size: 18pt;
-        margin-bottom: 3px;
+        font-size: 16pt;
+        margin-bottom: 2px;
         font-weight: bold;
         color: #333;
     }
     
     .header p {
-        font-size: 10pt;
+        font-size: 9pt;
         color: #666;
-        margin: 2px 0;
+        margin: 1px 0;
     }
     
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        page-break-inside: avoid;
     }
     
     .stat-box {
         border: 1px solid #ddd;
-        padding: 12px;
-        border-radius: 4px;
+        padding: 10px;
+        border-radius: 3px;
         text-align: center;
     }
     
     .stat-box label {
-        font-size: 9pt;
+        font-size: 8pt;
         color: #999;
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
+        font-weight: 600;
     }
     
     .stat-box .value {
-        font-size: 14pt;
+        font-size: 13pt;
         font-weight: bold;
         color: #333;
     }
     
     .stat-box .subtitle {
-        font-size: 8pt;
+        font-size: 7pt;
         color: #999;
-        margin-top: 3px;
+        margin-top: 2px;
     }
     
     .charts-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 12px;
+        margin-bottom: 15px;
+        page-break-inside: avoid;
     }
     
     .chart-box {
         border: 1px solid #ddd;
-        padding: 12px;
+        padding: 10px;
         border-radius: 4px;
+        page-break-inside: avoid;
     }
     
     .chart-box h5 {
-        font-size: 11pt;
+        font-size: 10pt;
         font-weight: bold;
         color: #333;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
+        padding-bottom: 6px;
     }
     
     .chart-container {
         position: relative;
-        height: 280px;
+        height: 200px;
     }
     
     .tabla-facturas {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 15px;
-        font-size: 10pt;
+        margin-top: 12px;
+        font-size: 9pt;
+        page-break-inside: avoid;
     }
     
     .tabla-facturas thead {
@@ -121,14 +128,15 @@
     }
     
     .tabla-facturas th {
-        padding: 8px;
+        padding: 6px;
         text-align: left;
         font-weight: bold;
         border: 1px solid #ddd;
+        font-size: 8pt;
     }
     
     .tabla-facturas td {
-        padding: 8px;
+        padding: 6px;
         border: 1px solid #ddd;
     }
     
@@ -139,6 +147,7 @@
     .tabla-facturas tfoot tr {
         background-color: #ecf0f1;
         font-weight: bold;
+        font-size: 9pt;
     }
     
     .text-right {
@@ -146,25 +155,26 @@
     }
     
     .seccion-titulo {
-        font-size: 11pt;
+        font-size: 10pt;
         font-weight: bold;
         color: #333;
-        margin: 20px 0 10px 0;
-        padding-bottom: 5px;
+        margin: 12px 0 8px 0;
+        padding-bottom: 4px;
         border-bottom: 1px solid #ddd;
+        page-break-inside: avoid;
     }
     
     .footer {
-        margin-top: 30px;
-        padding-top: 15px;
+        margin-top: 15px;
+        padding-top: 10px;
         border-top: 1px solid #ddd;
         text-align: center;
-        font-size: 9pt;
+        font-size: 8pt;
         color: #999;
     }
     
     .footer p {
-        margin: 3px 0;
+        margin: 2px 0;
     }
     
     @media print {
@@ -183,9 +193,8 @@
         }
     }
 </style>
-{% endblock %}
-
-{% block page_content %}
+</head>
+<body>
 <div class="reporte-container">
     <!-- Header -->
     <div class="header">
@@ -299,11 +308,8 @@
             Archivo: {{ nombre_clinica|upper }}_REPFACTURACION_{{ fecha_reporte_display|date:"Ymd" }}.pdf
         </p>
     </div>
-</div>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script>
+</body>
+</html>
 document.addEventListener('DOMContentLoaded', function() {
     // Cambiar el título del documento para nombre del archivo
     const nombreArchivo = '{{ nombre_clinica }}_RepFacturacion_{{ fecha_reporte_display|date:"Y-m-d" }}'.replace(/[/:]/g, '-').replace(/\s+/g, '_');
@@ -372,5 +378,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
 </script>
-
-{% endblock %}
+</body>
+</html>
