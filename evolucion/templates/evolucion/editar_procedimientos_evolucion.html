@@ -96,56 +96,65 @@ $(document).ready(function() {
     const prefix = '{{ formset.prefix }}';
     let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
 
-    // Initialize Select2 sin configuraciones complicadas
-    $('.select2').select2({
+    // Configuración Select2 con búsqueda
+    const select2Opts = {
         theme: "bootstrap",
         width: '100%',
-        placeholder: 'Buscar procedimiento...'
+        placeholder: 'Buscar procedimiento...',
+        language: {
+            noResults: function() { return "No se encontraron resultados"; },
+            searching: function() { return "Buscando..."; }
+        }
+    };
+
+    // Initialize Select2
+    $('.select2').each(function() {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+            $(this).select2(select2Opts);
+        }
     });
 
-    $('#add-procedimiento').on('click', function(e) {
+    // Agregar procedimiento
+    $('#add-procedimiento').click(function(e) {
         e.preventDefault();
         
-        // Clonar la primera fila como template
-        const $firstRow = $('#procedimientos-table tbody tr:first');
-        const $newRow = $firstRow.clone();
+        const $firstRow = $('#procedimientos-table tbody tr').first();
+        const $newRow = $firstRow.clone(true);
         
         // Limpiar valores
-        $newRow.find('input[type="text"], input[type="number"], textarea').val('');
+        $newRow.find('input[type="hidden"]').val('');
+        $newRow.find('input[type="number"]').val('1');
+        $newRow.find('textarea').val('');
         $newRow.find('input[type="checkbox"]').prop('checked', false);
-        $newRow.find('select').val('').trigger('change');
+        
+        // Limpiar Select2
+        $newRow.find('.select2-container').remove();
+        $newRow.find('select').removeClass('select2-hidden-accessible')
+            .removeAttr('data-select2-id aria-hidden tabindex');
         
         // Actualizar IDs y names
         $newRow.find('input, select, textarea').each(function() {
-            const $field = $(this);
-            const name = $field.attr('name');
-            const id = $field.attr('id');
+            let name = $(this).attr('name');
+            let id = $(this).attr('id');
             
-            if (name) {
-                $field.attr('name', name.replace(/\d+/, totalForms));
+            if (name && name.includes(prefix)) {
+                $(this).attr('name', name.replace(/-\d+-/, '-' + totalForms + '-'));
             }
-            if (id) {
-                $field.attr('id', id.replace(/\d+/, totalForms));
+            if (id && id.includes(prefix)) {
+                $(this).attr('id', id.replace(/-\d+-/, '-' + totalForms + '-'));
             }
         });
         
-        // Destruir Select2 de la fila clonada y reinicializarlo
-        $newRow.find('.select2-container').remove();
-        const $select = $newRow.find('select');
-        $select.removeClass('select2-hidden-accessible');
-        
+        // Agregar fila
         $('#procedimientos-table tbody').append($newRow);
         
-        // Inicializar Select2 en el nuevo select
-        $select.select2({
-            theme: "bootstrap",
-            width: '100%',
-            placeholder: 'Buscar procedimiento...'
-        });
+        // Inicializar Select2 en nuevo select
+        $newRow.find('select').val('').select2(select2Opts);
         
-        totalForms += 1;
+        totalForms++;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
     });
+});
 </script>
 <style>
 /* Tabla scrollable sin restricciones para dropdown */
