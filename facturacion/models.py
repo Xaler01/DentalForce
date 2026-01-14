@@ -246,7 +246,7 @@ class Factura(ClaseModelo):
     
     def tiene_pagos(self):
         """Retorna True si la factura tiene al menos un pago registrado"""
-        return self.pago_set.exists()
+        return self.pagos.exists()
     
     def puede_editar_items(self):
         """

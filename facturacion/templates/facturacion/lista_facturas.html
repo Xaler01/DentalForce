@@ -137,7 +137,7 @@
                         <tr>
                             <td><strong>{{ factura.numero_factura }}</strong></td>
                             <td>{{ factura.fecha_emision|date:"d/m/Y" }}</td>
-                            <td>{{ factura.paciente.nombre_completo }}</td>
+                            <td>{{ factura.paciente.apellidos }}, {{ factura.paciente.nombres }}</td>
                             <td>${{ factura.subtotal|floatformat:2 }}</td>
                             <td>${{ factura.iva_monto|floatformat:2 }}</td>
                             <td><strong>${{ factura.total|floatformat:2 }}</strong></td>
