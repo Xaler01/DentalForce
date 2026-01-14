@@ -238,12 +238,42 @@ function eliminarItem(itemId) {
                     });
                 },
                 error: function(xhr) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Error: ' + (xhr.responseJSON?.error || 'Error al eliminar'),
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
+                    const response = xhr.responseJSON || {};
+                    
+                    // ✅ Manejo especial para bloqueo por pagos
+                    if (response.error === 'bloqueado') {
+                        Swal.fire({
+                            title: response.titulo,
+                            html: `
+                                <div style="text-align: left; padding: 20px;">
+                                    <p><strong>⚠️ ${response.mensaje}</strong></p>
+                                    <p style="margin-top: 15px; font-size: 14px;">
+                                        <strong>Monto Pagado:</strong> $${response.monto_pagado}
+                                    </p>
+                                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 3px;">
+                                        <p style="margin: 0; font-size: 13px;">
+                                            💡 <strong>Solución:</strong><br>
+                                            ${response.detalle}
+                                        </p>
+                                    </div>
+                                    <p style="margin-top: 15px; font-size: 12px; color: #7f8c8d;">
+                                        Para cambios en facturas pagadas, contacte con administración para anular y crear una nueva factura.
+                                    </p>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#3498db'
+                        });
+                    } else {
+                        // Error normal
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Error: ' + (response.error || 'Error al eliminar'),
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
             });
         }

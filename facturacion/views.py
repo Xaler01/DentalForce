@@ -172,6 +172,8 @@ def nueva_factura(request):
 def editar_items_factura(request, pk):
     """
     Permite agregar/editar items de una factura
+    
+    VALIDACIÓN CRÍTICA: No permite editar items si hay pagos registrados
     """
     clinica = get_clinica_from_request(request)
     
@@ -188,6 +190,15 @@ def editar_items_factura(request, pk):
     # Solo permitir editar facturas pendientes
     if factura.estado != Factura.ESTADO_PENDIENTE:
         messages.warning(request, "Solo se pueden editar facturas pendientes")
+        return redirect('facturacion:detalle', pk=pk)
+    
+    # ✅ VALIDACIÓN CRÍTICA: Bloquear si hay pagos
+    if not factura.puede_editar_items():
+        messages.warning(
+            request, 
+            f"⚠️ No se pueden editar items después de registrar pagos. "
+            f"Monto pagado: ${factura.total_pagado:.2f}"
+        )
         return redirect('facturacion:detalle', pk=pk)
     
     if request.method == 'POST':
@@ -227,6 +238,8 @@ def editar_items_factura(request, pk):
 def eliminar_item_factura(request, factura_pk, item_pk):
     """
     Elimina un item de la factura
+    
+    VALIDACIÓN CRÍTICA: No permite eliminar items si hay pagos registrados
     """
     clinica = get_clinica_from_request(request)
     
@@ -240,6 +253,16 @@ def eliminar_item_factura(request, factura_pk, item_pk):
     
     if factura.estado != Factura.ESTADO_PENDIENTE:
         return JsonResponse({'error': 'Solo se pueden editar facturas pendientes'}, status=403)
+    
+    # ✅ VALIDACIÓN CRÍTICA: Bloquear si hay pagos
+    if not factura.puede_editar_items():
+        return JsonResponse({
+            'error': 'bloqueado',
+            'titulo': '⚠️ Factura Bloqueada',
+            'mensaje': f'No se pueden editar items después de registrar pagos.',
+            'monto_pagado': f'{factura.total_pagado:.2f}',
+            'detalle': 'Esta factura tiene pagos registrados. Para realizar cambios, debe anular la factura y crear una nueva.'
+        }, status=403)
     
     try:
         item = ItemFactura.objects.get(pk=item_pk, factura=factura)

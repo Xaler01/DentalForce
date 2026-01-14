@@ -241,6 +241,25 @@ class Factura(ClaseModelo):
             )
         
         super().save(*args, **kwargs)
+    
+    # ==================== MÉTODOS DE VALIDACIÓN PARA EDICIÓN ====================
+    
+    def tiene_pagos(self):
+        """Retorna True si la factura tiene al menos un pago registrado"""
+        return self.pago_set.exists()
+    
+    def puede_editar_items(self):
+        """
+        Retorna True si se pueden editar/eliminar items
+        Solo permite edición si NO hay pagos registrados
+        """
+        return not self.tiene_pagos()
+    
+    def obtener_motivo_bloqueo(self):
+        """Retorna una descripción del motivo por el que está bloqueada"""
+        if self.tiene_pagos():
+            return f"No se pueden editar items después de registrar pagos. Monto pagado: ${self.total_pagado:.2f}"
+        return None
 
 
 class ItemFactura(ClaseModelo):
