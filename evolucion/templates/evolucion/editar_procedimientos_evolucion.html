@@ -28,8 +28,6 @@
                 
                 {{ formset.management_form }}
                 
-                <div id="select2-dropdown-container"></div>
-                
                 <div class="table-responsive">
                     <table class="table table-bordered" id="procedimientos-table">
                         <thead class="bg-light">
@@ -101,8 +99,8 @@ $(document).ready(function() {
         width: '100%',
         placeholder: 'Buscar procedimiento...',
         allowClear: false,
-        dropdownAutoWidth: false,
-        dropdownParent: $('#select2-dropdown-container'),
+        dropdownAutoWidth: true,
+        dropdownParent: $('body'),
         language: {
             noResults: function() {
                 return "No se encontraron resultados";
@@ -113,6 +111,15 @@ $(document).ready(function() {
         }
     };
     $('.select2').select2(select2Opts);
+    
+    // Manejar overflow cuando se abre/cierra el dropdown
+    $(document).on('select2:open', '.select2', function() {
+        $('.table-responsive').addClass('select2-open');
+    });
+    
+    $(document).on('select2:close', '.select2', function() {
+        $('.table-responsive').removeClass('select2-open');
+    });
 
     const prefix = '{{ formset.prefix }}';
     let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
@@ -182,26 +189,18 @@ $(document).ready(function() {
 });
 </script>
 <style>
-/* Contenedor para dropdown de Select2 fuera del overflow */
-#select2-dropdown-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 9999;
-    pointer-events: none;
-}
-
-#select2-dropdown-container .select2-dropdown {
-    position: absolute !important;
-    pointer-events: auto;
-}
-
 /* Tabla scrollable con altura máxima */
 .table-responsive {
     max-height: 500px;
     overflow-y: auto;
+    overflow-x: hidden;
     border: 1px solid #dee2e6;
     border-radius: 0.25rem;
+}
+
+/* Permitir que dropdown salga del contenedor */
+.table-responsive.select2-open {
+    overflow: visible;
 }
 
 /* Fijar cabecera de tabla */
