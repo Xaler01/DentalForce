@@ -13,7 +13,7 @@ from django.utils import timezone
 from bases.models import ClaseModelo
 from pacientes.models import Paciente
 from clinicas.models import Clinica, Sucursal
-from cit.models import Cita
+from cit.models import Cita, Dentista
 from procedimientos.models import ProcedimientoOdontologico
 
 
@@ -242,6 +242,104 @@ class Factura(ClaseModelo):
         
         super().save(*args, **kwargs)
     
+class ServicioPendienteManager(models.Manager):
+    """Manager para filtrar servicios pendientes por clínica y paciente"""
+
+    def para_clinica(self, clinica_id):
+        return self.filter(clinica_id=clinica_id)
+
+    def para_paciente(self, paciente_id):
+        return self.filter(paciente_id=paciente_id)
+
+
+class ServicioPendiente(ClaseModelo):
+    """
+    Tracking de servicios realizados por el odontólogo y pendientes de facturar.
+    Vincula evoluciones/procedimientos realizados con ítems de factura.
+    """
+
+    # Relaciones
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name='servicios_pendientes'
+    )
+    clinica = models.ForeignKey(
+        Clinica,
+        on_delete=models.PROTECT,
+        related_name='servicios_pendientes'
+    )
+    dentista = models.ForeignKey(
+        Dentista,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='servicios_realizados'
+    )
+
+    # Servicio realizado
+    procedimiento = models.ForeignKey(
+        ProcedimientoOdontologico,
+        on_delete=models.PROTECT,
+        related_name='servicios_pendientes'
+    )
+    fecha_realizacion = models.DateField(default=timezone.now)
+    cantidad_realizada = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    descripcion = models.TextField(blank=True)
+
+    # Facturación
+    cantidad_facturada = models.PositiveIntegerField(default=0)
+    items_factura = models.ManyToManyField(
+        'facturacion.ItemFactura',
+        blank=True,
+        related_name='servicios_asociados'
+    )
+
+    # Estado
+    ESTADO_PENDIENTE = 'PEN'
+    ESTADO_PARCIAL = 'PAR'
+    ESTADO_FACTURADO = 'FAC'
+    ESTADO_ANULADO = 'ANU'
+    ESTADOS_CHOICES = [
+        (ESTADO_PENDIENTE, 'Pendiente de Facturación'),
+        (ESTADO_PARCIAL, 'Parcialmente Facturado'),
+        (ESTADO_FACTURADO, 'Completamente Facturado'),
+        (ESTADO_ANULADO, 'Anulado'),
+    ]
+    estado = models.CharField(max_length=3, choices=ESTADOS_CHOICES, default=ESTADO_PENDIENTE)
+
+    # Manager
+    objects = ServicioPendienteManager()
+
+    class Meta:
+        verbose_name = 'Servicio Pendiente'
+        verbose_name_plural = 'Servicios Pendientes'
+        ordering = ['-fecha_realizacion', '-id']
+        indexes = [
+            models.Index(fields=['paciente', 'clinica']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['fecha_realizacion']),
+        ]
+
+    def __str__(self):
+        return f"{self.procedimiento} x{self.cantidad_realizada} - {self.paciente}"
+
+    @property
+    def cantidad_disponible(self):
+        return max(0, self.cantidad_realizada - self.cantidad_facturada)
+
+    def puede_facturar(self, cantidad=1):
+        return self.cantidad_disponible >= cantidad
+
+    def actualizar_estado(self):
+        if self.cantidad_facturada <= 0:
+            self.estado = self.ESTADO_PENDIENTE
+        elif self.cantidad_facturada < self.cantidad_realizada:
+            self.estado = self.ESTADO_PARCIAL
+        else:
+            self.estado = self.ESTADO_FACTURADO
+        self.save(update_fields=['estado'])
+
     # ==================== MÉTODOS DE VALIDACIÓN PARA EDICIÓN ====================
     
     def tiene_pagos(self):
@@ -337,9 +435,57 @@ class ItemFactura(ClaseModelo):
         return self.total
     
     def save(self, *args, **kwargs):
-        """Calcula total y actualiza factura"""
+        """Calcula total, actualiza factura y vincula con ServicioPendiente"""
         self.calcular_total()
+        is_new = self.pk is None
+        cantidad_a_facturar = self.cantidad
+        
         super().save(*args, **kwargs)
+        
+        # Recalcular totales de la factura
+        self.factura.calcular_totales()
+        
+        # Si es nuevo item, vincular con ServicioPendiente y actualizar cantidad facturada
+        if is_new:
+            servicios = ServicioPendiente.objects.filter(
+                paciente=self.factura.paciente,
+                procedimiento=self.procedimiento
+            ).exclude(estado=ServicioPendiente.ESTADO_ANULADO).order_by('fecha_realizacion')
+            
+            cantidad_restante = cantidad_a_facturar
+            for servicio in servicios:
+                if cantidad_restante <= 0:
+                    break
+                
+                disponible = servicio.cantidad_disponible
+                if disponible > 0:
+                    facturar = min(disponible, cantidad_restante)
+                    servicio.cantidad_facturada += facturar
+                    servicio.actualizar_estado()
+                    servicio.save()  # CRÍTICO: Guardar los cambios
+                    cantidad_restante -= facturar
+    
+    def delete(self, *args, **kwargs):
+        """Al eliminar item, revertir cantidad facturada en ServicioPendiente"""
+        # Obtener servicios vinculados antes de eliminar
+        servicios = ServicioPendiente.objects.filter(
+            paciente=self.factura.paciente,
+            procedimiento=self.procedimiento,
+            cantidad_facturada__gt=0
+        ).exclude(estado=ServicioPendiente.ESTADO_ANULADO).order_by('-fecha_realizacion')
+        
+        cantidad_a_devolver = self.cantidad
+        for servicio in servicios:
+            if cantidad_a_devolver <= 0:
+                break
+            
+            devolver = min(servicio.cantidad_facturada, cantidad_a_devolver)
+            servicio.cantidad_facturada -= devolver
+            servicio.actualizar_estado()
+            servicio.save()  # CRÍTICO: Guardar los cambios
+            cantidad_a_devolver -= devolver
+        
+        super().delete(*args, **kwargs)
         
         # Recalcular totales de la factura
         self.factura.calcular_totales()

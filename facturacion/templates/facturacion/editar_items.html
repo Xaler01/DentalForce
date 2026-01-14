@@ -143,6 +143,14 @@
                     <small class="form-text text-muted">
                         Seleccione un procedimiento o agregue una descripción personalizada
                     </small>
+                    <div id="cantidad-disponible-info" class="mt-2" style="display: none;">
+                        <div class="alert alert-info mb-0">
+                            <strong>📊 Información del Tratamiento:</strong><br>
+                            <span id="info-realizada"></span><br>
+                            <span id="info-facturada"></span><br>
+                            <span id="info-disponible" style="font-size: 1.1em;"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -167,6 +175,9 @@
                             {{ form.cantidad.errors }}
                         </div>
                         {% endif %}
+                        <small class="form-text text-muted" id="hint-cantidad">
+                            Cantidad a facturar
+                        </small>
                     </div>
 
                     <div class="form-group col-md-4">
@@ -210,6 +221,65 @@
 </div>
 
 <script>
+// Obtener cantidad disponible al cambiar procedimiento
+$(document).ready(function() {
+    const pacienteId = {{ factura.paciente.id }};
+    
+    $('#id_procedimiento').on('change', function() {
+        const procedimientoId = $(this).val();
+        const $infoDiv = $('#cantidad-disponible-info');
+        const $cantidadInput = $('#id_cantidad');
+        const $hintCantidad = $('#hint-cantidad');
+        
+        if (!procedimientoId) {
+            $infoDiv.hide();
+            $hintCantidad.text('Cantidad a facturar');
+            return;
+        }
+        
+        // Llamar al endpoint AJAX
+        $.ajax({
+            url: '{% url "facturacion:api_cantidad_disponible" %}',
+            type: 'GET',
+            data: {
+                'procedimiento_id': procedimientoId,
+                'paciente_id': pacienteId
+            },
+            success: function(data) {
+                if (data.servicios_count > 0) {
+                    // Mostrar información
+                    $('#info-realizada').html(`✅ <strong>Realizada:</strong> ${data.realizada} unidad(es)`);
+                    $('#info-facturada').html(`💰 <strong>Ya facturada:</strong> ${data.facturada} unidad(es)`);
+                    $('#info-disponible').html(`🔵 <strong>Disponible para facturar:</strong> ${data.disponible} unidad(es)`);
+                    
+                    $infoDiv.show();
+                    
+                    // Actualizar hint y máximo en cantidad
+                    $hintCantidad.html(`<strong>Máximo disponible: ${data.disponible}</strong>`);
+                    $cantidadInput.attr('max', data.disponible);
+                    
+                    // Si disponible es 0, mostrar advertencia
+                    if (data.disponible === 0) {
+                        $infoDiv.find('.alert').removeClass('alert-info').addClass('alert-warning');
+                        $('#info-disponible').html(`⚠️ <strong>No hay unidades disponibles para facturar</strong>`);
+                    } else {
+                        $infoDiv.find('.alert').removeClass('alert-warning').addClass('alert-info');
+                    }
+                } else {
+                    // No hay servicios pendientes registrados
+                    $infoDiv.hide();
+                    $hintCantidad.text('Cantidad a facturar');
+                    $cantidadInput.removeAttr('max');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al obtener cantidad disponible:', xhr);
+                $infoDiv.hide();
+            }
+        });
+    });
+});
+
 function eliminarItem(itemId) {
     Swal.fire({
         title: '¿Eliminar Item?',

@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from .models import Factura, ItemFactura, Pago
+from .models import Factura, ItemFactura, Pago, ServicioPendiente
 from .forms import FacturaForm, ItemFacturaForm, PagoForm, BuscarFacturaForm
 from . import services
 from pacientes.models import Paciente
@@ -83,6 +83,40 @@ def lista_facturas(request):
     }
     
     return render(request, 'facturacion/lista_facturas.html', context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def obtener_cantidad_disponible(request):
+    """
+    AJAX endpoint: Retorna cantidad disponible de un procedimiento para un paciente.
+    Suma cantidad_disponible de todos los ServicioPendiente que coincidan.
+    """
+    procedimiento_id = request.GET.get('procedimiento_id')
+    paciente_id = request.GET.get('paciente_id')
+    
+    if not procedimiento_id or not paciente_id:
+        return JsonResponse({'error': 'Faltan parámetros'}, status=400)
+    
+    try:
+        servicios = ServicioPendiente.objects.filter(
+            paciente_id=paciente_id,
+            procedimiento_id=procedimiento_id
+        ).exclude(estado=ServicioPendiente.ESTADO_ANULADO)
+        
+        disponible_total = sum(sp.cantidad_disponible for sp in servicios)
+        realizada_total = sum(sp.cantidad_realizada for sp in servicios)
+        facturada_total = sum(sp.cantidad_facturada for sp in servicios)
+        
+        return JsonResponse({
+            'disponible': disponible_total,
+            'realizada': realizada_total,
+            'facturada': facturada_total,
+            'servicios_count': servicios.count()
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -280,6 +314,40 @@ def eliminar_item_factura(request, factura_pk, item_pk):
     
     except ItemFactura.DoesNotExist:
         return JsonResponse({'error': 'Item no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def obtener_cantidad_disponible(request):
+    """
+    AJAX endpoint: Retorna cantidad disponible de un procedimiento para un paciente.
+    Suma cantidad_disponible de todos los ServicioPendiente que coincidan.
+    """
+    procedimiento_id = request.GET.get('procedimiento_id')
+    paciente_id = request.GET.get('paciente_id')
+    
+    if not procedimiento_id or not paciente_id:
+        return JsonResponse({'error': 'Faltan parámetros'}, status=400)
+    
+    try:
+        servicios = ServicioPendiente.objects.filter(
+            paciente_id=paciente_id,
+            procedimiento_id=procedimiento_id
+        ).exclude(estado=ServicioPendiente.ESTADO_ANULADO)
+        
+        disponible_total = sum(sp.cantidad_disponible for sp in servicios)
+        realizada_total = sum(sp.cantidad_realizada for sp in servicios)
+        facturada_total = sum(sp.cantidad_facturada for sp in servicios)
+        
+        return JsonResponse({
+            'disponible': disponible_total,
+            'realizada': realizada_total,
+            'facturada': facturada_total,
+            'servicios_count': servicios.count()
+        })
+    
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 

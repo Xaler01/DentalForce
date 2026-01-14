@@ -29,4 +29,5 @@ urlpatterns = [
     
     # AJAX
     path('api/citas-paciente/', views.obtener_citas_paciente, name='api_citas_paciente'),
+    path('api/cantidad-disponible/', views.obtener_cantidad_disponible, name='api_cantidad_disponible'),
 ]

@@ -101,7 +101,7 @@
                             <td>{{ evolucion.paciente.cedula }}</td>
                             <td>
                                 {% if evolucion.dentista %}
-                                    {{ evolucion.dentista.user.first_name }} {{ evolucion.dentista.user.last_name }}
+                                    {{ evolucion.dentista.usuario.get_full_name|default:evolucion.dentista.usuario.username }}
                                 {% else %}
                                     <span class="text-muted">-</span>
                                 {% endif %}

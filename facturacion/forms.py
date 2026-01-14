@@ -7,7 +7,7 @@ items de factura y pagos con validación multi-tenant.
 from django import forms
 from django.core.exceptions import ValidationError
 from decimal import Decimal
-from .models import Factura, ItemFactura, Pago
+from .models import Factura, ItemFactura, Pago, ServicioPendiente
 from pacientes.models import Paciente
 from procedimientos.models import ProcedimientoOdontologico
 
@@ -154,6 +154,7 @@ class ItemFacturaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         factura = kwargs.pop('factura', None)
         super().__init__(*args, **kwargs)
+        self.factura = factura
         
         # Hacer descripción opcional (se llena desde procedimiento)
         self.fields['descripcion'].required = False
@@ -223,6 +224,19 @@ class ItemFacturaForm(forms.ModelForm):
             # Asumiendo que ProcedimientoOdontologico tiene un campo precio
             if hasattr(procedimiento, 'precio_base'):
                 cleaned_data['precio_unitario'] = procedimiento.precio_base
+        
+        # Validación de sobre-facturación contra Servicios Pendientes
+        cantidad = cleaned_data.get('cantidad')
+        if self.factura and procedimiento and cantidad:
+            servicios = ServicioPendiente.objects.filter(
+                paciente=self.factura.paciente,
+                procedimiento=procedimiento
+            ).exclude(estado=ServicioPendiente.ESTADO_ANULADO)
+            disponible_total = sum(sp.cantidad_disponible for sp in servicios)
+            if cantidad > disponible_total:
+                raise ValidationError(
+                    f"La cantidad ({cantidad}) excede lo disponible ({disponible_total}) para este procedimiento."
+                )
         
         return cleaned_data
 
