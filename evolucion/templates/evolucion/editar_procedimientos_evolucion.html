@@ -99,8 +99,6 @@ $(document).ready(function() {
         width: '100%',
         placeholder: 'Buscar procedimiento...',
         allowClear: false,
-        dropdownAutoWidth: true,
-        dropdownParent: $('body'),
         language: {
             noResults: function() {
                 return "No se encontraron resultados";
@@ -110,15 +108,24 @@ $(document).ready(function() {
             }
         }
     };
+    
+    // Inicializar Select2 existentes
     $('.select2').select2(select2Opts);
     
     // Manejar overflow cuando se abre/cierra el dropdown
-    $(document).on('select2:open', '.select2', function() {
-        $('.table-responsive').addClass('select2-open');
+    $(document).on('select2:open', function(e) {
+        const $tableResponsive = $(e.target).closest('.table-responsive');
+        if ($tableResponsive.length) {
+            $tableResponsive.css('overflow', 'visible');
+        }
     });
     
-    $(document).on('select2:close', '.select2', function() {
-        $('.table-responsive').removeClass('select2-open');
+    $(document).on('select2:close', function(e) {
+        const $tableResponsive = $(e.target).closest('.table-responsive');
+        if ($tableResponsive.length) {
+            $tableResponsive.css('overflow-y', 'auto');
+            $tableResponsive.css('overflow-x', 'hidden');
+        }
     });
 
     const prefix = '{{ formset.prefix }}';
@@ -198,9 +205,13 @@ $(document).ready(function() {
     border-radius: 0.25rem;
 }
 
-/* Permitir que dropdown salga del contenedor */
-.table-responsive.select2-open {
-    overflow: visible;
+/* Asegurar que dropdown de Select2 tenga z-index alto */
+.select2-container {
+    z-index: 1050;
+}
+
+.select2-dropdown {
+    z-index: 1051;
 }
 
 /* Fijar cabecera de tabla */
@@ -208,7 +219,7 @@ $(document).ready(function() {
     position: sticky;
     top: 0;
     background-color: #f8f9fa;
-    z-index: 10;
+    z-index: 5;
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
