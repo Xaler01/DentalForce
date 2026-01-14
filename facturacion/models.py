@@ -234,11 +234,11 @@ class Factura(ClaseModelo):
         if not self.numero_factura:
             self.generar_numero_factura()
         
-        # Validar que paciente y clinica coincidan
-        if self.paciente.clinica_id != self.clinica_id:
-            raise ValueError(
-                f"El paciente {self.paciente} no pertenece a la clínica {self.clinica}"
-            )
+        # Validar y corregir que paciente y clinica coincidan
+        if self.paciente and self.paciente.clinica_id and self.clinica_id:
+            if self.paciente.clinica_id != self.clinica_id:
+                # Corrige la clínica para evitar errores en facturas heredadas
+                self.clinica = self.paciente.clinica
         
         super().save(*args, **kwargs)
     
