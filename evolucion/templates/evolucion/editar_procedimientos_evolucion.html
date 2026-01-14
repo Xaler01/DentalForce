@@ -28,6 +28,8 @@
                 
                 {{ formset.management_form }}
                 
+                <div id="select2-dropdown-container"></div>
+                
                 <div class="table-responsive">
                     <table class="table table-bordered" id="procedimientos-table">
                         <thead class="bg-light">
@@ -100,6 +102,7 @@ $(document).ready(function() {
         placeholder: 'Buscar procedimiento...',
         allowClear: false,
         dropdownAutoWidth: false,
+        dropdownParent: $('#select2-dropdown-container'),
         language: {
             noResults: function() {
                 return "No se encontraron resultados";
@@ -179,6 +182,20 @@ $(document).ready(function() {
 });
 </script>
 <style>
+/* Contenedor para dropdown de Select2 fuera del overflow */
+#select2-dropdown-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+#select2-dropdown-container .select2-dropdown {
+    position: absolute !important;
+    pointer-events: auto;
+}
+
 /* Tabla scrollable con altura máxima */
 .table-responsive {
     max-height: 500px;
