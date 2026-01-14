@@ -118,8 +118,9 @@ $(document).ready(function() {
     $('#add-procedimiento').click(function(e) {
         e.preventDefault();
         
+        // NO clonar - usar fresh select para evitar conflictos de Select2
         const $firstRow = $('#procedimientos-table tbody tr').first();
-        const $newRow = $firstRow.clone(true);
+        const $newRow = $firstRow.clone(false); // false = NO copiar event handlers
         
         // Limpiar valores
         $newRow.find('input[type="hidden"]').val('');
@@ -127,10 +128,16 @@ $(document).ready(function() {
         $newRow.find('textarea').val('');
         $newRow.find('input[type="checkbox"]').prop('checked', false);
         
-        // Limpiar Select2
+        // IMPORTANTE: Destruir completamente Select2 del clone
         $newRow.find('.select2-container').remove();
-        $newRow.find('select').removeClass('select2-hidden-accessible')
+        const $select = $newRow.find('select');
+        $select.removeClass('select2-hidden-accessible')
+            .removeData('select2')
+            .off('select2:*')
             .removeAttr('data-select2-id aria-hidden tabindex');
+        
+        // Limpiar options attributes también
+        $select.find('option').removeAttr('data-select2-id');
         
         // Actualizar IDs y names
         $newRow.find('input, select, textarea').each(function() {
@@ -148,8 +155,8 @@ $(document).ready(function() {
         // Agregar fila
         $('#procedimientos-table tbody').append($newRow);
         
-        // Inicializar Select2 en nuevo select
-        $newRow.find('select').val('').select2(select2Opts);
+        // Inicializar Select2 COMPLETAMENTE NUEVO
+        $select.val('').select2(select2Opts);
         
         totalForms++;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
