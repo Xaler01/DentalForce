@@ -99,6 +99,7 @@ $(document).ready(function() {
         width: '100%',
         placeholder: 'Buscar procedimiento...',
         allowClear: false,
+        dropdownAutoWidth: false,
         language: {
             noResults: function() {
                 return "No se encontraron resultados";
@@ -113,37 +114,63 @@ $(document).ready(function() {
     const prefix = '{{ formset.prefix }}';
     let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
 
-    // Template for empty form
-    const emptyFormHtml = `
-    <tr class="formset-row">
-        ${`{{ formset.empty_form.id|escapejs }}`}
-            ${`{{ formset.empty_form.evolucion|default:''|escapejs }}`}
-        <td class="procedimiento-cell">
-            ${`{{ formset.empty_form.procedimiento|escapejs }}`}
-        </td>
-        <td>
-            ${`{{ formset.empty_form.cantidad|escapejs }}`}
-        </td>
-        <td>
-            ${`{{ formset.empty_form.observaciones|escapejs }}`}
-        </td>
-        <td class="text-center">
-            ${`{{ formset.empty_form.DELETE|escapejs }}`}
-        </td>
-    </tr>`;
+    function getEmptyFormRow() {
+        const form = `{{ formset.empty_form|escapejs }}`;
+        const newForm = form.replace(/__prefix__/g, totalForms);
+        return newForm;
+    }
 
     $('#add-procedimiento').on('click', function(e) {
         e.preventDefault();
         
-        const newForm = emptyFormHtml.replace(/__prefix__/g, totalForms);
-        $('#procedimientos-table tbody').append(newForm);
+        // Get the empty form HTML
+        const emptyFormRow = getEmptyFormRow();
+        
+        // Create a temporary div to parse HTML
+        const $tempDiv = $('<div>').html(emptyFormRow);
+        
+        // Extract only the tbody row
+        const $newRow = $tempDiv.find('tr').first();
+        
+        if ($newRow.length === 0) {
+            // Fallback: manually create the row structure
+            const selectId = `id_${prefix}-${totalForms}-procedimiento`;
+            const cantidadId = `id_${prefix}-${totalForms}-cantidad`;
+            const obsId = `id_${prefix}-${totalForms}-observaciones`;
+            const deleteId = `id_${prefix}-${totalForms}-DELETE`;
+            
+            const $newRow = $(`
+                <tr class="formset-row">
+                    <input type="hidden" id="id_${prefix}-${totalForms}-id" name="${prefix}-${totalForms}-id">
+                    <input type="hidden" id="id_${prefix}-${totalForms}-evolucion" name="${prefix}-${totalForms}-evolucion">
+                    <td class="procedimiento-cell">
+                        <select id="${selectId}" name="${prefix}-${totalForms}-procedimiento" class="form-control select2"></select>
+                    </td>
+                    <td>
+                        <input type="number" id="${cantidadId}" name="${prefix}-${totalForms}-cantidad" min="1" value="1" class="form-control">
+                    </td>
+                    <td>
+                        <textarea id="${obsId}" name="${prefix}-${totalForms}-observaciones" class="form-control" rows="2"></textarea>
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" id="${deleteId}" name="${prefix}-${totalForms}-DELETE">
+                    </td>
+                </tr>
+            `);
+        }
+        
+        $('#procedimientos-table tbody').append($newRow);
         
         // Init select2 for the newly added select
         const selectId = `id_${prefix}-${totalForms}-procedimiento`;
-        const newSelect = $(`#${selectId}`);
+        const $newSelect = $(`#${selectId}`);
         
-        if (newSelect.length > 0) {
-            newSelect.select2(select2Opts);
+        if ($newSelect.length > 0) {
+            // Clear any existing Select2 instance
+            if ($newSelect.data('select2')) {
+                $newSelect.select2('destroy');
+            }
+            $newSelect.select2(select2Opts);
         }
         
         totalForms += 1;
@@ -207,6 +234,15 @@ $(document).ready(function() {
 /* Limitar altura del dropdown */
 .select2-results__options {
     max-height: 300px;
+}
+
+/* Z-index alto para dropdown */
+.select2-container--open {
+    z-index: 9999 !important;
+}
+
+.select2-dropdown {
+    z-index: 9999 !important;
 }
 
 /* Mejorar alineación de tabla */
