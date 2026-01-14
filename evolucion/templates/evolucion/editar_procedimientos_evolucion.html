@@ -93,125 +93,68 @@
 {% block js_page %}
 <script>
 $(document).ready(function() {
-    // Initialize Select2 con búsqueda habilitada
-    const select2Opts = { 
-        theme: "bootstrap",
-        width: '100%',
-        placeholder: 'Buscar procedimiento...',
-        allowClear: false,
-        language: {
-            noResults: function() {
-                return "No se encontraron resultados";
-            },
-            searching: function() {
-                return "Buscando...";
-            }
-        }
-    };
-    
-    // Inicializar Select2 existentes
-    $('.select2').select2(select2Opts);
-    
-    // Manejar overflow cuando se abre/cierra el dropdown
-    $(document).on('select2:open', function(e) {
-        const $tableResponsive = $(e.target).closest('.table-responsive');
-        if ($tableResponsive.length) {
-            $tableResponsive.css('overflow', 'visible');
-        }
-    });
-    
-    $(document).on('select2:close', function(e) {
-        const $tableResponsive = $(e.target).closest('.table-responsive');
-        if ($tableResponsive.length) {
-            $tableResponsive.css('overflow-y', 'auto');
-            $tableResponsive.css('overflow-x', 'hidden');
-        }
-    });
-
     const prefix = '{{ formset.prefix }}';
     let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
 
-    function getEmptyFormRow() {
-        const form = `{{ formset.empty_form|escapejs }}`;
-        const newForm = form.replace(/__prefix__/g, totalForms);
-        return newForm;
-    }
+    // Initialize Select2 sin configuraciones complicadas
+    $('.select2').select2({
+        theme: "bootstrap",
+        width: '100%',
+        placeholder: 'Buscar procedimiento...'
+    });
 
     $('#add-procedimiento').on('click', function(e) {
         e.preventDefault();
         
-        // Get the empty form HTML
-        const emptyFormRow = getEmptyFormRow();
+        // Clonar la primera fila como template
+        const $firstRow = $('#procedimientos-table tbody tr:first');
+        const $newRow = $firstRow.clone();
         
-        // Create a temporary div to parse HTML
-        const $tempDiv = $('<div>').html(emptyFormRow);
+        // Limpiar valores
+        $newRow.find('input[type="text"], input[type="number"], textarea').val('');
+        $newRow.find('input[type="checkbox"]').prop('checked', false);
+        $newRow.find('select').val('').trigger('change');
         
-        // Extract only the tbody row
-        const $newRow = $tempDiv.find('tr').first();
-        
-        if ($newRow.length === 0) {
-            // Fallback: manually create the row structure
-            const selectId = `id_${prefix}-${totalForms}-procedimiento`;
-            const cantidadId = `id_${prefix}-${totalForms}-cantidad`;
-            const obsId = `id_${prefix}-${totalForms}-observaciones`;
-            const deleteId = `id_${prefix}-${totalForms}-DELETE`;
+        // Actualizar IDs y names
+        $newRow.find('input, select, textarea').each(function() {
+            const $field = $(this);
+            const name = $field.attr('name');
+            const id = $field.attr('id');
             
-            const $newRow = $(`
-                <tr class="formset-row">
-                    <input type="hidden" id="id_${prefix}-${totalForms}-id" name="${prefix}-${totalForms}-id">
-                    <input type="hidden" id="id_${prefix}-${totalForms}-evolucion" name="${prefix}-${totalForms}-evolucion">
-                    <td class="procedimiento-cell">
-                        <select id="${selectId}" name="${prefix}-${totalForms}-procedimiento" class="form-control select2"></select>
-                    </td>
-                    <td>
-                        <input type="number" id="${cantidadId}" name="${prefix}-${totalForms}-cantidad" min="1" value="1" class="form-control">
-                    </td>
-                    <td>
-                        <textarea id="${obsId}" name="${prefix}-${totalForms}-observaciones" class="form-control" rows="2"></textarea>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" id="${deleteId}" name="${prefix}-${totalForms}-DELETE">
-                    </td>
-                </tr>
-            `);
-        }
+            if (name) {
+                $field.attr('name', name.replace(/\d+/, totalForms));
+            }
+            if (id) {
+                $field.attr('id', id.replace(/\d+/, totalForms));
+            }
+        });
+        
+        // Destruir Select2 de la fila clonada y reinicializarlo
+        $newRow.find('.select2-container').remove();
+        const $select = $newRow.find('select');
+        $select.removeClass('select2-hidden-accessible');
         
         $('#procedimientos-table tbody').append($newRow);
         
-        // Init select2 for the newly added select
-        const selectId = `id_${prefix}-${totalForms}-procedimiento`;
-        const $newSelect = $(`#${selectId}`);
-        
-        if ($newSelect.length > 0) {
-            // Clear any existing Select2 instance
-            if ($newSelect.data('select2')) {
-                $newSelect.select2('destroy');
-            }
-            $newSelect.select2(select2Opts);
-        }
+        // Inicializar Select2 en el nuevo select
+        $select.select2({
+            theme: "bootstrap",
+            width: '100%',
+            placeholder: 'Buscar procedimiento...'
+        });
         
         totalForms += 1;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
     });
-});
 </script>
 <style>
-/* Tabla scrollable con altura máxima */
+/* Tabla scrollable sin restricciones para dropdown */
 .table-responsive {
     max-height: 500px;
     overflow-y: auto;
     overflow-x: hidden;
     border: 1px solid #dee2e6;
     border-radius: 0.25rem;
-}
-
-/* Asegurar que dropdown de Select2 tenga z-index alto */
-.select2-container {
-    z-index: 1050;
-}
-
-.select2-dropdown {
-    z-index: 1051;
 }
 
 /* Fijar cabecera de tabla */
@@ -224,52 +167,12 @@ $(document).ready(function() {
 }
 
 /* Mejorar apariencia del Select2 */
-.procedimiento-cell .select2-container { 
-    width: 100% !important; 
-}
-
-.procedimiento-cell .select2-selection--single {
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    min-height: calc(1.5em + 0.75rem + 2px);
-    display: flex;
-    align-items: center;
-    background: #fff;
-}
-
-.procedimiento-cell .select2-selection__rendered { 
-    line-height: 1.5rem;
-    padding-left: 0.5rem;
-}
-
-.procedimiento-cell .select2-selection__arrow { 
-    height: 100%; 
-}
-
-/* Hacer el dropdown más amigable */
-.select2-dropdown {
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-}
-
-.select2-search--dropdown .select2-search__field {
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    padding: 0.375rem 0.75rem;
-}
-
-/* Limitar altura del dropdown */
-.select2-results__options {
-    max-height: 300px;
-}
-
-/* Z-index alto para dropdown */
-.select2-container--open {
-    z-index: 9999 !important;
+.select2-container {
+    width: 100% !important;
 }
 
 .select2-dropdown {
-    z-index: 9999 !important;
+    z-index: 9999;
 }
 
 /* Mejorar alineación de tabla */
