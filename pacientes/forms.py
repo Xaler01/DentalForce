@@ -40,7 +40,7 @@ class PacienteForm(forms.ModelForm):
             'tipo_sangre', 'alergias', 'observaciones_medicas',
             'enfermedades', 'es_vip', 'categoria_vip',
             'contacto_emergencia_nombre', 'contacto_emergencia_telefono',
-            'contacto_emergencia_relacion', 'foto', 'clinica'
+            'contacto_emergencia_relacion', 'foto'
         ]
         widgets = {
             'nombres': forms.TextInput(attrs={
@@ -109,9 +109,6 @@ class PacienteForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Ej: Madre, Esposo, Hermano'
             }),
-            'clinica': forms.Select(attrs={
-                'class': 'form-control'
-            }),
         }
         labels = {
             'nombres': 'Nombres',
@@ -130,7 +127,6 @@ class PacienteForm(forms.ModelForm):
             'contacto_emergencia_telefono': 'Teléfono Emergencia',
             'contacto_emergencia_relacion': 'Relación',
             'foto': 'Fotografía',
-            'clinica': 'Clínica',
             'es_vip': 'Cliente VIP',
             'categoria_vip': 'Categoría VIP',
         }

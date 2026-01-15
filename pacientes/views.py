@@ -144,9 +144,11 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     login_url = 'login'
     
     def form_valid(self, form):
-        """Actualizar usuario de auditoría"""
+        """Actualizar usuario de auditoría y preservar la clínica"""
         paciente = form.save(commit=False)
         paciente.um = self.request.user.id
+        # NO permitir cambiar la clínica - preservar la original
+        paciente.clinica = self.get_object().clinica
         paciente.save()
 
         enfermedades = form.cleaned_data.get('enfermedades')
@@ -177,8 +179,11 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def get_queryset(self):
-        """Operar solo sobre pacientes activos"""
-        return Paciente.objects.filter(estado=True)
+        """Filtrar por clínica del usuario y solo pacientes activos"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Paciente.objects.none()
+        return Paciente.objects.filter(estado=True, clinica=clinica)
 
 
 class PacienteDetailView(LoginRequiredMixin, DetailView):
