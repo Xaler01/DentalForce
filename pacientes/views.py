@@ -98,15 +98,41 @@ class PacienteCreateView(LoginRequiredMixin, CreateView):
     login_url = 'login'
     
     def form_valid(self, form):
-        """Agregar usuario de auditoría y clínica activa"""
+        """Agregar usuario de auditoría, clínica activa y validar duplicados por clínica"""
+        cedula = form.cleaned_data.get('cedula')
+        clinica = get_clinica_from_request(self.request)
+        
+        if not clinica:
+            messages.error(self.request, 'No tiene clínica seleccionada')
+            return self.form_invalid(form)
+        
+        # Validar duplicado de cédula EN ESTA CLÍNICA
+        if cedula:
+            duplicado_activo = Paciente.objects.filter(
+                cedula=cedula,
+                clinica=clinica,
+                estado=True
+            ).exists()
+            
+            if duplicado_activo:
+                form.add_error('cedula', 'Ya existe un paciente activo con esta cédula en esta clínica')
+                return self.form_invalid(form)
+            
+            # Verificar si existe inactivo en esta clínica
+            duplicado_inactivo = Paciente.objects.filter(
+                cedula=cedula,
+                clinica=clinica,
+                estado=False
+            ).first()
+            
+            if duplicado_inactivo:
+                form.add_error('cedula', f'Existe un paciente desactivado con esta cédula ({duplicado_inactivo.get_nombre_completo()}). Reactívalo en lugar de crear uno nuevo.')
+                return self.form_invalid(form)
+        
         paciente = form.save(commit=False)
         paciente.uc = self.request.user
         paciente.um = self.request.user.id
-        
-        # Asignar clínica activa desde sesión
-        clinica_id = self.request.session.get('clinica_id')
-        if clinica_id:
-            paciente.clinica_id = clinica_id
+        paciente.clinica = clinica
         
         paciente.save()
 

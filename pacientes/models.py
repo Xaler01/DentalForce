@@ -39,11 +39,11 @@ class Paciente(ClaseModelo):
     )
     cedula = models.CharField(
         max_length=20,
-        unique=True,
         verbose_name='Cédula/DNI',
-        help_text='Número de identificación único',
+        help_text='Número de identificación único por clínica',
         null=True,
-        blank=True
+        blank=True,
+        db_index=True  # Índice para búsquedas rápidas
     )
     fecha_nacimiento = models.DateField(
         verbose_name='Fecha de Nacimiento',
@@ -197,6 +197,11 @@ class Paciente(ClaseModelo):
         verbose_name = 'Paciente'
         verbose_name_plural = 'Pacientes'
         ordering = ['apellidos', 'nombres']
+        # Permitir mismo paciente (cédula) en diferentes clínicas
+        unique_together = [['cedula', 'clinica']]
+        indexes = [
+            models.Index(fields=['cedula', 'clinica'], name='idx_paciente_cedula_clinica'),
+        ]
     
     def __str__(self):
         return f"{self.apellidos}, {self.nombres} - {self.cedula}"

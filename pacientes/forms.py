@@ -143,7 +143,7 @@ class PacienteForm(forms.ModelForm):
     )
     
     def clean_cedula(self):
-        """Validar cédula ecuatoriana única"""
+        """Validar cédula ecuatoriana única por clínica"""
         cedula = self.cleaned_data.get('cedula', '').strip()
         
         if not cedula:
@@ -153,23 +153,8 @@ class PacienteForm(forms.ModelForm):
         if not re.match(r'^[0-9\-]+$', cedula):
             raise ValidationError('La cédula solo puede contener números y guiones')
         
-        # Remover guiones para verificar unicidad
-        cedula_sin_guiones = cedula.replace('-', '')
-        
-        # Verificar que sea única (excepto en edición)
-        qs_activos = Paciente.objects.filter(cedula=cedula, estado=True)
-        if self.instance.pk:
-            qs_activos = qs_activos.exclude(pk=self.instance.pk)
-        
-        if qs_activos.exists():
-            raise ValidationError('Ya existe un paciente activo con esta cédula')
-        
-        # Detectar duplicados inactivos para guiar a reactivación
-        qs_inactivos = Paciente.objects.filter(cedula=cedula, estado=False)
-        if self.instance.pk:
-            qs_inactivos = qs_inactivos.exclude(pk=self.instance.pk)
-        if qs_inactivos.exists():
-            raise ValidationError('Existe un paciente desactivado con esta cédula. Incluye inactivos en la lista y reactívalo.')
+        # NOTA: La validación de duplicados ahora requiere la clínica
+        # Esto se validará en la vista cuando tengamos acceso a la clínica del usuario
         
         return cedula
     
