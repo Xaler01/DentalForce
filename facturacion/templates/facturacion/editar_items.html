@@ -219,25 +219,39 @@
         </a>
     </div>
 </div>
+{% endblock %}
 
+{% block js_page %}
 <script>
 // Obtener cantidad disponible al cambiar procedimiento
 $(document).ready(function() {
+    console.log('✅ Script facturacion cargado');
     const pacienteId = {{ factura.paciente.id }};
+    console.log('👤 Paciente ID:', pacienteId);
     
-    $('#id_procedimiento').on('change', function() {
-        const procedimientoId = $(this).val();
+    // Función para cargar la cantidad disponible
+    function cargarCantidadDisponible() {
+        const procedimientoId = $('#id_procedimiento').val();
         const $infoDiv = $('#cantidad-disponible-info');
         const $cantidadInput = $('#id_cantidad');
         const $hintCantidad = $('#hint-cantidad');
         
+        console.log('🔄 Procedimiento ID:', procedimientoId);
+        
         if (!procedimientoId) {
+            console.log('⚠️ Sin procedimiento seleccionado');
             $infoDiv.hide();
             $hintCantidad.text('Cantidad a facturar');
+            $cantidadInput.val('');
             return;
         }
         
+        // Mostrar que se está cargando
+        $infoDiv.find('.alert').html('⏳ Cargando información...');
+        $infoDiv.show();
+        
         // Llamar al endpoint AJAX
+        console.log('📡 Enviando AJAX a obtener_cantidad_disponible');
         $.ajax({
             url: '{% url "facturacion:api_cantidad_disponible" %}',
             type: 'GET',
@@ -246,38 +260,92 @@ $(document).ready(function() {
                 'paciente_id': pacienteId
             },
             success: function(data) {
+                console.log('✅ Respuesta AJAX exitosa:', data);
+                
                 if (data.servicios_count > 0) {
-                    // Mostrar información
-                    $('#info-realizada').html(`✅ <strong>Realizada:</strong> ${data.realizada} unidad(es)`);
-                    $('#info-facturada').html(`💰 <strong>Ya facturada:</strong> ${data.facturada} unidad(es)`);
-                    $('#info-disponible').html(`🔵 <strong>Disponible para facturar:</strong> ${data.disponible} unidad(es)`);
+                    console.log('📦 Se encontraron', data.servicios_count, 'servicios');
                     
+                    // Reconstruir el HTML completo del alert con la información
+                    const htmlInfo = `
+                        <strong>📊 Información del Tratamiento:</strong><br>
+                        <span id="info-realizada">✅ <strong>Realizada:</strong> ${data.realizada} unidad(es)</span><br>
+                        <span id="info-facturada">💰 <strong>Ya facturada:</strong> ${data.facturada} unidad(es)</span><br>
+                        <span id="info-disponible" style="font-size: 1.1em;">🔵 <strong>Disponible para facturar:</strong> ${data.disponible} unidad(es)</span>
+                    `;
+                    
+                    $infoDiv.find('.alert')
+                        .removeClass('alert-warning alert-danger')
+                        .addClass('alert-info')
+                        .html(htmlInfo);
                     $infoDiv.show();
                     
                     // Actualizar hint y máximo en cantidad
-                    $hintCantidad.html(`<strong>Máximo disponible: ${data.disponible}</strong>`);
+                    $hintCantidad.html(`<strong>Máximo disponible: ${data.disponible}</strong> (sugerido según evolución)`);
                     $cantidadInput.attr('max', data.disponible);
-                    
-                    // Si disponible es 0, mostrar advertencia
-                    if (data.disponible === 0) {
-                        $infoDiv.find('.alert').removeClass('alert-info').addClass('alert-warning');
-                        $('#info-disponible').html(`⚠️ <strong>No hay unidades disponibles para facturar</strong>`);
+
+                    // Autocompletar con la cantidad disponible para agilizar la facturación
+                    if (data.disponible > 0) {
+                        $cantidadInput.val(data.disponible);
+                        $cantidadInput.trigger('input');
+                        console.log('✨ Cantidad establecida a:', data.disponible);
                     } else {
-                        $infoDiv.find('.alert').removeClass('alert-warning').addClass('alert-info');
+                        $cantidadInput.val('');
+                        console.log('⚠️ No hay cantidad disponible');
+                        
+                        // Actualizar el HTML para mostrar advertencia
+                        const htmlAdvertencia = `
+                            <strong>📊 Información del Tratamiento:</strong><br>
+                            <span>✅ <strong>Realizada:</strong> ${data.realizada} unidad(es)</span><br>
+                            <span>💰 <strong>Ya facturada:</strong> ${data.facturada} unidad(es)</span><br>
+                            <span style="font-size: 1.1em;">⚠️ <strong>No hay unidades disponibles para facturar</strong></span>
+                        `;
+                        $infoDiv.find('.alert')
+                            .removeClass('alert-info')
+                            .addClass('alert-warning')
+                            .html(htmlAdvertencia);
                     }
                 } else {
                     // No hay servicios pendientes registrados
+                    console.log('❌ No se encontraron servicios pendientes para este procedimiento');
                     $infoDiv.hide();
                     $hintCantidad.text('Cantidad a facturar');
+                    $cantidadInput.val('');
                     $cantidadInput.removeAttr('max');
                 }
             },
             error: function(xhr) {
-                console.error('Error al obtener cantidad disponible:', xhr);
-                $infoDiv.hide();
+                console.error('❌ Error AJAX:', xhr);
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseJSON);
+                $infoDiv.find('.alert')
+                    .removeClass('alert-info')
+                    .addClass('alert-danger')
+                    .html('⚠️ Error al cargar información: ' + (xhr.responseJSON?.error || 'Error desconocido'));
             }
         });
+    }
+    
+    // Registrar evento change en el selector
+    $('#id_procedimiento').on('change', function() {
+        console.log('🎯 Evento change disparado');
+        cargarCantidadDisponible();
     });
+    
+    // También registrar para Select2 si está en uso
+    $('#id_procedimiento').on('select2:select', function() {
+        console.log('🎯 Evento select2:select disparado');
+        cargarCantidadDisponible();
+    });
+
+    // Mostrar la información inicial si la página carga con un procedimiento ya seleccionado
+    setTimeout(function() {
+        if ($('#id_procedimiento').val()) {
+            console.log('🚀 Procedimiento preseleccionado, cargando datos...');
+            cargarCantidadDisponible();
+        } else {
+            console.log('ℹ️ Sin procedimiento preseleccionado al cargar la página');
+        }
+    }, 500);
 });
 
 function eliminarItem(itemId) {

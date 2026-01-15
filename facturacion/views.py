@@ -99,7 +99,15 @@ def obtener_cantidad_disponible(request):
         return JsonResponse({'error': 'Faltan parámetros'}, status=400)
     
     try:
+        # Obtener la clínica del usuario
+        clinica = get_clinica_from_request(request)
+        
+        if not clinica:
+            return JsonResponse({'error': 'No tiene clínica seleccionada'}, status=403)
+        
+        # Filtrar servicios por clínica, paciente y procedimiento
         servicios = ServicioPendiente.objects.filter(
+            clinica=clinica,
             paciente_id=paciente_id,
             procedimiento_id=procedimiento_id
         ).exclude(estado=ServicioPendiente.ESTADO_ANULADO)
