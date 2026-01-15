@@ -195,6 +195,21 @@ class Factura(ClaseModelo):
     def subtotal_neto(self):
         """Subtotal después de aplicar descuento"""
         return self.subtotal - self.descuento
+
+    # ==================== MÉTODOS DE VALIDACIÓN PARA EDICIÓN ====================
+    def tiene_pagos(self):
+        """Retorna True si la factura tiene pagos registrados."""
+        return self.pagos.exists()
+
+    def puede_editar_items(self):
+        """Solo permite editar/eliminar items si NO hay pagos registrados."""
+        return not self.tiene_pagos()
+
+    def obtener_motivo_bloqueo(self):
+        """Devuelve el motivo de bloqueo para edición de items."""
+        if self.tiene_pagos():
+            return f"No se pueden editar items después de registrar pagos. Monto pagado: ${self.total_pagado:.2f}"
+        return None
     
     def calcular_totales(self):
         """Recalcula subtotal, IVA y total a partir de ítems"""
