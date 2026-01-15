@@ -143,6 +143,12 @@ $(document).ready(function() {
                 .removeAttr('data-select2-id aria-hidden tabindex');
             $select.find('option').removeAttr('data-select2-id');
         } else {
+            // Tabla vacía: obtener opciones del empty_form
+            const emptyFormHtml = '{{ formset.empty_form|escapejs }}';
+            const $tempForm = $('<div>').html(emptyFormHtml);
+            const $templateSelect = $tempForm.find('select');
+            const optionsHtml = $templateSelect.html(); // Copiar todas las opciones
+            
             // Crear fila nueva manualmente
             $newRow = $('<tr class="formset-row"></tr>');
             
@@ -150,9 +156,9 @@ $(document).ready(function() {
             $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-id" name="${prefix}-${totalForms}-id">`);
             $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-evolucion" name="${prefix}-${totalForms}-evolucion">`);
             
-            // Procedimiento (select)
+            // Procedimiento (select con opciones del template)
             const $tdProc = $('<td class="procedimiento-cell"></td>');
-            $tdProc.html(`<select id="id_${prefix}-${totalForms}-procedimiento" name="${prefix}-${totalForms}-procedimiento" class="form-control select2"></select>`);
+            $tdProc.html(`<select id="id_${prefix}-${totalForms}-procedimiento" name="${prefix}-${totalForms}-procedimiento" class="form-control select2">${optionsHtml}</select>`);
             $newRow.append($tdProc);
             
             // Cantidad
