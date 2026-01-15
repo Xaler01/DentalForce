@@ -118,26 +118,58 @@ $(document).ready(function() {
     $('#add-procedimiento').click(function(e) {
         e.preventDefault();
         
-        // NO clonar - usar fresh select para evitar conflictos de Select2
-        const $firstRow = $('#procedimientos-table tbody tr').first();
-        const $newRow = $firstRow.clone(false); // false = NO copiar event handlers
+        const $tbody = $('#procedimientos-table tbody');
+        let $newRow;
         
-        // Limpiar valores
-        $newRow.find('input[type="hidden"]').val('');
-        $newRow.find('input[type="number"]').val('1');
-        $newRow.find('textarea').val('');
-        $newRow.find('input[type="checkbox"]').prop('checked', false);
+        // Si hay filas, clonar la primera; si no, crear manualmente
+        const $firstRow = $tbody.find('tr').first();
         
-        // IMPORTANTE: Destruir completamente Select2 del clone
-        $newRow.find('.select2-container').remove();
-        const $select = $newRow.find('select');
-        $select.removeClass('select2-hidden-accessible')
-            .removeData('select2')
-            .off('select2:*')
-            .removeAttr('data-select2-id aria-hidden tabindex');
-        
-        // Limpiar options attributes también
-        $select.find('option').removeAttr('data-select2-id');
+        if ($firstRow.length > 0) {
+            // Clonar fila existente
+            $newRow = $firstRow.clone(false);
+            
+            // Limpiar valores
+            $newRow.find('input[type="hidden"]').val('');
+            $newRow.find('input[type="number"]').val('1');
+            $newRow.find('textarea').val('');
+            $newRow.find('input[type="checkbox"]').prop('checked', false);
+            
+            // Limpiar Select2
+            $newRow.find('.select2-container').remove();
+            const $select = $newRow.find('select');
+            $select.removeClass('select2-hidden-accessible')
+                .removeData('select2')
+                .off('select2:*')
+                .removeAttr('data-select2-id aria-hidden tabindex');
+            $select.find('option').removeAttr('data-select2-id');
+        } else {
+            // Crear fila nueva manualmente
+            $newRow = $('<tr class="formset-row"></tr>');
+            
+            // Hidden fields
+            $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-id" name="${prefix}-${totalForms}-id">`);
+            $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-evolucion" name="${prefix}-${totalForms}-evolucion">`);
+            
+            // Procedimiento (select)
+            const $tdProc = $('<td class="procedimiento-cell"></td>');
+            $tdProc.html(`<select id="id_${prefix}-${totalForms}-procedimiento" name="${prefix}-${totalForms}-procedimiento" class="form-control select2"></select>`);
+            $newRow.append($tdProc);
+            
+            // Cantidad
+            const $tdCant = $('<td></td>');
+            $tdCant.html(`<input type="number" id="id_${prefix}-${totalForms}-cantidad" name="${prefix}-${totalForms}-cantidad" min="1" value="1" class="form-control">`);
+            $newRow.append($tdCant);
+            
+            // Observaciones
+            const $tdObs = $('<td></td>');
+            $tdObs.html(`<textarea id="id_${prefix}-${totalForms}-observaciones" name="${prefix}-${totalForms}-observaciones" class="form-control" rows="2"></textarea>`);
+            $newRow.append($tdObs);
+            
+            // Delete
+            const $tdDel = $('<td class="text-center"></td>');
+            $tdDel.html(`<input type="checkbox" id="id_${prefix}-${totalForms}-DELETE" name="${prefix}-${totalForms}-DELETE">`);
+            $newRow.append($tdDel);
+        }
         
         // Actualizar IDs y names
         $newRow.find('input, select, textarea').each(function() {
@@ -153,10 +185,17 @@ $(document).ready(function() {
         });
         
         // Agregar fila
-        $('#procedimientos-table tbody').append($newRow);
+        $tbody.append($newRow);
         
-        // Inicializar Select2 COMPLETAMENTE NUEVO
-        $select.val('').select2(select2Opts);
+        // Copiar options del primer select si existe
+        if ($firstRow.length > 0) {
+            const $origSelect = $firstRow.find('select');
+            const $newSelect = $newRow.find('select');
+            $newSelect.html($origSelect.html());
+        }
+        
+        // Inicializar Select2
+        $newRow.find('select').select2(select2Opts);
         
         totalForms++;
         $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
