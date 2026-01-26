@@ -1,0 +1,160 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Procedimiento{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-fw fa-procedures"></i> 
+            {% if object %}Editar Procedimiento{% else %}Nuevo Procedimiento{% endif %}
+        </h1>
+        <a href="{% url 'procedimientos:procedimiento-list' %}" class="btn btn-secondary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Volver</span>
+        </a>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Información del Procedimiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.codigo.id_for_label }}">{{ form.codigo.label }} <span class="text-danger">*</span></label>
+                                    {{ form.codigo }}
+                                    {% if form.codigo.errors %}
+                                    <div class="text-danger small mt-1">{{ form.codigo.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.codigo.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.codigo_cdt.id_for_label }}">{{ form.codigo_cdt.label }}</label>
+                                    {{ form.codigo_cdt }}
+                                    {% if form.codigo_cdt.errors %}
+                                    <div class="text-danger small mt-1">{{ form.codigo_cdt.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">{{ form.codigo_cdt.help_text }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }} <span class="text-danger">*</span></label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">{{ form.nombre.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                            <div class="text-danger small mt-1">{{ form.descripcion.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.categoria.id_for_label }}">{{ form.categoria.label }} <span class="text-danger">*</span></label>
+                                    {{ form.categoria }}
+                                    {% if form.categoria.errors %}
+                                    <div class="text-danger small mt-1">{{ form.categoria.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.duracion_estimada.id_for_label }}">{{ form.duracion_estimada.label }} <span class="text-danger">*</span></label>
+                                    {{ form.duracion_estimada }}
+                                    {% if form.duracion_estimada.errors %}
+                                    <div class="text-danger small mt-1">{{ form.duracion_estimada.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check mb-3">
+                                    {{ form.requiere_anestesia }}
+                                    <label class="form-check-label" for="{{ form.requiere_anestesia.id_for_label }}">
+                                        {{ form.requiere_anestesia.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mb-3">
+                                    {{ form.afecta_odontograma }}
+                                    <label class="form-check-label" for="{{ form.afecta_odontograma.id_for_label }}">
+                                        {{ form.afecta_odontograma.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mb-3">
+                                    {{ form.estado }}
+                                    <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                        {{ form.estado.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="form-group text-right">
+                            <a href="{% url 'procedimientos:procedimiento-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de ayuda -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle"></i> Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Código:</strong> Identificador único del procedimiento (ej: RES-OBT001).</p>
+                    <p class="mb-2"><strong>Código CDT:</strong> Código opcional según clasificación ADA.</p>
+                    <p class="mb-2"><strong>Categoría:</strong> Tipo de procedimiento odontológico.</p>
+                    <p class="mb-2"><strong>Duración:</strong> Tiempo estimado en minutos para realizar el procedimiento.</p>
+                    <p class="mb-0"><strong>Estado:</strong> Define si el procedimiento está disponible para uso.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

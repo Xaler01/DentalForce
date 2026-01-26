@@ -1,5 +1,6 @@
 from cit.models import ConfiguracionClinica
 from clinicas.models import Clinica
+from django.urls import reverse
 
 
 def clinica_context(request):
@@ -53,4 +54,12 @@ def clinica_context(request):
         })
 
     return context
+
+
+def menu_urls(request):
+    """URLs globales para el menú lateral"""
+    return {
+        'procedimiento_list_url': reverse('procedimientos:procedimiento-list'),
+        'precio_list_url': reverse('procedimientos:precio-list'),
+    }
 

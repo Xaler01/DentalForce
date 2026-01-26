@@ -5,8 +5,9 @@ from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import HttpResponseForbidden
-from usuarios.models import UsuarioClinica, RolUsuario
-from usuarios.forms import UsuarioForm
+from django.db.models import Q
+from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioPowerDent, PermisoPersonalizado
+from usuarios.forms import UsuarioForm, PerfilUsuarioForm
 from core.services.tenants import get_clinica_from_request
 
 
@@ -150,6 +151,30 @@ class UsuarioUpdateView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView):
         return response
 
 
+class PerfilUsuarioView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para que cualquier usuario pueda editar su propio perfil.
+    No requiere permisos de admin.
+    """
+    model = User
+    form_class = PerfilUsuarioForm
+    template_name = 'usuarios/perfil_form.html'
+    success_url = reverse_lazy('usuarios:mi_perfil')
+    
+    def get_object(self, queryset=None):
+        """Siempre devuelve el usuario actual"""
+        return self.request.user
+    
+    def form_valid(self, form):
+        """Procesar formulario válido"""
+        response = super().form_valid(form)
+        messages.success(
+            self.request,
+            f'✅ Tu perfil ha sido actualizado exitosamente.'
+        )
+        return response
+
+
 class UsuarioDeleteView(LoginRequiredMixin, UsuarioEsAdminMixin, DeleteView):
     """
     Vista para soft-delete de un usuario (marcar como inactivo).
@@ -186,3 +211,142 @@ class UsuarioDeleteView(LoginRequiredMixin, UsuarioEsAdminMixin, DeleteView):
         
         return redirect(self.success_url)
 
+
+# ================================
+# GESTIÓN DE ROLES Y PERMISOS
+# ================================
+
+class RolListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
+    """
+    Lista todos los roles disponibles para la clínica del usuario.
+    Solo accesible para Admin de Clínica.
+    """
+    model = RolUsuarioPowerDent
+    template_name = 'usuarios/rol_list.html'
+    context_object_name = 'roles'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        """
+        Solo mostrar:
+        1. Roles globales del sistema
+        2. Roles personalizados de su clínica (si es admin)
+        """
+        clinica = self.request.user.clinica_asignacion.clinica
+        return RolUsuarioPowerDent.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica),
+            activo=True
+        ).order_by('nombre')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        clinica = self.request.user.clinica_asignacion.clinica
+        context['clinica'] = clinica
+        return context
+
+
+class RolDetailView(LoginRequiredMixin, UsuarioEsAdminMixin, DetailView):
+    """Vista detallada de un rol con sus permisos"""
+    model = RolUsuarioPowerDent
+    template_name = 'usuarios/rol_detail.html'
+    context_object_name = 'rol'
+    
+    def get_queryset(self):
+        clinica = self.request.user.clinica_asignacion.clinica
+        return RolUsuarioPowerDent.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica)
+        )
+
+
+class PermisoListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
+    """
+    Lista todos los permisos disponibles para asignar a roles/usuarios.
+    Agrupados por categoría.
+    """
+    model = PermisoPersonalizado
+    template_name = 'usuarios/permiso_list.html'
+    context_object_name = 'permisos'
+    
+    def get_queryset(self):
+        clinica = self.request.user.clinica_asignacion.clinica
+        return PermisoPersonalizado.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica),
+            activo=True
+        ).order_by('categoria', 'nombre')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Agrupar permisos por categoría
+        clinica = self.request.user.clinica_asignacion.clinica
+        permisos = PermisoPersonalizado.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica),
+            activo=True
+        )
+        
+        permisos_por_categoria = {}
+        for permiso in permisos:
+            cat = permiso.get_categoria_display()
+            if cat not in permisos_por_categoria:
+                permisos_por_categoria[cat] = []
+            permisos_por_categoria[cat].append(permiso)
+        
+        context['permisos_por_categoria'] = permisos_por_categoria
+        context['clinica'] = clinica
+        
+        return context
+
+
+class UsuarioRolesUpdateView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView):
+    """
+    Permite asignar roles y permisos a un usuario.
+    Solo accesible para Admin de Clínica (de su propia clínica).
+    """
+    model = UsuarioClinica
+    template_name = 'usuarios/usuario_roles_form.html'
+    fields = ['roles_personalizados', 'permisos_adicionales']
+    success_url = reverse_lazy('usuarios:lista')
+    
+    def get_queryset(self):
+        """Solo puede editar usuarios de su propia clínica"""
+        clinica = self.request.user.clinica_asignacion.clinica
+        return UsuarioClinica.objects.filter(clinica=clinica)
+    
+    def get_form(self):
+        """Filtrar roles y permisos disponibles"""
+        form = super().get_form()
+        clinica = self.request.user.clinica_asignacion.clinica
+        
+        # Solo mostrar roles y permisos de su clínica o globales
+        form.fields['roles_personalizados'].queryset = RolUsuarioPowerDent.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica),
+            activo=True
+        )
+        
+        form.fields['permisos_adicionales'].queryset = PermisoPersonalizado.objects.filter(
+            Q(clinica=None) | Q(clinica=clinica),
+            activo=True
+        )
+        
+        return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuario_clinica = self.object
+        
+        # Mostrar información del usuario
+        context['usuario_editado'] = usuario_clinica.usuario
+        context['roles_actuales'] = usuario_clinica.roles_personalizados.all()
+        context['permisos_actuales'] = usuario_clinica.permisos_adicionales.all()
+        context['permisos_totales'] = usuario_clinica.get_permisos()
+        
+        return context
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        usuario = self.object.usuario
+        messages.success(
+            self.request,
+            f'✅ Roles y permisos de {usuario.get_full_name() or usuario.username} actualizados.'
+        )
+        return response

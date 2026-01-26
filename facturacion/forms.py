@@ -219,11 +219,20 @@ class ItemFacturaForm(forms.ModelForm):
         if procedimiento and not descripcion:
             cleaned_data['descripcion'] = procedimiento.nombre
         
-        # Si hay procedimiento pero no precio, usar precio del procedimiento
-        if procedimiento and not precio_unitario:
-            # Asumiendo que ProcedimientoOdontologico tiene un campo precio
-            if hasattr(procedimiento, 'precio_base'):
-                cleaned_data['precio_unitario'] = procedimiento.precio_base
+        # Si hay procedimiento pero no precio, intentar obtenerlo desde ClinicaProcedimiento
+        if procedimiento and not precio_unitario and self.factura:
+            # Obtener precio desde el catálogo de la clínica
+            precio_catalogo = procedimiento.get_precio_para_clinica(self.factura.clinica)
+            
+            if precio_catalogo is not None:
+                cleaned_data['precio_unitario'] = precio_catalogo
+            else:
+                # Si no hay precio configurado, generar error
+                raise ValidationError({
+                    'precio_unitario': f'No hay precio configurado para "{procedimiento.nombre}" '
+                                     f'en {self.factura.clinica.nombre}. '
+                                     f'Por favor configure el precio en el catálogo o ingréselo manualmente.'
+                })
         
         # Validación de sobre-facturación contra Servicios Pendientes
         cantidad = cleaned_data.get('cantidad')
@@ -233,7 +242,8 @@ class ItemFacturaForm(forms.ModelForm):
                 procedimiento=procedimiento
             ).exclude(estado=ServicioPendiente.ESTADO_ANULADO)
             disponible_total = sum(sp.cantidad_disponible for sp in servicios)
-            if cantidad > disponible_total:
+            if cantidad > disponible_total and disponible_total > 0:
+                # Solo advertir si hay servicios pendientes registrados
                 raise ValidationError(
                     f"La cantidad ({cantidad}) excede lo disponible ({disponible_total}) para este procedimiento."
                 )

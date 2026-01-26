@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'inv',
     'cmp',
     'cit',
-    'clinicas',
+    'clinicas.apps.ClinicasConfig',  # Usar AppConfig para registrar signals
     'personal',
     'pacientes',
     'facturacion',
@@ -87,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'powerdent.context_processors.clinica_context',
+                'powerdent.context_processors.menu_urls',
             ],
         },
     },

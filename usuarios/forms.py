@@ -156,3 +156,43 @@ class UsuarioForm(forms.ModelForm):
             self.usuario_clinica = usuario_clinica
         
         return user
+
+
+class PerfilUsuarioForm(forms.ModelForm):
+    """
+    Formulario para que un usuario edite su propio perfil.
+    Solo permite editar campos básicos: nombre, apellido y email.
+    """
+    
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label='Nombre',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-user',
+            'placeholder': 'Ingresa tu nombre'
+        })
+    )
+    
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label='Apellido',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-user',
+            'placeholder': 'Ingresa tu apellido'
+        })
+    )
+    
+    email = forms.EmailField(
+        required=True,
+        label='Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control form-control-user',
+            'placeholder': 'tu_email@ejemplo.com'
+        })
+    )
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']

@@ -1,0 +1,147 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} Precio{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-fw fa-dollar-sign"></i> 
+            {% if object %}Editar Precio{% else %}Nuevo Precio{% endif %}
+        </h1>
+        <a href="{% url 'procedimientos:precio-list' %}" class="btn btn-secondary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Volver</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Información del Precio
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.clinica.id_for_label }}">{{ form.clinica.label }} <span class="text-danger">*</span></label>
+                                    {{ form.clinica }}
+                                    {% if form.clinica.errors %}
+                                    <div class="text-danger small mt-1">{{ form.clinica.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.procedimiento.id_for_label }}">{{ form.procedimiento.label }} <span class="text-danger">*</span></label>
+                                    {{ form.procedimiento }}
+                                    {% if form.procedimiento.errors %}
+                                    <div class="text-danger small mt-1">{{ form.procedimiento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.precio.id_for_label }}">{{ form.precio.label }} <span class="text-danger">*</span></label>
+                                    {{ form.precio }}
+                                    {% if form.precio.errors %}
+                                    <div class="text-danger small mt-1">{{ form.precio.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="{{ form.moneda.id_for_label }}">{{ form.moneda.label }} <span class="text-danger">*</span></label>
+                                    {{ form.moneda }}
+                                    {% if form.moneda.errors %}
+                                    <div class="text-danger small mt-1">{{ form.moneda.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="{{ form.descuento_porcentaje.id_for_label }}">{{ form.descuento_porcentaje.label }}</label>
+                                    {{ form.descuento_porcentaje }}
+                                    {% if form.descuento_porcentaje.errors %}
+                                    <div class="text-danger small mt-1">{{ form.descuento_porcentaje.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.notas.id_for_label }}">{{ form.notas.label }}</label>
+                            {{ form.notas }}
+                            {% if form.notas.errors %}
+                            <div class="text-danger small mt-1">{{ form.notas.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.activo }}
+                            <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                {{ form.activo.label }}
+                            </label>
+                        </div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <div class="form-group text-right">
+                            <a href="{% url 'procedimientos:precio-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle"></i> Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Clínica:</strong> Seleccione la clínica para la que aplica este precio.</p>
+                    <p class="mb-2"><strong>Procedimiento:</strong> Seleccione el procedimiento a tarifar.</p>
+                    <p class="mb-2"><strong>Precio:</strong> Valor del procedimiento en la moneda seleccionada.</p>
+                    <p class="mb-2"><strong>Descuento:</strong> Porcentaje de descuento opcional (0-100%).</p>
+                    <p class="mb-0"><strong>Activo:</strong> Define si este precio está vigente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Inicializar Select2 si está disponible
+    if ($.fn.select2) {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+    }
+});
+</script>
+{% endblock %}

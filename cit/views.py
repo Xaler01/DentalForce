@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.db import transaction
 from datetime import datetime, timedelta
 import json
 
@@ -1551,6 +1552,18 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
                 instance=self.object
             )
         
+        if 'comision_formset' in kwargs:
+            context['comision_formset'] = kwargs['comision_formset']
+        elif self.request.POST:
+            context['comision_formset'] = ComisionDentistaFormSet(
+                self.request.POST,
+                instance=self.object
+            )
+        else:
+            context['comision_formset'] = ComisionDentistaFormSet(
+                instance=self.object
+            )
+        
         # Agregar el tab activo al contexto (por defecto 'datos')
         context['active_tab'] = kwargs.get('active_tab', 'datos')
         
@@ -2079,7 +2092,11 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+        cubiculo_formset = kwargs.get('cubiculo_formset')
+
+        if cubiculo_formset is not None:
+            context['cubiculo_formset'] = cubiculo_formset
+        elif self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST)
         else:
             context['cubiculo_formset'] = CubiculoFormSet()
@@ -2087,37 +2104,29 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         from .forms import CubiculoFormSet
-        context = self.get_context_data()
-        cubiculo_formset = context.get('cubiculo_formset')
-
-        # Validar formset solo si viene en POST
-        formset_valid = True
-        if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
-            formset_valid = cubiculo_formset.is_valid()
-
-        if formset_valid:
+        with transaction.atomic():
             form.instance.uc = self.request.user
             self.object = form.save()
 
-            # Guardar cubículos asociados
-            if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
-                cubiculo_formset.instance = self.object
+            cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
+
+            if cubiculo_formset.is_valid():
                 cubiculos = cubiculo_formset.save(commit=False)
                 for cubiculo in cubiculos:
                     cubiculo.uc = self.request.user
                     cubiculo.um = self.request.user.id
                     cubiculo.save()
-                # Guardar relaciones M2M si existieran
                 cubiculo_formset.save_m2m()
-                # Eliminar cubículos marcados para borrado
                 for obj in cubiculo_formset.deleted_objects:
                     obj.delete()
 
-            messages.success(
-                self.request,
-                f'Sucursal "{self.object.nombre}" creada exitosamente para {self.object.clinica.nombre}.'
-            )
-            return redirect(self.success_url)
+                messages.success(
+                    self.request,
+                    f'Sucursal "{self.object.nombre}" creada exitosamente para {self.object.clinica.nombre}.'
+                )
+                return redirect(self.success_url)
+
+            transaction.set_rollback(True)
 
         messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
         return self.form_invalid(form)
@@ -2125,7 +2134,7 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     def form_invalid(self, form):
         from .forms import CubiculoFormSet
         if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
-            cubiculo_formset = CubiculoFormSet(self.request.POST)
+            cubiculo_formset = CubiculoFormSet(self.request.POST, instance=form.instance)
         else:
             cubiculo_formset = CubiculoFormSet()
         messages.error(self.request, 'Por favor corrija los errores en el formulario y los cubículos.')
@@ -2151,7 +2160,11 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import CubiculoFormSet
-        if self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
+        cubiculo_formset = kwargs.get('cubiculo_formset')
+
+        if cubiculo_formset is not None:
+            context['cubiculo_formset'] = cubiculo_formset
+        elif self.request.method == 'POST' and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
             context['cubiculo_formset'] = CubiculoFormSet(self.request.POST, instance=self.object)
         else:
             context['cubiculo_formset'] = CubiculoFormSet(instance=self.object)
@@ -2160,38 +2173,30 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         from .forms import CubiculoFormSet
-        context = self.get_context_data()
-        cubiculo_formset = context.get('cubiculo_formset')
+        from django.db import transaction
+        cubiculo_formset = CubiculoFormSet(self.request.POST, instance=self.object)
 
-        # Validar formset solo si viene en POST
-        formset_valid = True
-        if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
-            formset_valid = cubiculo_formset.is_valid()
+        if not cubiculo_formset.is_valid():
+            messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
+            return self.form_invalid(form)
 
-        if formset_valid:
+        with transaction.atomic():
             form.instance.um = self.request.user.id
             self.object = form.save()
 
-            # Guardar cubículos asociados
-            if cubiculo_formset and 'cubiculo_set-TOTAL_FORMS' in self.request.POST:
-                cubiculo_formset.instance = self.object
-                cubiculos = cubiculo_formset.save(commit=False)
-                for cubiculo in cubiculos:
-                    if not cubiculo.pk:
-                        cubiculo.uc = self.request.user
-                    cubiculo.um = self.request.user.id
-                    cubiculo.save()
-                # Guardar relaciones M2M si existieran
-                cubiculo_formset.save_m2m()
-                # Eliminar cubículos marcados para borrado
-                for obj in cubiculo_formset.deleted_objects:
-                    obj.delete()
+            cubiculo_formset.instance = self.object
+            cubiculos = cubiculo_formset.save(commit=False)
+            for cubiculo in cubiculos:
+                if not cubiculo.pk:
+                    cubiculo.uc = self.request.user
+                cubiculo.um = self.request.user.id
+                cubiculo.save()
+            cubiculo_formset.save_m2m()
+            for obj in cubiculo_formset.deleted_objects:
+                obj.delete()
 
-            messages.success(self.request, f'Sucursal "{self.object.nombre}" actualizada exitosamente.')
-            return redirect(self.success_url)
-
-        messages.error(self.request, 'Por favor corrija los errores en los cubículos.')
-        return self.form_invalid(form)
+        messages.success(self.request, f'Sucursal "{self.object.nombre}" actualizada exitosamente.')
+        return redirect(self.success_url)
 
     def form_invalid(self, form):
         from .forms import CubiculoFormSet

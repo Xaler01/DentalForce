@@ -1,0 +1,163 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Catálogo de Procedimientos{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-fw fa-procedures"></i> Catálogo de Procedimientos Odontológicos
+        </h1>
+        {% if perms.procedimientos.add_procedimientoodontologico %}
+        <a href="{% url 'procedimientos:procedimiento-create' %}" class="btn btn-primary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-plus"></i>
+            </span>
+            <span class="text">Nuevo Procedimiento</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-2 mb-2">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar..." value="{{ search }}">
+                </div>
+                <div class="form-group mr-2 mb-2">
+                    <select name="categoria" class="form-control">
+                        <option value="">Todas las Categorías</option>
+                        {% for value, label in categorias %}
+                        <option value="{{ value }}" {% if categoria_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-2 mb-2">
+                    <select name="estado" class="form-control">
+                        <option value="">Todos los Estados</option>
+                        <option value="activo" {% if estado_filter == 'activo' %}selected{% endif %}>Activos</option>
+                        <option value="inactivo" {% if estado_filter == 'inactivo' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2 mr-2">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a href="{% url 'procedimientos:procedimiento-list' %}" class="btn btn-secondary mb-2">
+                    <i class="fas fa-redo"></i> Limpiar
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de procedimientos -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Procedimientos Registrados ({{ page_obj.paginator.count }})
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proc in procedimientos %}
+                        <tr>
+                            <td>
+                                <strong>{{ proc.codigo }}</strong>
+                                {% if proc.codigo_cdt %}
+                                <br><small class="text-muted">CDT: {{ proc.codigo_cdt }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ proc.nombre }}
+                                {% if proc.requiere_anestesia %}
+                                <span class="badge badge-warning ml-1" title="Requiere Anestesia">
+                                    <i class="fas fa-syringe"></i>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ proc.get_categoria_display }}</td>
+                            <td>{{ proc.duracion_estimada }} min</td>
+                            <td>
+                                {% if proc.estado %}
+                                <span class="badge badge-success">Activo</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if perms.procedimientos.change_procedimientoodontologico %}
+                                <a href="{% url 'procedimientos:procedimiento-update' proc.pk %}" 
+                                   class="btn btn-sm btn-info" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if perms.procedimientos.delete_procedimientoodontologico %}
+                                <a href="{% url 'procedimientos:procedimiento-delete' proc.pk %}" 
+                                   class="btn btn-sm btn-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="fas fa-info-circle"></i> No se encontraron procedimientos.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}">Anterior</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if categoria_filter %}&categoria={{ categoria_filter }}{% endif %}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

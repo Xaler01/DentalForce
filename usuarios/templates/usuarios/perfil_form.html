@@ -1,0 +1,138 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Editar Mi Perfil - PowerDent{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Encabezado de página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-edit"></i> Editar Mi Perfil
+        </h1>
+    </div>
+
+    <!-- Card del formulario -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Información Personal
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="user">
+                        {% csrf_token %}
+                        
+                        <!-- Información del usuario -->
+                        <div class="form-group">
+                            <label for="id_username" class="font-weight-bold">
+                                <i class="fas fa-user"></i> Usuario
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-user" 
+                                   value="{{ user.username }}" 
+                                   disabled
+                                   readonly>
+                            <small class="form-text text-muted">
+                                El nombre de usuario no puede ser modificado.
+                            </small>
+                        </div>
+
+                        <!-- Nombre -->
+                        <div class="form-group">
+                            <label for="{{ form.first_name.id_for_label }}" class="font-weight-bold">
+                                <i class="fas fa-signature"></i> Nombre
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.first_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Apellido -->
+                        <div class="form-group">
+                            <label for="{{ form.last_name.id_for_label }}" class="font-weight-bold">
+                                <i class="fas fa-signature"></i> Apellido
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.last_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}" class="font-weight-bold">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Información de clínica (solo lectura) -->
+                        {% if user.clinica_asignacion %}
+                        <div class="alert alert-info" role="alert">
+                            <h6 class="font-weight-bold mb-2">
+                                <i class="fas fa-hospital-alt"></i> Información de Clínica
+                            </h6>
+                            <p class="mb-1">
+                                <strong>Clínica:</strong> {{ user.clinica_asignacion.clinica.nombre }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Rol:</strong> 
+                                <span class="badge badge-primary">
+                                    {{ user.clinica_asignacion.get_rol_display }}
+                                </span>
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        <!-- Botones de acción -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-user btn-block">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <div class="text-center">
+                            <a href="{% url 'bases:home' %}" class="btn btn-secondary btn-user">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control-user {
+        border-radius: 10rem;
+        padding: 1.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-user {
+        border-radius: 10rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    select.form-control-user {
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}

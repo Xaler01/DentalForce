@@ -233,6 +233,18 @@
               <span>Dentistas</span>
             </a>
             {% endif %}
+            {% if perms.procedimientos.view_procedimientoodontologico %}
+            <a class="collapse-item" href="{{ procedimiento_list_url }}">
+              <i class="fas fa-fw fa-procedures"></i>
+              <span>Procedimientos</span>
+            </a>
+            {% endif %}
+            {% if perms.procedimientos.view_clinicaprocedimiento %}
+            <a class="collapse-item" href="{{ precio_list_url }}">
+              <i class="fas fa-fw fa-dollar-sign"></i>
+              <span>Precios</span>
+            </a>
+            {% endif %}
             {% if perms.enfermedades.view_categoriaenfermedad %}
             <a class="collapse-item" href="{{ enf_categoria_list_url }}" title="Categorías de Enfermedades">
               <i class="fas fa-fw fa-notes-medical"></i>
@@ -565,13 +577,15 @@
             <li class="nav-item dropdown no-arrow">
               <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.username }}</span>
-                <img class="img-profile rounded-circle"src="{% static 'base/img/undraw_profile.svg' %}">
+                <img class="img-profile rounded-circle" src="{% static 'base/img/undraw_profile.svg' %}" 
+                     style="cursor: pointer;" 
+                     title="Click para abrir menú de usuario">
               </a>
               <!-- Dropdown - User Information -->
               <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"aria-labelledby="userDropdown">
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="{% url 'usuarios:mi_perfil' %}">
                   <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                  Profile
+                  Editar Perfil
                 </a>
                 <a class="dropdown-item" href="{% url 'clinicas:seleccionar' %}">
                   <i class="fas fa-hospital-user fa-sm fa-fw mr-2 text-gray-400"></i>
