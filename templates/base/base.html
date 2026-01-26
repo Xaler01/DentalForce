@@ -587,10 +587,12 @@
                   <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                   Editar Perfil
                 </a>
+                {% if user.is_superuser %}
                 <a class="dropdown-item" href="{% url 'clinicas:seleccionar' %}">
                   <i class="fas fa-hospital-user fa-sm fa-fw mr-2 text-gray-400"></i>
                   Cambiar Clínica
                 </a>
+                {% endif %}
                 <a class="dropdown-item" href="#">
                   <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                   Settings

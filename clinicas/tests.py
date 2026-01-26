@@ -341,28 +341,16 @@ class ClinicaSelectorTests(MultiTenantTestSetup):
         self.assertContains(response, 'Clínica Norte')
         self.assertContains(response, 'Clínica Inactiva')
     
-    def test_usuario_normal_solo_ve_clinicas_activas(self):
+    def test_usuario_no_admin_no_puede_cambiar_clinica(self):
         """
-        Verificar que usuario regular solo ve clínicas activas
+        Usuarios sin rol de admin general no pueden acceder al selector.
         """
-        # Crear una clínica inactiva
-        clinica_inactiva = Clinica.objects.create(
-            nombre='Clínica Inactiva',
-            direccion='Calle X',
-            telefono='555-9999',
-            email='inactiva@example.com',
-            estado=False,
-            uc_id=self.admin.id
-        )
-        
         self.client.login(username='user_sur', password='testpass')
         
-        response = self.client.get(reverse('clinicas:seleccionar'))
+        response = self.client.get(reverse('clinicas:seleccionar'), follow=True)
         
-        # Usuario regular no debe ver clínica inactiva
-        self.assertContains(response, 'Clínica Sur')
-        self.assertContains(response, 'Clínica Norte')
-        self.assertNotContains(response, 'Clínica Inactiva')
+        self.assertRedirects(response, reverse('bases:home'))
+        self.assertContains(response, 'Solo el administrador general puede cambiar de clínica.')
 
 
 class CubiculoCreationTests(MultiTenantTestSetup):

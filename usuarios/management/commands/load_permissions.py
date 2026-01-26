@@ -129,6 +129,35 @@ def crear_roles(permisos_dict):
                 'inventario.solicitar_inventario',
             ]
         },
+        'Odontólogo Director': {
+            'descripcion': 'Para odontólogos que dirigen clínicas nuevas. Acceso completo a: odontología, recepción, facturación e inventario básico. Escalable: cambiar a rol "Dentista" cuando creza el equipo.',
+            'permisos': [
+                # ODONTOLOGÍA (completo)
+                'odontologia.crear_procedimiento',
+                'odontologia.editar_diagnostico',
+                'odontologia.registrar_evolucion',
+                'odontologia.prescribir_medicinas',
+                'odontologia.ver_radiografias',
+                # RECEPCIÓN (completo)
+                'recepcion.ver_citas',
+                'recepcion.crear_cita',
+                'recepcion.editar_cita',
+                'recepcion.cancelar_cita',
+                'recepcion.gestionar_pacientes',
+                'recepcion.ver_historiales',
+                # FACTURACIÓN (completo)
+                'facturacion.ver_facturas',
+                'facturacion.crear_factura',
+                'facturacion.editar_factura',
+                'facturacion.anular_factura',
+                # INVENTARIO (básico)
+                'inventario.ver_inventario',
+                'inventario.solicitar_inventario',
+                # REPORTES (básico)
+                'reportes.ver_reportes_general',
+                'reportes.ver_reportes_financiero',
+            ]
+        },
     }
     
     for nombre_rol, datos in roles_datos.items():

@@ -1,6 +1,6 @@
 from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -21,16 +21,20 @@ from .permissions import (
 # SELECTOR DE CLÍNICA
 # ============================================================================
 
-class ClinicaSelectView(LoginRequiredMixin, View):
+class ClinicaSelectView(LoginRequiredMixin, UserPassesTestMixin, View):
     """Selector de clínica independiente del módulo de citas."""
     template_name = 'clinicas/clinica_select.html'
 
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        messages.warning(self.request, 'Solo el administrador general puede cambiar de clínica.')
+        return redirect('bases:home')
+
     def get(self, request):
-        # Admin ve todas las clínicas; usuarios regulares solo activas
-        if request.user.is_staff and request.user.is_superuser:
-            clinicas = list(Clinica.objects.all().order_by('nombre'))
-        else:
-            clinicas = list(Clinica.objects.filter(estado=True).order_by('nombre'))
+        # Solo el admin general (superuser) puede acceder
+        clinicas = list(Clinica.objects.all().order_by('nombre'))
 
         context = {
             'clinicas': clinicas,
@@ -45,10 +49,7 @@ class ClinicaSelectView(LoginRequiredMixin, View):
             return redirect('clinicas:seleccionar')
 
         try:
-            if request.user.is_staff and request.user.is_superuser:
-                clinica = Clinica.objects.get(pk=clinica_id)
-            else:
-                clinica = Clinica.objects.get(pk=clinica_id, estado=True)
+            clinica = Clinica.objects.get(pk=clinica_id)
         except Clinica.DoesNotExist:
             messages.error(request, 'La clínica seleccionada no existe o está inactiva.')
             return redirect('clinicas:seleccionar')
