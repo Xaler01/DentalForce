@@ -294,11 +294,14 @@
         <div id="collapsePersonal" class="collapse" aria-labelledby="headingPersonal" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header">Gestión de Personal</h6>
+            {% if user.is_staff or user.is_superuser %}
             <a class="collapse-item" href="{% url 'personal:personal-list' %}">
               <i class="fas fa-fw fa-users"></i><span>Lista de Personal</span>
+            {% endif %}
             </a>
             <a class="collapse-item" href="{% url 'personal:horas-extra-list' %}">
               <i class="fas fa-fw fa-clock"></i><span>Horas Extra</span>
+            {% if user.is_staff or user.is_superuser %}
             </a>
             <a class="collapse-item" href="{% url 'personal:horas-extra-aprobar-masiva' %}">
               <i class="fas fa-fw fa-tasks"></i><span>Aprobar Horas</span>
@@ -306,6 +309,7 @@
             <h6 class="collapse-header">Reportes</h6>
             <a class="collapse-item" href="{% url 'personal:nomina-reporte' %}">
               <i class="fas fa-fw fa-file-invoice-dollar"></i><span>Nómina Mensual</span>
+            {% endif %}
             </a>
           </div>
         </div>

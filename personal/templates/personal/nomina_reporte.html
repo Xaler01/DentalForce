@@ -180,8 +180,8 @@
                         {% for item in nomina_data %}
                         <tr>
                             <td>{{ item.personal.usuario.get_full_name }}</td>
-                            <td>{{ item.personal.sucursal.clinica.nombre }}</td>
-                            <td>{{ item.personal.sucursal.nombre }}</td>
+                            <td>{{ item.personal.sucursal_principal.clinica.nombre }}</td>
+                            <td>{{ item.personal.sucursal_principal.nombre }}</td>
                             <td class="text-right">${{ item.salario_base|floatformat:2 }}</td>
                             <td class="text-right">{{ item.horas_normales|floatformat:1 }}</td>
                             <td class="text-right">{{ item.horas_25|floatformat:1 }}</td>

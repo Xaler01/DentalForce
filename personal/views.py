@@ -19,17 +19,17 @@ class PersonalListView(LoginRequiredMixin, ListView):
 	context_object_name = 'personal_list'
 
 	def get_queryset(self):
-		queryset = Personal.objects.select_related('sucursal', 'sucursal__clinica', 'usuario').filter(estado=True)
+		queryset = Personal.objects.select_related('sucursal_principal', 'sucursal_principal__clinica', 'usuario').filter(estado=True)
 		
 		# Filtro por clínica
 		clinica_id = self.request.GET.get('clinica')
 		if clinica_id:
-			queryset = queryset.filter(sucursal__clinica_id=clinica_id)
+			queryset = queryset.filter(sucursal_principal__clinica_id=clinica_id)
 		
 		# Filtro por sucursal
 		sucursal_id = self.request.GET.get('sucursal')
 		if sucursal_id:
-			queryset = queryset.filter(sucursal_id=sucursal_id)
+			queryset = queryset.filter(sucursal_principal_id=sucursal_id)
 		
 		return queryset.order_by('usuario__first_name', 'usuario__last_name')
 
@@ -93,7 +93,7 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 
 	def get_queryset(self):
 		queryset = RegistroHorasPersonal.objects.select_related(
-			'personal', 'personal__usuario', 'personal__sucursal', 'personal__sucursal__clinica'
+			'personal', 'personal__usuario', 'personal__sucursal_principal', 'personal__sucursal_principal__clinica'
 		)
 		
 		# Filtro por estado
@@ -104,12 +104,12 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 		# Filtro por clínica
 		clinica_id = self.request.GET.get('clinica')
 		if clinica_id:
-			queryset = queryset.filter(personal__sucursal__clinica_id=clinica_id)
+			queryset = queryset.filter(personal__sucursal_principal__clinica_id=clinica_id)
 		
 		# Filtro por sucursal
 		sucursal_id = self.request.GET.get('sucursal')
 		if sucursal_id:
-			queryset = queryset.filter(personal__sucursal_id=sucursal_id)
+			queryset = queryset.filter(personal__sucursal_principal_id=sucursal_id)
 		
 		# Filtro por mes/año
 		mes = self.request.GET.get('mes')
@@ -154,17 +154,17 @@ class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, View):
 	def get(self, request):
 		# Obtener registros pendientes
 		queryset = RegistroHorasPersonal.objects.select_related(
-			'personal', 'personal__usuario', 'personal__sucursal__clinica'
+			'personal', 'personal__usuario', 'personal__sucursal_principal__clinica'
 		).filter(estado='PENDIENTE')
 		
 		# Aplicar filtros
 		clinica_id = request.GET.get('clinica')
 		if clinica_id:
-			queryset = queryset.filter(personal__sucursal__clinica_id=clinica_id)
+			queryset = queryset.filter(personal__sucursal_principal__clinica_id=clinica_id)
 		
 		sucursal_id = request.GET.get('sucursal')
 		if sucursal_id:
-			queryset = queryset.filter(personal__sucursal_id=sucursal_id)
+			queryset = queryset.filter(personal__sucursal_principal_id=sucursal_id)
 		
 		mes = request.GET.get('mes')
 		anio = request.GET.get('anio')
@@ -223,17 +223,17 @@ class PersonalNominaReporteView(LoginRequiredMixin, View):
 		
 		# Obtener todo el personal activo
 		personal_queryset = Personal.objects.filter(estado=True).select_related(
-			'usuario', 'sucursal', 'sucursal__clinica'
+			'usuario', 'sucursal_principal', 'sucursal_principal__clinica'
 		)
 		
 		# Aplicar filtros
 		clinica_id = request.GET.get('clinica')
 		if clinica_id:
-			personal_queryset = personal_queryset.filter(sucursal__clinica_id=clinica_id)
+			personal_queryset = personal_queryset.filter(sucursal_principal__clinica_id=clinica_id)
 		
 		sucursal_id = request.GET.get('sucursal')
 		if sucursal_id:
-			personal_queryset = personal_queryset.filter(sucursal_id=sucursal_id)
+			personal_queryset = personal_queryset.filter(sucursal_principal_id=sucursal_id)
 		
 		# Calcular datos de nómina para cada personal
 		nomina_data = []

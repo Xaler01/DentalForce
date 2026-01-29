@@ -169,8 +169,8 @@
                         <tr>
                             <td>{{ registro.fecha|date:"d/m/Y" }}</td>
                             <td>{{ registro.personal.usuario.get_full_name }}</td>
-                            <td>{{ registro.personal.sucursal.clinica.nombre }}</td>
-                            <td>{{ registro.personal.sucursal.nombre }}</td>
+                            <td>{{ registro.personal.sucursal_principal.clinica.nombre }}</td>
+                            <td>{{ registro.personal.sucursal_principal.nombre }}</td>
                             <td>{{ registro.horas_normales|floatformat:2 }}</td>
                             <td>{{ registro.horas_25_porciento|floatformat:2 }}</td>
                             <td>{{ registro.horas_50_porciento|floatformat:2 }}</td>
