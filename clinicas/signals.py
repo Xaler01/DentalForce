@@ -207,7 +207,7 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
             
             # Crear perfil profesional de Dentista
             from personal.models import Dentista
-            Dentista.objects.create(
+            dentista = Dentista.objects.create(
                 usuario=dentista_user,
                 uc=dentista_user,  # Usuario que crea el registro
                 sucursal_principal=instance,
@@ -216,6 +216,48 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 estado=True
             )
             # Las especialidades se pueden asignar después por el administrador
+            
+            # Crear horarios por defecto basados en la configuración de la clínica
+            try:
+                from cit.models import ConfiguracionClinica
+                from personal.models import DisponibilidadDentista
+                from datetime import datetime
+                
+                config = ConfiguracionClinica.objects.filter(estado=True).first()
+                
+                if config:
+                    # Obtener días y horarios de la clínica
+                    dias_atiende = config.get_dias_atencion()
+                    for dia in dias_atiende:
+                        horario = config.get_horario_dia(dia)
+                        if horario:
+                            DisponibilidadDentista.objects.create(
+                                dentista=dentista,
+                                uc=dentista_user,
+                                sucursal=instance,
+                                dia_semana=dia,
+                                hora_inicio=horario[0],
+                                hora_fin=horario[1],
+                                activo=True
+                            )
+                else:
+                    # Si no hay configuración de clínica, usar horario por defecto (8:30-18:00 L-V)
+                    default_inicio = datetime.strptime('08:30', '%H:%M').time()
+                    default_fin = datetime.strptime('18:00', '%H:%M').time()
+                    for dia in range(5):  # Lunes a Viernes
+                        DisponibilidadDentista.objects.create(
+                            dentista=dentista,
+                            uc=dentista_user,
+                            sucursal=instance,
+                            dia_semana=dia,
+                            hora_inicio=default_inicio,
+                            hora_fin=default_fin,
+                            activo=True
+                        )
+                
+                logger.info(f"✅ Horarios por defecto creados para dentista {username_dent}")
+            except Exception as e:
+                logger.error(f"❌ Error al crear horarios para dentista {username_dent}: {str(e)}")
             
             # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
             if instance.clinica.email:
