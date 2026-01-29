@@ -1476,6 +1476,36 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
             for obj in comision_formset.deleted_objects:
                 obj.delete()
             
+            # Crear comisiones por defecto si el dentista no tiene ninguna
+            comisiones_existentes = self.object.comisiones.count()
+            if comisiones_existentes == 0:
+                try:
+                    from clinicas.models import Especialidad
+                    from personal.models import ComisionDentista
+                    
+                    # Obtener especialidades activas
+                    especialidades_activas = Especialidad.objects.filter(estado=True)
+                    
+                    if especialidades_activas.exists():
+                        for especialidad in especialidades_activas:
+                            ComisionDentista.objects.create(
+                                dentista=self.object,
+                                uc=self.request.user,
+                                especialidad=especialidad,
+                                tipo_comision='PORCENTAJE',
+                                porcentaje=15,  # 15% por defecto
+                                activo=True
+                            )
+                        messages.success(
+                            self.request,
+                            f'✅ Comisiones por defecto (15%) creadas automáticamente para todas las especialidades'
+                        )
+                except Exception as e:
+                    messages.warning(
+                        self.request,
+                        f'⚠️ No se pudieron crear comisiones automáticas: {str(e)}'
+                    )
+            
             # Guardar credenciales en sesión para mostrar en página de éxito
             self.request.session['dentista_credenciales'] = {
                 'nombre_completo': self.object.usuario.get_full_name(),

@@ -1257,6 +1257,7 @@ class ComisionDentistaForm(forms.ModelForm):
     """
     Formulario para gestionar comisiones de dentistas por especialidad.
     Permite configurar comisiones por porcentaje o valor fijo.
+    Solo muestra especialidades activas o asignadas al dentista.
     """
     
     class Meta:
@@ -1307,6 +1308,15 @@ class ComisionDentistaForm(forms.ModelForm):
             'activo': 'Marque para activar esta comisión',
             'observaciones': 'Información adicional (opcional)'
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar especialidades: solo mostrar especialidades activas
+        from clinicas.models import Especialidad
+        self.fields['especialidad'].queryset = Especialidad.objects.filter(
+            estado=True
+        ).order_by('nombre')
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

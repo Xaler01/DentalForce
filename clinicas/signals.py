@@ -20,6 +20,41 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def crear_comisiones_por_defecto(dentista, porcentaje_defecto=15):
+    """
+    Crea comisiones por defecto para un dentista en todas sus especialidades activas.
+    
+    Args:
+        dentista: Instancia de Dentista
+        porcentaje_defecto: Porcentaje por defecto (default 15%)
+    """
+    try:
+        from personal.models import ComisionDentista
+        from clinicas.models import Especialidad
+        
+        # Obtener especialidades activas
+        especialidades_activas = Especialidad.objects.filter(estado=True)
+        
+        for especialidad in especialidades_activas:
+            # Verificar si ya existe comisión para esta combinación
+            if not ComisionDentista.objects.filter(
+                dentista=dentista,
+                especialidad=especialidad
+            ).exists():
+                ComisionDentista.objects.create(
+                    dentista=dentista,
+                    uc=dentista.usuario,
+                    especialidad=especialidad,
+                    tipo_comision='PORCENTAJE',
+                    porcentaje=porcentaje_defecto,
+                    activo=True
+                )
+        
+        logger.info(f"✅ Comisiones por defecto creadas para {dentista.usuario.username} (15%)")
+    except Exception as e:
+        logger.error(f"❌ Error al crear comisiones para {dentista.usuario.username}: {str(e)}")
+
+
 @receiver(post_save, sender=Clinica)
 def crear_admin_clinica(sender, instance, created, **kwargs):
     """
@@ -258,6 +293,9 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 logger.info(f"✅ Horarios por defecto creados para dentista {username_dent}")
             except Exception as e:
                 logger.error(f"❌ Error al crear horarios para dentista {username_dent}: {str(e)}")
+            
+            # Crear comisiones por defecto (15%)
+            crear_comisiones_por_defecto(dentista, porcentaje_defecto=15)
             
             # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
             if instance.clinica.email:
