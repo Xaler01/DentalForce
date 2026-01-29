@@ -162,11 +162,13 @@ class CitaForm(forms.ModelForm):
             ).order_by('apellidos', 'nombres')
             self.fields['dentista'].queryset = Dentista.objects.filter(
                 estado=True,
-                sucursal_principal__clinica=self.clinica
+                sucursal_principal__clinica=self.clinica,
+                sucursal_principal__estado=True  # Solo dentistas de sucursales activas
             ).select_related('usuario').order_by('usuario__last_name', 'usuario__first_name')
-            # Filtrar cubículos por clínica (a través de sucursal)
+            # Filtrar cubículos: solo activos, de la clínica y de SUCURSALES ACTIVAS
             self.fields['cubiculo'].queryset = Cubiculo.objects.filter(
                 estado=True,
+                sucursal__estado=True,  # ⭐ CLAVE: Solo sucursales activas
                 sucursal__clinica=self.clinica
             ).select_related('sucursal').order_by('sucursal__nombre', 'nombre')
         else:
@@ -354,6 +356,34 @@ class CitaForm(forms.ModelForm):
         if dentista.sucursal_principal and cubiculo.sucursal != dentista.sucursal_principal:
             raise ValidationError({
                 'cubiculo': f'El cubículo debe pertenecer a la sucursal {dentista.sucursal_principal}'
+            })
+        
+        # ========================================================================
+        # VALIDACIÓN 2.1: Sucursal del cubículo debe estar activa ⭐ NUEVO
+        # ========================================================================
+        if not cubiculo.sucursal.estado:
+            raise ValidationError({
+                'cubiculo': f'La sucursal "{cubiculo.sucursal.nombre}" está inactiva. '
+                           f'No se pueden agendar citas en sucursales inactivas. '
+                           f'Por favor, contacte al administrador.'
+            })
+        
+        # ========================================================================
+        # VALIDACIÓN 2.2: Cubículo debe estar activo ⭐ NUEVO
+        # ========================================================================
+        if not cubiculo.estado:
+            raise ValidationError({
+                'cubiculo': f'El cubículo "{cubiculo.nombre}" está inactivo. '
+                           f'Por favor, seleccione otro cubículo disponible.'
+            })
+        
+        # ========================================================================
+        # VALIDACIÓN 2.3: Sucursal del dentista debe estar activa ⭐ NUEVO
+        # ========================================================================
+        if dentista.sucursal_principal and not dentista.sucursal_principal.estado:
+            raise ValidationError({
+                'dentista': f'La sucursal principal del dentista está inactiva. '
+                           f'No se pueden agendar citas con este profesional.'
             })
         
         # ========================================================================
