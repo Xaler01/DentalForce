@@ -62,6 +62,64 @@ class SucursalForm(forms.ModelForm):
             'domingo_horario_apertura': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'domingo_horario_cierre': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        # Extraer el usuario del kwargs si viene
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Guardar el usuario para usarlo en clean_clinica
+        self._user = user
+        
+        # Filtrar clínicas según el usuario
+        if user:
+            if not user.is_superuser:
+                # Para admins de clínica: mostrar solo su clínica, hacerla readonly
+                try:
+                    from usuarios.models import UsuarioClinica
+                    usuario_clinica = UsuarioClinica.objects.filter(usuario=user).first()
+                    if usuario_clinica and usuario_clinica.clinica:
+                        clinica = usuario_clinica.clinica
+                        # Filtrar queryset a solo la clínica del usuario
+                        self.fields['clinica'].queryset = Clinica.objects.filter(pk=clinica.pk)
+                        # Pre-seleccionar la clínica del usuario
+                        self.initial['clinica'] = clinica
+                        # Deshabilitar el campo
+                        self.fields['clinica'].disabled = True
+                        self.fields['clinica'].widget.attrs.update({
+                            'disabled': 'disabled',
+                            'style': 'background-color: #e9ecef; cursor: not-allowed; pointer-events: none;'
+                        })
+                        self.fields['clinica'].help_text = f'Asignado a: {clinica.nombre}'
+                    else:
+                        # Si no tiene clínica asignada, mostrar todas
+                        self.fields['clinica'].queryset = Clinica.objects.all()
+                except Exception as e:
+                    # Si hay error, usar comportamiento por defecto
+                    self.fields['clinica'].queryset = Clinica.objects.all()
+            else:
+                # Para superusers: mostrar todas las clínicas
+                self.fields['clinica'].queryset = Clinica.objects.all()
+        else:
+            # Si no viene user, mostrar todas (fallback)
+            self.fields['clinica'].queryset = Clinica.objects.all()
+    
+    def clean_clinica(self):
+        """
+        Validación backend: asegurar que admins de clínica solo puedan 
+        asignar su propia clínica
+        """
+        clinica = self.cleaned_data.get('clinica')
+        
+        # Obtener el usuario desde el formulario (guardado en __init__)
+        if hasattr(self, '_user') and self._user and not self._user.is_superuser:
+            from usuarios.models import UsuarioClinica
+            usuario_clinica = UsuarioClinica.objects.filter(usuario=self._user).first()
+            if usuario_clinica and usuario_clinica.clinica:
+                # Forzar que sea la clínica del usuario, ignorando lo que venga del POST
+                return usuario_clinica.clinica
+        
+        return clinica
 
 
 class EspecialidadForm(forms.ModelForm):

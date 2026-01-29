@@ -971,6 +971,7 @@ def citas_json(request):
             'extendedProps': {
                 'paciente': str(cita.paciente),
                 'paciente_cedula': cita.paciente.cedula,
+                'paciente_telefono': cita.paciente.telefono or 'N/A',
                 'dentista': str(cita.dentista),
                 'especialidad': cita.especialidad.nombre,
                 'especialidad_color': cita.especialidad.color_calendario,
@@ -1173,9 +1174,25 @@ class EspecialidadDeleteView(LoginRequiredMixin, DeleteView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Verificar si hay dentistas o citas asociadas
-        context['dentistas_count'] = self.object.dentistas.count()
-        context['citas_count'] = self.object.citas.count()
+        
+        # Filtrar conteos por clínica activa
+        clinica = get_clinica_from_request(self.request)
+        
+        if clinica and not self.request.user.is_superuser:
+            # Contar solo dentistas de la clínica activa
+            context['dentistas_count'] = self.object.dentistas.filter(
+                sucursal_principal__clinica=clinica
+            ).count()
+            
+            # Contar solo citas de la clínica activa
+            context['citas_count'] = self.object.citas.filter(
+                dentista__sucursal_principal__clinica=clinica
+            ).count()
+        else:
+            # Superusers ven totales globales
+            context['dentistas_count'] = self.object.dentistas.count()
+            context['citas_count'] = self.object.citas.count()
+        
         return context
 
 
@@ -1261,6 +1278,13 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
     def get_form_class(self):
         from .forms import DentistaForm
         return DentistaForm
+    
+    def get_form_kwargs(self):
+        """Pasar clínica activa al formulario"""
+        kwargs = super().get_form_kwargs()
+        clinica = get_clinica_from_request(self.request)
+        kwargs['clinica'] = clinica
+        return kwargs
     
     def get_context_data(self, **kwargs):
         """Agregar formsets al contexto"""
@@ -1452,11 +1476,17 @@ class DentistaCreateView(LoginRequiredMixin, CreateView):
             for obj in comision_formset.deleted_objects:
                 obj.delete()
             
-            messages.success(
-                self.request,
-                f'✅ Dentista Dr(a). {self.object.usuario.get_full_name()} creado exitosamente'
-            )
-            return redirect(self.success_url)
+            # Guardar credenciales en sesión para mostrar en página de éxito
+            self.request.session['dentista_credenciales'] = {
+                'nombre_completo': self.object.usuario.get_full_name(),
+                'username': self.object.usuario.username,
+                'email': self.object.usuario.email,
+                'clinica': str(self.object.sucursal_principal.clinica) if self.object.sucursal_principal else 'N/A',
+                'dentista_id': self.object.id
+            }
+            self.request.session.modified = True
+            
+            return redirect('cit:dentista-credenciales')
         else:
             # Mostrar errores de los formsets de forma legible
             error_found = False
@@ -1505,6 +1535,20 @@ class DentistaUpdateView(LoginRequiredMixin, UpdateView):
     def get_form_class(self):
         from .forms import DentistaForm
         return DentistaForm
+    
+    def get_form_kwargs(self):
+        """Pasar clínica activa al formulario"""
+        kwargs = super().get_form_kwargs()
+        clinica = get_clinica_from_request(self.request)
+        kwargs['clinica'] = clinica
+        return kwargs
+    
+    def get_form_kwargs(self):
+        """Pasar clínica activa al formulario"""
+        kwargs = super().get_form_kwargs()
+        clinica = get_clinica_from_request(self.request)
+        kwargs['clinica'] = clinica
+        return kwargs
     
     def get_context_data(self, **kwargs):
         """Agregar formsets al contexto"""
@@ -1793,10 +1837,16 @@ class ClinicaListView(LoginRequiredMixin, ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        """Aplicar filtros y búsqueda"""
+        """Aplicar filtros y búsqueda solo sobre la clínica asignada."""
         queryset = Clinica.objects.prefetch_related('sucursales').all()
+
+        if not self.request.user.is_superuser:
+            clinica_id = self.request.session.get('clinica_id')
+            if clinica_id:
+                queryset = queryset.filter(id=clinica_id)
+            else:
+                return Clinica.objects.none()
         
-        # Búsqueda por nombre, dirección o email
         busqueda = self.request.GET.get('busqueda')
         if busqueda:
             queryset = queryset.filter(
@@ -1812,6 +1862,7 @@ class ClinicaListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['busqueda'] = self.request.GET.get('busqueda', '')
         context['total_clinicas'] = self.get_queryset().count()
+        context['puede_crear_clinica'] = self.request.user.is_superuser
         return context
 
 
@@ -1820,6 +1871,13 @@ class ClinicaDetailView(LoginRequiredMixin, DetailView):
     model = Clinica
     template_name = 'cit/clinica_detail.html'
     context_object_name = 'clinica'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.is_superuser:
+            return qs
+        clinica_id = self.request.session.get('clinica_id')
+        return qs.filter(id=clinica_id)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1844,6 +1902,12 @@ class ClinicaCreateView(LoginRequiredMixin, CreateView):
     form_class = ClinicaForm
     template_name = 'cit/clinica_form.html'
     success_url = reverse_lazy('cit:clinica-list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            messages.error(request, 'Solo el administrador general puede crear clínicas.')
+            return redirect('bases:sin_privilegios')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -2044,6 +2108,18 @@ class SucursalListView(LoginRequiredMixin, ListView):
         
         context['total_sucursales'] = self.get_queryset().count()
         context['busqueda'] = self.request.GET.get('busqueda', '')
+        
+        # Pasar clínicas al filtro
+        clinica_usuario = get_clinica_from_request(self.request)
+        if self.request.user.is_superuser:
+            context['clinicas'] = Clinica.objects.filter(estado=True).order_by('nombre')
+        else:
+            # Para admins de clínica, solo mostrar su clínica
+            context['clinicas'] = Clinica.objects.filter(id=clinica_usuario.id) if clinica_usuario else Clinica.objects.none()
+        
+        # Pre-seleccionar la clínica actual
+        context['clinica_seleccionada'] = str(clinica_usuario.id) if clinica_usuario else ''
+        
         return context
 
 
@@ -2082,6 +2158,8 @@ class SucursalCreateView(LoginRequiredMixin, CreateView):
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        # Pasar el usuario al formulario para filtrar la clínica
+        kwargs['user'] = self.request.user
         if self.request.method in ('POST', 'PUT'):
             kwargs.update({
                 'data': self.request.POST,
@@ -2150,6 +2228,8 @@ class SucursalUpdateView(LoginRequiredMixin, UpdateView):
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        # Pasar el usuario al formulario para filtrar la clínica
+        kwargs['user'] = self.request.user
         if self.request.method in ('POST', 'PUT'):
             kwargs.update({
                 'data': self.request.POST,
@@ -2247,7 +2327,27 @@ class SucursalActivateView(LoginRequiredMixin, View):
             sucursal.estado = True
             sucursal.um = request.user.id
             sucursal.save()
-            messages.success(request, f'Sucursal "{sucursal.nombre}" reactivada exitosamente.')
+            messages.success(request, f'Sucursal "{sucursal.nombre}" reactivada.')
         
-        return redirect('cit:sucursal-detail', pk=pk)
+        return redirect('cit:sucursal-list')
+
+
+class DentistaMostrarCredencialesView(LoginRequiredMixin, TemplateView):
+    """Vista para mostrar credenciales de acceso del nuevo dentista"""
+    template_name = 'cit/dentista_credenciales.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Obtener credenciales de la sesión
+        credenciales = self.request.session.pop('dentista_credenciales', None)
+        
+        if not credenciales:
+            messages.error(self.request, 'No hay credenciales para mostrar')
+            return redirect('cit:dentista-list')
+        
+        context['credenciales'] = credenciales
+        context['login_url'] = self.request.build_absolute_uri('/login/')
+        
+        return context
 

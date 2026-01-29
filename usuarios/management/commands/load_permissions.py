@@ -1,15 +1,34 @@
 """
 Script para cargar permisos y roles predefinidos en PowerDent
 
-Ejecutar: python manage.py shell < usuarios/management/commands/load_permissions.py
+Ejecutar: python manage.py load_permissions
 """
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 from usuarios.models import PermisoPersonalizado, RolUsuarioPowerDent
 
-def crear_permisos():
-    """Crea los permisos predefinidos del sistema"""
-    
-    permisos_datos = [
+
+class Command(BaseCommand):
+    help = 'Carga permisos y roles predefinidos en el sistema'
+
+    def handle(self, *args, **options):
+        self.stdout.write("=" * 60)
+        self.stdout.write("Cargando permisos y roles predefinidos...")
+        self.stdout.write("=" * 60)
+        
+        permisos = self.crear_permisos()
+        self.stdout.write("")
+        self.crear_roles(permisos)
+        
+        self.stdout.write("")
+        self.stdout.write("=" * 60)
+        self.stdout.write(self.style.SUCCESS("✅ Permisos y roles cargados exitosamente"))
+        self.stdout.write("=" * 60)
+
+    def crear_permisos(self):
+        """Crea los permisos predefinidos del sistema"""
+        
+        permisos_datos = [
         # RECEPCIÓN
         ('recepcion.ver_citas', 'Ver Citas', 'Permite visualizar el calendario y listado de citas', 'recepcion'),
         ('recepcion.crear_cita', 'Crear Cita', 'Permite crear nuevas citas para pacientes', 'recepcion'),
@@ -50,32 +69,32 @@ def crear_permisos():
         ('reportes.ver_reportes_general', 'Ver Reportes Generales', 'Permite visualizar reportes generales de la clínica', 'reportes'),
         ('reportes.ver_reportes_financiero', 'Ver Reportes Financieros', 'Permite visualizar reportes financieros detallados', 'reportes'),
         ('reportes.exportar_reportes', 'Exportar Reportes', 'Permite exportar reportes a PDF/Excel', 'reportes'),
-    ]
-    
-    permisos_dict = {}
-    for codigo, nombre, descripcion, categoria in permisos_datos:
-        permiso, created = PermisoPersonalizado.objects.get_or_create(
-            codigo=codigo,
-            defaults={
-                'nombre': nombre,
-                'descripcion': descripcion,
-                'categoria': categoria,
-                'clinica': None,  # Permiso global
-                'activo': True
-            }
-        )
-        permisos_dict[codigo] = permiso
-        if created:
-            print(f"✅ Permiso creado: {codigo}")
-        else:
-            print(f"⚠️  Permiso ya existe: {codigo}")
-    
-    return permisos_dict
+        ]
+        
+        permisos_dict = {}
+        for codigo, nombre, descripcion, categoria in permisos_datos:
+            permiso, created = PermisoPersonalizado.objects.get_or_create(
+                codigo=codigo,
+                defaults={
+                    'nombre': nombre,
+                    'descripcion': descripcion,
+                    'categoria': categoria,
+                    'clinica': None,  # Permiso global
+                    'activo': True
+                }
+            )
+            permisos_dict[codigo] = permiso
+            if created:
+                self.stdout.write(self.style.SUCCESS(f"✅ Permiso creado: {codigo}"))
+            else:
+                self.stdout.write(self.style.WARNING(f"⚠️  Permiso ya existe: {codigo}"))
+        
+        return permisos_dict
 
-def crear_roles(permisos_dict):
-    """Crea los roles predefinidos con sus permisos"""
-    
-    roles_datos = {
+    def crear_roles(self, permisos_dict):
+        """Crea los roles predefinidos con sus permisos"""
+        
+        roles_datos = {
         'Recepcionista': {
             'descripcion': 'Personal encargado de recepción y gestión de citas. Acceso limitado a funciones de atención al paciente.',
             'permisos': [
@@ -99,9 +118,10 @@ def crear_roles(permisos_dict):
             ]
         },
         'Dentista': {
-            'descripcion': 'Profesional odontológico con acceso a historiales, diagnósticos y procedimientos completos.',
+            'descripcion': 'Profesional odontológico con acceso a historiales, diagnósticos y procedimientos completos. Puede agendar citas para sus pacientes después de la consulta.',
             'permisos': [
                 'recepcion.ver_citas',
+                'recepcion.crear_cita',  # Puede agendar próxima cita después de consulta
                 'odontologia.crear_procedimiento',
                 'odontologia.editar_diagnostico',
                 'odontologia.registrar_evolucion',
@@ -158,38 +178,55 @@ def crear_roles(permisos_dict):
                 'reportes.ver_reportes_financiero',
             ]
         },
-    }
-    
-    for nombre_rol, datos in roles_datos.items():
-        rol, created = RolUsuarioPowerDent.objects.get_or_create(
-            nombre=nombre_rol,
-            clinica=None,  # Rol global del sistema
-            defaults={
-                'descripcion': datos['descripcion'],
-                'activo': True
-            }
-        )
+        'Administrador de Clínica': {
+            'descripcion': 'Acceso administrativo completo a la clínica: gestión de usuarios, sucursales, acceso a todos los módulos (citas, pacientes, inventario, facturación, reportes).',
+            'permisos': [
+                # ADMINISTRACIÓN (completo)
+                'admin.gestionar_usuarios',
+                'admin.asignar_roles',
+                'admin.gestionar_sucursales',
+                # RECEPCIÓN (completo)
+                'recepcion.ver_citas',
+                'recepcion.crear_cita',
+                'recepcion.editar_cita',
+                'recepcion.cancelar_cita',
+                'recepcion.gestionar_pacientes',
+                'recepcion.ver_historiales',
+                # FACTURACIÓN (completo)
+                'facturacion.ver_facturas',
+                'facturacion.crear_factura',
+                'facturacion.editar_factura',
+                'facturacion.anular_factura',
+                # INVENTARIO (completo)
+                'inventario.ver_inventario',
+                'inventario.solicitar_inventario',
+                # REPORTES (completo)
+                'reportes.ver_reportes_general',
+                'reportes.ver_reportes_financiero',
+                'reportes.exportar_reportes',
+                # ODONTOLOGÍA (lectura para supervisión)
+                'odontologia.ver_radiografias',
+                'recepcion.ver_historiales',
+            ]
+        },
+        }
         
-        # Asignar permisos al rol
-        for codigo_permiso in datos['permisos']:
-            if codigo_permiso in permisos_dict:
-                rol.permisos.add(permisos_dict[codigo_permiso])
-        
-        if created:
-            print(f"✅ Rol creado: {nombre_rol} con {len(datos['permisos'])} permisos")
-        else:
-            print(f"⚠️  Rol ya existe: {nombre_rol}")
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("Cargando permisos y roles predefinidos...")
-    print("=" * 60)
-    
-    permisos = crear_permisos()
-    print()
-    crear_roles(permisos)
-    
-    print()
-    print("=" * 60)
-    print("✅ Permisos y roles cargados exitosamente")
-    print("=" * 60)
+        for nombre_rol, datos in roles_datos.items():
+            rol, created = RolUsuarioPowerDent.objects.get_or_create(
+                nombre=nombre_rol,
+                clinica=None,  # Rol global del sistema
+                defaults={
+                    'descripcion': datos['descripcion'],
+                    'activo': True
+                }
+            )
+            
+            # Asignar permisos al rol
+            for codigo_permiso in datos['permisos']:
+                if codigo_permiso in permisos_dict:
+                    rol.permisos.add(permisos_dict[codigo_permiso])
+            
+            if created:
+                self.stdout.write(self.style.SUCCESS(f"✅ Rol creado: {nombre_rol} con {len(datos['permisos'])} permisos"))
+            else:
+                self.stdout.write(self.style.WARNING(f"⚠️  Rol ya existe: {nombre_rol}"))

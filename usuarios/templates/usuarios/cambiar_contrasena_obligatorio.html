@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cambiar Contraseña - PowerDent{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-key"></i> Cambio de Contraseña Requerido
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <strong>⚠️ Primera vez aquí</strong><br>
+                        Por seguridad, debe cambiar su contraseña temporal antes de continuar usando el sistema.
+                    </div>
+
+                    <form method="post" class="needs-validation">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_password_nueva" class="form-label">
+                                <strong>Nueva Contraseña</strong>
+                            </label>
+                            <div class="input-group">
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="id_password_nueva"
+                                    name="password_nueva"
+                                    placeholder="Ingrese su nueva contraseña"
+                                    required
+                                    minlength="8"
+                                >
+                                <button 
+                                    class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    id="toggle_password"
+                                    title="Mostrar/Ocultar contraseña"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Mínimo 8 caracteres
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password_confirmar" class="form-label">
+                                <strong>Confirmar Contraseña</strong>
+                            </label>
+                            <input 
+                                type="password" 
+                                class="form-control" 
+                                id="id_password_confirmar"
+                                name="password_confirmar"
+                                placeholder="Confirme su nueva contraseña"
+                                required
+                                minlength="8"
+                            >
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Cambiar Contraseña
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+                    
+                    <div class="alert alert-light text-muted">
+                        <small>
+                            <strong>Recomendaciones de seguridad:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Use una contraseña única (no la use en otros sitios)</li>
+                                <li>Combine mayúsculas, minúsculas, números y símbolos</li>
+                                <li>Evite información personal (nombre, fecha de nacimiento, etc)</li>
+                                <li>No comparta su contraseña con nadie</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info de usuario -->
+            <div class="card mt-3 text-muted" style="background-color: #f8f9fa;">
+                <div class="card-body small">
+                    <strong>Usuario:</strong> {{ user.username }}<br>
+                    <strong>Email:</strong> {{ user.email }}<br>
+                    <strong>Acceso a:</strong> 
+                    {% if user.clinica_asignacion %}
+                        {{ user.clinica_asignacion.clinica.nombre }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle mostrar/ocultar contraseña
+    const toggleBtn = document.getElementById('toggle_password');
+    const passwordInput = document.getElementById('id_password_nueva');
+    const passwordConfirmar = document.getElementById('id_password_confirmar');
+    
+    toggleBtn.addEventListener('click', function() {
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        passwordConfirmar.type = isPassword ? 'text' : 'password';
+        
+        const icon = toggleBtn.querySelector('i');
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
+
+    // Validar que las contraseñas coincidan
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const pwd = document.getElementById('id_password_nueva').value;
+        const confirm = document.getElementById('id_password_confirmar').value;
+        
+        if (pwd !== confirm) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+            return false;
+        }
+        
+        if (pwd.length < 8) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 8 caracteres');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

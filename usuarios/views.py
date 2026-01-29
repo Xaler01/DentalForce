@@ -350,3 +350,67 @@ class UsuarioRolesUpdateView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView
             f'✅ Roles y permisos de {usuario.get_full_name() or usuario.username} actualizados.'
         )
         return response
+
+
+class CambiarContrasenaObligatorioView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para cambiar contraseña obligatoria en primer login.
+    Se muestra si el usuario tiene contrasena_temporal=True.
+    """
+    model = User
+    fields = []
+    template_name = 'usuarios/cambiar_contrasena_obligatorio.html'
+    success_url = reverse_lazy('bases:home')
+    
+    def get_object(self, queryset=None):
+        """Siempre devuelve el usuario actual"""
+        return self.request.user
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            user_clinica = self.request.user.clinica_asignacion
+            context['contrasena_temporal'] = user_clinica.contrasena_temporal
+        except:
+            context['contrasena_temporal'] = False
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Procesar cambio de contraseña"""
+        password_nueva = request.POST.get('password_nueva', '').strip()
+        password_confirmar = request.POST.get('password_confirmar', '').strip()
+        
+        # Validar que no estén vacías
+        if not password_nueva or not password_confirmar:
+            messages.error(request, '❌ La contraseña no puede estar vacía.')
+            return self.get(request, *args, **kwargs)
+        
+        # Validar que coincidan
+        if password_nueva != password_confirmar:
+            messages.error(request, '❌ Las contraseñas no coinciden.')
+            return self.get(request, *args, **kwargs)
+        
+        # Validar longitud mínima
+        if len(password_nueva) < 8:
+            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
+            return self.get(request, *args, **kwargs)
+        
+        # Cambiar contraseña
+        user = self.request.user
+        user.set_password(password_nueva)
+        user.save()
+        
+        # Marcar contraseña como no-temporal
+        try:
+            user_clinica = user.clinica_asignacion
+            user_clinica.contrasena_temporal = False
+            user_clinica.save()
+        except:
+            pass
+        
+        # Mensaje de éxito
+        messages.success(request, '✅ Contraseña cambió correctamente. Ahora puedes acceder al sistema.')
+        
+        # Redirigir a home
+        return redirect(self.success_url)
+

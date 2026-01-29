@@ -1,0 +1,212 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Alert de éxito -->
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <h4 class="alert-heading">
+                    <i class="fas fa-check-circle"></i> ¡Dentista Creado Exitosamente!
+                </h4>
+                <p class="mb-0">
+                    Se ha creado el perfil de Dr(a). <strong>{{ credenciales.nombre_completo }}</strong> en la clínica <strong>{{ credenciales.clinica }}</strong>
+                </p>
+            </div>
+
+            <!-- Card con credenciales -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key"></i> Credenciales de Acceso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>IMPORTANTE:</strong> Comparta estas credenciales de forma segura con el dentista.
+                        El dentista debe cambiar su contraseña en el primer acceso.
+                    </div>
+
+                    <!-- Usuario -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-user-circle"></i> Usuario (Username)
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg" 
+                                id="username"
+                                value="{{ credenciales.username }}" 
+                                readonly
+                                style="background-color: #f8f9fa; font-family: monospace;"
+                            >
+                            <div class="input-group-append">
+                                <button 
+                                    class="btn btn-outline-primary" 
+                                    type="button"
+                                    onclick="copiarAlPortapapeles('username')"
+                                    title="Copiar usuario"
+                                >
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="email" 
+                                class="form-control form-control-lg" 
+                                id="email"
+                                value="{{ credenciales.email }}" 
+                                readonly
+                                style="background-color: #f8f9fa; font-family: monospace;"
+                            >
+                            <div class="input-group-append">
+                                <button 
+                                    class="btn btn-outline-primary" 
+                                    type="button"
+                                    onclick="copiarAlPortapapeles('email')"
+                                    title="Copiar email"
+                                >
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nota sobre contraseña -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Contraseña:</strong> La contraseña fue ingresada durante la creación y 
+                        <strong>no se puede recuperar desde aquí</strong>. Si el dentista olvida su contraseña, 
+                        use la opción "Olvidé mi contraseña" en la página de login.
+                    </div>
+
+                    <!-- URL de Login -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-link"></i> URL de Acceso
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg" 
+                                id="login_url"
+                                value="{{ login_url }}" 
+                                readonly
+                                style="background-color: #f8f9fa; font-family: monospace;"
+                            >
+                            <div class="input-group-append">
+                                <button 
+                                    class="btn btn-outline-primary" 
+                                    type="button"
+                                    onclick="copiarAlPortapapeles('login_url')"
+                                    title="Copiar URL"
+                                >
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                                <a 
+                                    href="{{ login_url }}" 
+                                    target="_blank"
+                                    class="btn btn-outline-info"
+                                    title="Abrir login en nueva pestaña"
+                                >
+                                    <i class="fas fa-external-link-alt"></i> Abrir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="font-weight-bold mb-3">
+                                <i class="fas fa-clipboard-list"></i> Instrucciones para el Dentista
+                            </h6>
+                            <ol class="mb-0">
+                                <li>Ir a la URL proporcionada arriba</li>
+                                <li>Ingresar el <strong>usuario</strong> y la <strong>contraseña</strong></li>
+                                <li>En el primer acceso, se le solicitará cambiar la contraseña</li>
+                                <li>Crear una contraseña nueva segura y confirmarla</li>
+                                <li>¡Listo! Ya podrá acceder al sistema</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="{% url 'cit:dentista-list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Lista de Dentistas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Nota de seguridad -->
+            <div class="alert alert-warning mt-4">
+                <i class="fas fa-lock"></i>
+                <strong>Seguridad:</strong> Por favor, comunique estas credenciales de forma segura 
+                (preferiblemente en persona, llamada o mensaje encriptado). 
+                Evite enviarlas por canales no seguros.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarAlPortapapeles(elementId) {
+    const elemento = document.getElementById(elementId);
+    
+    // Seleccionar el texto
+    elemento.select();
+    elemento.setSelectionRange(0, 99999);
+    
+    // Copiar al portapapeles
+    document.execCommand('copy');
+    
+    // Mostrar notificación
+    const button = event.target.closest('button');
+    const textOriginal = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-primary', 'btn-outline-info');
+    
+    // Restaurar botón después de 2 segundos
+    setTimeout(() => {
+        button.innerHTML = textOriginal;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-primary');
+    }, 2000);
+}
+
+// Usar Clipboard API si está disponible (mejor práctica)
+async function copiarAlPortapapelesModerno(elementId) {
+    const elemento = document.getElementById(elementId);
+    try {
+        await navigator.clipboard.writeText(elemento.value);
+        
+        const button = event.target.closest('button');
+        const textOriginal = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-primary', 'btn-outline-info');
+        
+        setTimeout(() => {
+            button.innerHTML = textOriginal;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    } catch (err) {
+        alert('Error al copiar: ' + err);
+    }
+}
+</script>
+
+{% endblock %}

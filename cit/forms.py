@@ -792,6 +792,9 @@ class DentistaForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        # Extraer clínica activa antes de super()
+        self.clinica = kwargs.pop('clinica', None)
+        
         # Si es edición, preparar valores iniciales antes de llamar super()
         if 'instance' in kwargs and kwargs['instance'] and kwargs['instance'].pk:
             instance = kwargs['instance']
@@ -809,6 +812,26 @@ class DentistaForm(forms.ModelForm):
             '%d/%m/%Y',      # 22/11/2025
             '%m/%d/%Y',      # 11/22/2025
         ]
+        
+        # FILTRAR ESPECIALIDADES: Solo mostrar las activas
+        self.fields['especialidades'].queryset = Especialidad.objects.filter(
+            estado=True
+        ).order_by('nombre')
+        
+        # FILTRAR SUCURSALES: Solo mostrar las de la clínica activa
+        if self.clinica:
+            self.fields['sucursales'].queryset = Sucursal.objects.filter(
+                estado=True,
+                clinica=self.clinica
+            ).order_by('nombre')
+            self.fields['sucursal_principal'].queryset = Sucursal.objects.filter(
+                estado=True,
+                clinica=self.clinica
+            ).order_by('nombre')
+        else:
+            # Sin clínica, no mostrar sucursales (seguridad)
+            self.fields['sucursales'].queryset = Sucursal.objects.none()
+            self.fields['sucursal_principal'].queryset = Sucursal.objects.none()
         
         # Si es edición, cargar datos del usuario
         if self.instance and self.instance.pk:
@@ -1655,7 +1678,12 @@ class SucursalForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        # Extraer el usuario del kwargs si viene
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Guardar el usuario para usarlo en clean_clinica
+        self._user = user
         
         # Si estamos editando, cargar los días seleccionados
         if self.instance and self.instance.pk and self.instance.dias_atencion:
@@ -1663,8 +1691,55 @@ class SucursalForm(forms.ModelForm):
             dias_list = list(self.instance.dias_atencion)
             self.initial['dias_atencion_checkboxes'] = dias_list
         
-        # Ordenar clínicas por nombre
-        self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+        # Filtrar clínicas según el usuario
+        if user:
+            if not user.is_superuser:
+                # Para admins de clínica: mostrar solo su clínica, hacerla readonly
+                try:
+                    from usuarios.models import UsuarioClinica
+                    usuario_clinica = UsuarioClinica.objects.filter(usuario=user).first()
+                    if usuario_clinica and usuario_clinica.clinica:
+                        clinica = usuario_clinica.clinica
+                        # Filtrar queryset a solo la clínica del usuario
+                        self.fields['clinica'].queryset = Clinica.objects.filter(pk=clinica.pk)
+                        # Pre-seleccionar la clínica del usuario
+                        self.initial['clinica'] = clinica
+                        # Deshabilitar el campo
+                        self.fields['clinica'].disabled = True
+                        self.fields['clinica'].widget.attrs.update({
+                            'disabled': 'disabled',
+                            'style': 'background-color: #e9ecef; cursor: not-allowed; pointer-events: none;'
+                        })
+                        self.fields['clinica'].help_text = f'Asignado a: {clinica.nombre}'
+                    else:
+                        # Si no tiene clínica asignada, mostrar todas
+                        self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+                except Exception as e:
+                    # Si hay error, usar comportamiento por defecto
+                    self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+            else:
+                # Para superusers: mostrar todas las clínicas activas
+                self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+        else:
+            # Si no viene user, mostrar todas (fallback)
+            self.fields['clinica'].queryset = Clinica.objects.filter(estado=True).order_by('nombre')
+    
+    def clean_clinica(self):
+        """
+        Validación backend: asegurar que admins de clínica solo puedan 
+        asignar su propia clínica
+        """
+        clinica = self.cleaned_data.get('clinica')
+        
+        # Obtener el usuario desde el formulario (guardado en __init__)
+        if hasattr(self, '_user') and self._user and not self._user.is_superuser:
+            from usuarios.models import UsuarioClinica
+            usuario_clinica = UsuarioClinica.objects.filter(usuario=self._user).first()
+            if usuario_clinica and usuario_clinica.clinica:
+                # Forzar que sea la clínica del usuario, ignorando lo que venga del POST
+                return usuario_clinica.clinica
+        
+        return clinica
     
     def clean_nombre(self):
         """Validar que el nombre no esté vacío y sea único por clínica"""

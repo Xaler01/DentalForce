@@ -207,6 +207,11 @@ class UsuarioClinica(models.Model):
         default=True,
         verbose_name='¿Usuario activo?'
     )
+    contrasena_temporal = models.BooleanField(
+        default=False,
+        verbose_name='¿Contraseña temporal?',
+        help_text='Marca si el usuario tiene una contraseña temporal y debe cambiarla en primer acceso'
+    )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Fecha de creación'

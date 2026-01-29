@@ -204,6 +204,12 @@ class SucursalCreateView(MultiTenantListMixin, CreateView):
             initial['clinica'] = Clinica.objects.get(id=clinica_id)
         return initial
     
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Pasar el usuario al formulario para filtrar la clínica
+        kwargs['user'] = self.request.user
+        return kwargs
+    
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, f'Sucursal "{self.object.nombre}" creada.')
@@ -219,6 +225,12 @@ class SucursalUpdateView(MultiTenantAccessMixin, UpdateView):
     clinica_field = 'clinica'
     related_clinica_fields = 'clinica'
     success_url = reverse_lazy('clinicas:sucursal_list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Pasar el usuario al formulario para filtrar la clínica
+        kwargs['user'] = self.request.user
+        return kwargs
     
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -309,6 +321,34 @@ class EspecialidadDeleteView(PermissionCheckMixin, DeleteView):
     template_name = 'clinicas/especialidad_confirm_delete.html'
     permission_required = 'clinicas.delete_especialidad'
     success_url = reverse_lazy('clinicas:especialidad_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Filtrar conteos por clínica activa
+        clinica_id = self.request.session.get('clinica_id')
+        
+        if clinica_id and not self.request.user.is_superuser:
+            # Importar modelo Dentista (evitar imports circulares)
+            from cit.models import Dentista, Cita
+            
+            # Contar solo dentistas de la clínica activa
+            context['dentistas_count'] = self.object.dentistas.filter(
+                sucursal_principal__clinica_id=clinica_id
+            ).count()
+            
+            # Contar solo citas de la clínica activa
+            context['citas_count'] = Cita.objects.filter(
+                especialidad=self.object,
+                dentista__sucursal_principal__clinica_id=clinica_id
+            ).count()
+        else:
+            # Superusers ven totales globales
+            from cit.models import Cita
+            context['dentistas_count'] = self.object.dentistas.count()
+            context['citas_count'] = Cita.objects.filter(especialidad=self.object).count()
+        
+        return context
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Especialidad eliminada.')

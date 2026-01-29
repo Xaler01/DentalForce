@@ -122,6 +122,9 @@ class ClinicaFilterMixin:
         return queryset.none()
 
 
+from usuarios.utils_permisos import tiene_permiso_granular
+
+
 class PermissionCheckMixin(UserPassesTestMixin):
     """
     Mixin para verificar permisos específicos del usuario.
@@ -137,7 +140,7 @@ class PermissionCheckMixin(UserPassesTestMixin):
         if not self.permission_required:
             return True
         
-        return self.request.user.has_perm(self.permission_required)
+        return tiene_permiso_granular(self.request.user, self.permission_required)
     
     def handle_no_permission(self):
         """Si no tiene permiso, mostrar mensaje de error"""

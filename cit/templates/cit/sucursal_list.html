@@ -25,14 +25,19 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label for="clinica">Clínica</label>
-                        <select class="form-control" id="clinica" name="clinica">
+                        <select class="form-control" id="clinica" name="clinica" {% if not user.is_superuser %}disabled{% endif %}>
+                            {% if user.is_superuser %}
                             <option value="">Todas las clínicas</option>
+                            {% endif %}
                             {% for clinica in clinicas %}
                                 <option value="{{ clinica.id }}" {% if clinica.id|stringformat:"s" == clinica_seleccionada %}selected{% endif %}>
                                     {{ clinica.nombre }}
                                 </option>
                             {% endfor %}
                         </select>
+                        {% if not user.is_superuser %}
+                        <small class="form-text text-muted">Solo puedes ver tu clínica asignada</small>
+                        {% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label for="busqueda">Buscar</label>

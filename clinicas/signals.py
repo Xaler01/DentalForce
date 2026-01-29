@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from clinicas.models import Clinica, Sucursal
-from usuarios.models import UsuarioClinica, RolUsuario
+from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioPowerDent
 from usuarios.utils import (
     generar_password_temporal,
     generar_username_unico,
@@ -61,13 +61,30 @@ def crear_admin_clinica(sender, instance, created, **kwargs):
             )
             
             # Crear asociación con clínica
-            UsuarioClinica.objects.create(
+            usuario_clinica = UsuarioClinica.objects.create(
                 usuario=admin_user,
                 clinica=instance,
                 sucursal=None,  # Admin de clínica no tiene sucursal específica
                 rol=RolUsuario.ADMIN_CLINICA,
-                activo=True
+                activo=True,
+                contrasena_temporal=True  # Marcar como temporal
             )
+            
+            # Asignar rol granular "Administrador de Clínica" si existe
+            try:
+                rol_admin = RolUsuarioPowerDent.objects.filter(
+                    nombre='Administrador de Clínica',
+                    clinica__isnull=True,  # Rol global
+                    activo=True
+                ).first()
+                
+                if rol_admin:
+                    usuario_clinica.roles_personalizados.add(rol_admin)
+                    logger.info(f"✅ Rol 'Administrador de Clínica' asignado a {username}")
+                else:
+                    logger.warning(f"⚠️  Rol 'Administrador de Clínica' no encontrado. Ejecutar: python manage.py load_permissions")
+            except Exception as e:
+                logger.error(f"Error al asignar rol granular: {str(e)}")
             
             # Enviar credenciales por email
             enviar_credenciales_email(admin_user, password_temporal, 'admin_clinica')
@@ -126,7 +143,8 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 clinica=instance.clinica,
                 sucursal=instance,
                 rol=RolUsuario.AUXILIAR,
-                activo=True
+                activo=True,
+                contrasena_temporal=True  # Marcar como temporal
             )
             
             # Enviar credenciales
@@ -162,7 +180,8 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 clinica=instance.clinica,
                 sucursal=instance,
                 rol=RolUsuario.DENTISTA,
-                activo=True
+                activo=True,
+                contrasena_temporal=True  # Marcar como temporal
             )
             
             # Enviar credenciales

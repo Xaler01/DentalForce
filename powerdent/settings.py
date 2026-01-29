@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'powerdent.middleware.ClinicaMiddleware',  # Multi-tenant segregation
+    'powerdent.middleware_contrasena.ForzarCambioContrasenaTemporalMiddleware',  # Forzar cambio de contraseña temporal
 ]
 
 ROOT_URLCONF = 'powerdent.urls'
@@ -89,6 +90,9 @@ TEMPLATES = [
                 'powerdent.context_processors.clinica_context',
                 'powerdent.context_processors.menu_urls',
             ],
+            'libraries': {
+                'permisos_tags': 'usuarios.templatetags.permisos_tags',
+            },
         },
     },
 ]

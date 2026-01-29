@@ -4,6 +4,8 @@ Views para gestión de catálogo de procedimientos odontológicos y precios por 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+from usuarios.utils_permisos import tiene_permiso_granular
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -12,9 +14,16 @@ from .models import ProcedimientoOdontologico, ClinicaProcedimiento
 from .forms import ProcedimientoOdontologicoForm, ClinicaProcedimientoForm
 
 
+class GranularPermissionMixin(PermissionRequiredMixin):
+    """Extiende PermissionRequiredMixin para usar permisos granulares."""
+    def has_permission(self):
+        required = self.get_permission_required()
+        return tiene_permiso_granular(self.request.user, required)
+
+
 # ==================== VISTAS DE PROCEDIMIENTOS ====================
 
-class ProcedimientoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class ProcedimientoListView(LoginRequiredMixin, GranularPermissionMixin, ListView):
     """Lista de procedimientos odontológicos"""
     model = ProcedimientoOdontologico
     template_name = 'procedimientos/procedimiento_list.html'
@@ -58,7 +67,7 @@ class ProcedimientoListView(LoginRequiredMixin, PermissionRequiredMixin, ListVie
         return context
 
 
-class ProcedimientoCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ProcedimientoCreateView(LoginRequiredMixin, GranularPermissionMixin, CreateView):
     """Crear nuevo procedimiento"""
     model = ProcedimientoOdontologico
     form_class = ProcedimientoOdontologicoForm
@@ -82,7 +91,7 @@ class ProcedimientoCreateView(LoginRequiredMixin, PermissionRequiredMixin, Creat
         return super().form_invalid(form)
 
 
-class ProcedimientoUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ProcedimientoUpdateView(LoginRequiredMixin, GranularPermissionMixin, UpdateView):
     """Actualizar procedimiento existente"""
     model = ProcedimientoOdontologico
     form_class = ProcedimientoOdontologicoForm
@@ -106,7 +115,7 @@ class ProcedimientoUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Updat
         return super().form_invalid(form)
 
 
-class ProcedimientoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ProcedimientoDeleteView(LoginRequiredMixin, GranularPermissionMixin, DeleteView):
     """Eliminar procedimiento (soft delete)"""
     model = ProcedimientoOdontologico
     template_name = 'procedimientos/procedimiento_confirm_delete.html'
@@ -137,7 +146,7 @@ class ProcedimientoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Delet
 
 # ==================== VISTAS DE PRECIOS POR CLÍNICA ====================
 
-class ClinicaProcedimientoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class ClinicaProcedimientoListView(LoginRequiredMixin, GranularPermissionMixin, ListView):
     """Lista de precios de procedimientos por clínica"""
     model = ClinicaProcedimiento
     template_name = 'procedimientos/precio_list.html'
@@ -219,7 +228,7 @@ class ClinicaProcedimientoListView(LoginRequiredMixin, PermissionRequiredMixin, 
         return context
 
 
-class ClinicaProcedimientoCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ClinicaProcedimientoCreateView(LoginRequiredMixin, GranularPermissionMixin, CreateView):
     """Crear nuevo precio para procedimiento"""
     model = ClinicaProcedimiento
     form_class = ClinicaProcedimientoForm
@@ -249,7 +258,7 @@ class ClinicaProcedimientoCreateView(LoginRequiredMixin, PermissionRequiredMixin
         return super().form_invalid(form)
 
 
-class ClinicaProcedimientoUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ClinicaProcedimientoUpdateView(LoginRequiredMixin, GranularPermissionMixin, UpdateView):
     """Actualizar precio de procedimiento"""
     model = ClinicaProcedimiento
     form_class = ClinicaProcedimientoForm
@@ -278,7 +287,7 @@ class ClinicaProcedimientoUpdateView(LoginRequiredMixin, PermissionRequiredMixin
         return super().form_invalid(form)
 
 
-class ClinicaProcedimientoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ClinicaProcedimientoDeleteView(LoginRequiredMixin, GranularPermissionMixin, DeleteView):
     """Eliminar precio de procedimiento"""
     model = ClinicaProcedimiento
     template_name = 'procedimientos/precio_confirm_delete.html'

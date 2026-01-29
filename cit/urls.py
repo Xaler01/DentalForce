@@ -75,6 +75,7 @@ urlpatterns = [
     # ========================================================================
     path('dentistas/', views.DentistaListView.as_view(), name='dentista-list'),
     path('dentistas/nuevo/', views.DentistaCreateView.as_view(), name='dentista-create'),
+    path('dentistas/credenciales/', views.DentistaMostrarCredencialesView.as_view(), name='dentista-credenciales'),
     path('dentistas/<int:pk>/editar/', views.DentistaUpdateView.as_view(), name='dentista-update'),
     path('dentistas/<int:pk>/eliminar/', views.DentistaDeleteView.as_view(), name='dentista-delete'),
     

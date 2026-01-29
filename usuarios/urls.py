@@ -9,6 +9,7 @@ from usuarios.views import (
     RolDetailView,
     PermisoListView,
     UsuarioRolesUpdateView,
+    CambiarContrasenaObligatorioView,
 )
 
 app_name = 'usuarios'
@@ -25,6 +26,9 @@ urlpatterns = [
     
     # Editar mi perfil (no requiere permisos admin)
     path('mi-perfil/', PerfilUsuarioView.as_view(), name='mi_perfil'),
+    
+    # Cambiar contraseña obligatorio (primer login)
+    path('cambiar-contrasena/', CambiarContrasenaObligatorioView.as_view(), name='cambiar_contrasena'),
     
     # Eliminar usuario (soft delete)
     path('<int:pk>/eliminar/', UsuarioDeleteView.as_view(), name='eliminar'),

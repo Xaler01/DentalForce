@@ -1,4 +1,5 @@
 {% load static %}
+{% load permisos_tags %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -122,14 +123,16 @@
             <h6 class="collapse-header" style="color: #003366; font-weight: bold;">
               <i class="fas fa-calendar-check"></i> Gestión de Citas
             </h6>
-            {% if perms.cit.add_cita %}
+            {% tiene_permiso 'recepcion.crear_cita' as puede_crear_cita_menu %}
+            {% if puede_crear_cita_menu %}
             <a class="collapse-item" href="{{ cita_create_url }}" style="font-weight: 600; color: #28a745;">
               <i class="fas fa-fw fa-plus-circle" style="color: #28a745;"></i>
               <span>Nueva Cita</span>
             </a>
             <div class="collapse-divider"></div>
             {% endif %}
-            {% if perms.cit.view_cita %}
+            {% tiene_permiso 'recepcion.ver_citas' as puede_ver_citas_menu %}
+            {% if puede_ver_citas_menu %}
             <a class="collapse-item" href="{{ calendario_url }}">
               <i class="fas fa-fw fa-calendar-alt"></i>
               <span>Calendario</span>
@@ -144,6 +147,8 @@
       </li>
 
       <!-- Nav Item - PACIENTES (Second Priority - Collapsed by Default) -->
+      {% tiene_cualquier_permiso 'recepcion.gestionar_pacientes' 'admin.gestionar_usuarios' as puede_ver_pacientes %}
+      {% if puede_ver_pacientes %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePacientes" aria-expanded="false" aria-controls="collapsePacientes">
           <i class="fas fa-fw fa-users" style="color: #FFD700;"></i>
@@ -152,13 +157,15 @@
         <div id="collapsePacientes" class="collapse" aria-labelledby="headingPacientes" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header"><i class="fas fa-users"></i> Gestión de Pacientes</h6>
-            {% if perms.pacientes.add_paciente %}
+            {% tiene_permiso 'recepcion.gestionar_pacientes' as puede_crear_paciente %}
+            {% if puede_crear_paciente %}
             <a class="collapse-item" href="{{ paciente_create_url }}">
               <i class="fas fa-fw fa-user-plus"></i>
               <span>Nuevo Paciente</span>
             </a>
             {% endif %}
-            {% if perms.pacientes.view_paciente %}
+            {% tiene_permiso 'recepcion.gestionar_pacientes' as puede_listar_pacientes %}
+            {% if puede_listar_pacientes %}
             <a class="collapse-item" href="{{ paciente_list_url }}">
               <i class="fas fa-fw fa-list"></i>
               <span>Lista de Pacientes</span>
@@ -167,8 +174,11 @@
           </div>
         </div>
       </li>
+      {% endif %}
 
       <!-- Nav Item - CLÍNICAS (Third Priority - Collapsed by Default) -->
+      {% tiene_permiso 'admin.gestionar_sucursales' as puede_gestionar_clinicas %}
+      {% if puede_gestionar_clinicas %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseClinicas" aria-expanded="false" aria-controls="collapseClinicas">
           <i class="fas fa-fw fa-hospital" style="color: #e74c3c;"></i>
@@ -177,7 +187,6 @@
         <div id="collapseClinicas" class="collapse" aria-labelledby="headingClinicas" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header"><i class="fas fa-hospital"></i> Configuración</h6>
-            {% if perms.clinicas.view_clinica %}
             <a class="collapse-item" href="{{ clinica_list_url }}">
               <i class="fas fa-fw fa-hospital"></i>
               <span>Clínicas</span>
@@ -186,10 +195,10 @@
               <i class="fas fa-fw fa-building"></i>
               <span>Sucursales</span>
             </a>
-            {% endif %}
           </div>
         </div>
       </li>
+      {% endif %}
 
       <!-- Nav Item - EVOLUCIONES Y ODONTOGRAMA -->
       <li class="nav-item">
@@ -213,6 +222,8 @@
       </li>
 
       <!-- Nav Item - REFERENCIAS (Especialidades y Dentistas - Collapsed by Default) -->
+      {% tiene_cualquier_permiso 'admin.gestionar_sucursales' 'recepcion.gestionar_pacientes' as puede_ver_referencias %}
+      {% if puede_ver_referencias %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseReferencias" aria-expanded="false" aria-controls="collapseReferencias">
           <i class="fas fa-fw fa-cogs" style="color: #95a5a6;"></i>
@@ -221,30 +232,22 @@
         <div id="collapseReferencias" class="collapse" aria-labelledby="headingReferencias" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header"><i class="fas fa-cogs"></i> Catálogos</h6>
-            {% if perms.cit.view_especialidad %}
             <a class="collapse-item" href="{{ especialidad_list_url }}">
               <i class="fas fa-fw fa-stethoscope"></i>
               <span>Especialidades</span>
             </a>
-            {% endif %}
-            {% if perms.personal.view_dentista %}
             <a class="collapse-item" href="{{ dentista_list_url }}">
               <i class="fas fa-fw fa-user-md"></i>
               <span>Dentistas</span>
             </a>
-            {% endif %}
-            {% if perms.procedimientos.view_procedimientoodontologico %}
             <a class="collapse-item" href="{{ procedimiento_list_url }}">
               <i class="fas fa-fw fa-procedures"></i>
               <span>Procedimientos</span>
             </a>
-            {% endif %}
-            {% if perms.procedimientos.view_clinicaprocedimiento %}
             <a class="collapse-item" href="{{ precio_list_url }}">
               <i class="fas fa-fw fa-dollar-sign"></i>
               <span>Precios</span>
             </a>
-            {% endif %}
             {% if perms.enfermedades.view_categoriaenfermedad %}
             <a class="collapse-item" href="{{ enf_categoria_list_url }}" title="Categorías de Enfermedades">
               <i class="fas fa-fw fa-notes-medical"></i>
@@ -260,6 +263,7 @@
           </div>
         </div>
       </li>
+      {% endif %}
 
       <!-- ADMINISTRATIVE SECTION - Collapsed by Default -->
       <!-- Divider -->
@@ -282,6 +286,8 @@
       {% endif %}
 
       <!-- Nav Item - Inventario (Collapsed by Default) -->
+      {% tiene_permiso 'inventario.ver_inventario' as puede_ver_inventario %}
+      {% if puede_ver_inventario %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseInventario" aria-expanded="false" aria-controls="collapseInventario">
           <i class="fas fa-fw fa-boxes" style="color: #f39c12;"></i>
@@ -290,30 +296,18 @@
         <div id="collapseInventario" class="collapse" aria-labelledby="headingInventario" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header">Catálogos de Inventario</h6>
-            {% if perms.inv.view_categoria %}
             <a class="collapse-item" href="{% url 'inv:categoria_list' %}"><i class="fas fa-fw fa-suitcase"></i><span>Categorías</span></a>
-            {% endif %}
-            {% if perms.inv.view_subcategoria %}
             <a class="collapse-item" href="{% url 'inv:subcategoria_list' %}"><i class="fas fa-fw fa-folder"></i><span>Sub Categorías</span></a>
-            {% endif %}
-            {% if perms.inv.view_marca %}
             <a class="collapse-item" href="{% url 'inv:marca_list' %}"><i class="fas fa-fw fa-trademark"></i><span>Marcas</span></a>
-            {% endif %}
-            {% if perms.inv.view_unidadmedida %}
             <a class="collapse-item" href="{% url 'inv:um_list' %}"><i class="fas fa-fw fa-hourglass-start"></i><span>Unidades de Medida</span></a>
-            {% endif %}
-            {% if perms.inv.view_producto %}
             <a class="collapse-item" href="{% url 'inv:producto_list' %}"><i class="fas fa-fw fa-medkit"></i><span>Productos</span></a>
-            {% endif %}
 
             <h6 class="collapse-header">Catálogos de Compras</h6>
-
-            {% if perms.cmp.view_proveedor %}
             <a class="collapse-item" href="{% url 'cmp:proveedor_list' %}"><i class="fas fa-fw fa-users"></i><span>Proveedores</span></a>
-            {% endif %}
           </div>
         </div>
       </li>
+      {% endif %}
 
       <!-- Nav Item - Movimientos/Compras (Collapsed by Default) -->
       <li class="nav-item">
