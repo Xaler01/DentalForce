@@ -211,8 +211,8 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 usuario=dentista_user,
                 uc=dentista_user,  # Usuario que crea el registro
                 sucursal_principal=instance,
-                cedula_profesional='',  # Se puede actualizar después
-                telefono_movil='',  # Se puede actualizar después
+                cedula_profesional=None,  # Se puede actualizar después
+                telefono_movil=None,  # Se puede actualizar después
                 estado=True
             )
             # Las especialidades se pueden asignar después por el administrador

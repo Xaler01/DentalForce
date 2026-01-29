@@ -49,6 +49,8 @@ class Dentista(ClaseModelo):
     cedula_profesional = models.CharField(
         max_length=20,
         unique=True,
+        null=True,
+        blank=True,
         verbose_name='Cédula Profesional',
         help_text='Número de cédula profesional de odontología'
     )
@@ -61,6 +63,8 @@ class Dentista(ClaseModelo):
     )
     telefono_movil = models.CharField(
         max_length=20,
+        null=True,
+        blank=True,
         verbose_name='Teléfono Móvil',
         help_text='Número de teléfono móvil personal'
     )
