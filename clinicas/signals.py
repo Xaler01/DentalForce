@@ -205,6 +205,18 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 contrasena_temporal=True  # Marcar como temporal
             )
             
+            # Crear perfil profesional de Dentista
+            from personal.models import Dentista
+            Dentista.objects.create(
+                usuario=dentista_user,
+                uc=dentista_user,  # Usuario que crea el registro
+                sucursal_principal=instance,
+                cedula_profesional='',  # Se puede actualizar después
+                telefono_movil='',  # Se puede actualizar después
+                estado=True
+            )
+            # Las especialidades se pueden asignar después por el administrador
+            
             # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
             if instance.clinica.email:
                 enviar_credenciales_a_destinatario(
