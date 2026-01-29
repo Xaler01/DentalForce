@@ -86,8 +86,18 @@ def crear_admin_clinica(sender, instance, created, **kwargs):
             except Exception as e:
                 logger.error(f"Error al asignar rol granular: {str(e)}")
             
-            # Enviar credenciales por email
-            enviar_credenciales_email(admin_user, password_temporal, 'admin_clinica')
+            # Enviar credenciales por email a la clínica (no al usuario temporal)
+            from usuarios.utils import enviar_credenciales_a_destinatario
+            if instance.email:
+                enviar_credenciales_a_destinatario(
+                    email_destinatario=instance.email,
+                    nombre_usuario=admin_user.username,
+                    password_temporal=password_temporal,
+                    tipo_usuario='admin_clinica',
+                    clinica_nombre=instance.nombre
+                )
+            else:
+                logger.warning(f"⚠️  No hay email de clínica para enviar credenciales. Clínica: {instance.nombre}")
             
             logger.info(f"✅ Admin de clínica creado automáticamente: {username} para {instance.nombre}")
             
@@ -147,8 +157,19 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 contrasena_temporal=True  # Marcar como temporal
             )
             
-            # Enviar credenciales
-            enviar_credenciales_email(auxiliar_user, password_aux, 'auxiliar')
+            # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
+            from usuarios.utils import enviar_credenciales_a_destinatario
+            if instance.clinica.email:
+                enviar_credenciales_a_destinatario(
+                    email_destinatario=instance.clinica.email,
+                    nombre_usuario=username_aux,
+                    password_temporal=password_aux,
+                    tipo_usuario='auxiliar',
+                    clinica_nombre=instance.clinica.nombre,
+                    sucursal_nombre=instance.nombre
+                )
+            else:
+                logger.warning(f"⚠️  No hay email de clínica para enviar credenciales. Clínica: {instance.clinica.nombre}")
             
             logger.info(f"✅ Auxiliar creado automáticamente: {username_aux} para sucursal {instance.nombre}")
             
@@ -184,8 +205,18 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 contrasena_temporal=True  # Marcar como temporal
             )
             
-            # Enviar credenciales
-            enviar_credenciales_email(dentista_user, password_dent, 'dentista')
+            # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
+            if instance.clinica.email:
+                enviar_credenciales_a_destinatario(
+                    email_destinatario=instance.clinica.email,
+                    nombre_usuario=username_dent,
+                    password_temporal=password_dent,
+                    tipo_usuario='dentista',
+                    clinica_nombre=instance.clinica.nombre,
+                    sucursal_nombre=instance.nombre
+                )
+            else:
+                logger.warning(f"⚠️  No hay email de clínica para enviar credenciales. Clínica: {instance.clinica.nombre}")
             
             logger.info(f"✅ Dentista creado automáticamente: {username_dent} para sucursal {instance.nombre}")
             

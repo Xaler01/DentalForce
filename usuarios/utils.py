@@ -149,3 +149,104 @@ Equipo PowerDent
         print(f"Password temporal: {password_temporal}")
         print(f"Error: {str(e)}\n")
         return False
+
+
+def enviar_credenciales_a_destinatario(email_destinatario, nombre_usuario, password_temporal, 
+                                        tipo_usuario='usuario', clinica_nombre='', sucursal_nombre=''):
+    """
+    Envía las credenciales de un nuevo usuario a un email específico.
+    
+    Usado cuando se crean usuarios automáticamente (por ej. en sucursales) y las credenciales
+    se envían al admin de la clínica en lugar del usuario temporal creado.
+    
+    Args:
+        email_destinatario (str): Email donde enviar las credenciales
+        nombre_usuario (str): Username del nuevo usuario creado
+        password_temporal (str): Contraseña temporal generada
+        tipo_usuario (str): Tipo de usuario (auxiliar, dentista, admin_clinica)
+        clinica_nombre (str): Nombre de la clínica
+        sucursal_nombre (str): Nombre de la sucursal (opcional)
+    
+    Returns:
+        bool: True si se envió exitosamente, False en caso contrario
+    """
+    from django.core.mail import send_mail
+    from django.conf import settings
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Determinar descripción según tipo de usuario
+    descripciones = {
+        'admin_clinica': 'Administrador de Clínica',
+        'auxiliar': 'Auxiliar Odontológico',
+        'dentista': 'Dentista / Profesional Odontológico',
+        'recepcionista': 'Recepcionista',
+        'usuario': 'Usuario'
+    }
+    
+    descripcion = descripciones.get(tipo_usuario, 'Usuario')
+    
+    # Construir mensajecon información de contexto
+    ubicacion = f" en {sucursal_nombre}" if sucursal_nombre else ""
+    
+    asunto = f'Credenciales de Acceso - {descripcion} Creado en {clinica_nombre}'
+    mensaje = f"""
+Se ha creado una nueva cuenta de {descripcion} en PowerDent.
+
+INFORMACIÓN DE LA CLÍNICA:
+- Clínica: {clinica_nombre}{ubicacion}
+
+DATOS DEL NUEVO USUARIO:
+- Tipo: {descripcion}
+- Usuario: {nombre_usuario}
+- Contraseña Temporal: {password_temporal}
+
+INSTRUCCIONES:
+1. Comunique estos datos al {descripcion.lower()} de forma segura
+2. El usuario debe ingresar con estas credenciales en el primer acceso
+3. Al ingresar, le pedirá cambiar la contraseña temporal por una nueva
+4. Acceder desde: {settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://localhost:8001'}
+
+IMPORTANTE:
+- No comparta estas credenciales por canales no seguros
+- Esta contraseña es temporal y debe cambiarla en el primer acceso
+- Si el usuario olvida la contraseña, usará la opción "Olvidé mi contraseña"
+
+Saludos,
+Equipo PowerDent
+    """.strip()
+    
+    try:
+        # Intentar enviar email
+        if hasattr(settings, 'EMAIL_HOST') and settings.EMAIL_HOST:
+            send_mail(
+                subject=asunto,
+                message=mensaje,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email_destinatario],
+                fail_silently=False
+            )
+            logger.info(f"✅ Credenciales enviadas a {email_destinatario} para {nombre_usuario} ({tipo_usuario})")
+            return True
+        else:
+            # SMTP no configurado
+            logger.warning(f"⚠️  Email no configurado. Registro de credenciales:")
+            logger.warning(f"   Destinatario: {email_destinatario}")
+            logger.warning(f"   Usuario: {nombre_usuario}")
+            logger.warning(f"   Tipo: {tipo_usuario}")
+            logger.warning(f"   Clínica: {clinica_nombre}")
+            print(f"\n⚠️  EMAIL NO CONFIGURADO")
+            print(f"Destinatario: {email_destinatario}")
+            print(f"Usuario: {nombre_usuario}")
+            print(f"Password temporal: {password_temporal}\n")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error al enviar credenciales a {email_destinatario}: {str(e)}")
+        print(f"\n⚠️  ERROR AL ENVIAR EMAIL A {email_destinatario}")
+        print(f"Usuario: {nombre_usuario}")
+        print(f"Tipo: {tipo_usuario}")
+        print(f"Password temporal: {password_temporal}")
+        print(f"Error: {str(e)}\n")
+        return False
