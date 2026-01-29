@@ -1,0 +1,44 @@
+{% extends 'base/base.html' %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Personal</h1>
+    <a href="{% url 'personal:personal-create' %}" class="btn btn-primary">Nuevo Personal</a>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Sucursal Principal</th>
+              <th>Compensación</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in personal_list %}
+            <tr>
+              <td>{{ p.usuario.get_full_name|default:p.usuario.username }}</td>
+              <td>{{ p.get_tipo_personal_display }}</td>
+              <td>{{ p.sucursal_principal|default:'-' }}</td>
+              <td>{{ p.get_tipo_compensacion_display }}</td>
+              <td>{% if p.estado %}Activo{% else %}Inactivo{% endif %}</td>
+              <td>
+                <a href="{% url 'personal:personal-update' p.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">Sin registros</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

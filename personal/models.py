@@ -2,6 +2,7 @@
 Personal app models: Dentista, Disponibilidad, ComisionDentista, ExcepcionDisponibilidad
 Moved from cit.models in SOOD-62 refactoring.
 """
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -463,8 +464,6 @@ class DisponibilidadDentista(ClaseModelo):
         # Si tiene sucursal asignada, validar solo para esa sucursal
         if self.sucursal:
             filtro['sucursal'] = self.sucursal
-        
-        if self.pk:
             solapamientos = DisponibilidadDentista.objects.filter(**filtro).exclude(pk=self.pk)
         else:
             solapamientos = DisponibilidadDentista.objects.filter(**filtro)
@@ -563,3 +562,243 @@ class ExcepcionDisponibilidad(ClaseModelo):
                 raise ValidationError({
                     'hora_fin': 'La hora de fin debe ser posterior a la hora de inicio'
                 })
+
+
+class Personal(ClaseModelo):
+    """
+    Modelo para personal administrativo/auxiliar/servicios.
+    Similar a Dentista pero sin comisiones.
+    """
+    TIPO_PERSONAL = [
+        ('administrativo', 'Administrativo'),
+        ('auxiliar', 'Auxiliar'),
+        ('asistente', 'Asistente'),
+        ('recepcion', 'Recepción'),
+        ('servicios', 'Servicios Generales'),
+    ]
+
+    TIPO_COMPENSACION = [
+        ('MENSUAL', 'Mensual (Salario fijo)'),
+        ('POR_HORA', 'Pago por hora'),
+        ('POR_DIA', 'Pago por día'),
+    ]
+
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='personal_profile',
+        verbose_name='Usuario',
+        help_text='Usuario del sistema asociado al personal'
+    )
+    tipo_personal = models.CharField(
+        max_length=20,
+        choices=TIPO_PERSONAL,
+        default='auxiliar',
+        verbose_name='Tipo de Personal'
+    )
+    sucursales = models.ManyToManyField(
+        Sucursal,
+        related_name='personal_asignado',
+        verbose_name='Sucursales',
+        help_text='Sucursales donde puede trabajar',
+        blank=True
+    )
+    sucursal_principal = models.ForeignKey(
+        Sucursal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='personal_principal',
+        verbose_name='Sucursal Principal'
+    )
+    tipo_compensacion = models.CharField(
+        max_length=10,
+        choices=TIPO_COMPENSACION,
+        default='MENSUAL',
+        verbose_name='Tipo de Compensación'
+    )
+    salario_mensual = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('482.00'),
+        verbose_name='Salario Mensual',
+        help_text='Salario mensual (SBU por defecto)'
+    )
+    tarifa_por_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Tarifa por Hora',
+        help_text='Usar si la compensación es por hora'
+    )
+    tarifa_por_dia = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Tarifa por Día',
+        help_text='Usar si la compensación es por día'
+    )
+    fecha_contratacion = models.DateField(
+        verbose_name='Fecha de Contratación',
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Personal'
+        verbose_name_plural = 'Personal'
+        ordering = ['usuario__last_name', 'usuario__first_name']
+
+    def __str__(self):
+        return self.usuario.get_full_name() or self.usuario.username
+
+    def get_tarifa_hora_base(self):
+        """
+        Calcula la tarifa hora base.
+        Regla: salario mensual / 240 (30 días * 8 horas).
+        """
+        if self.tipo_compensacion == 'POR_HORA' and self.tarifa_por_hora:
+            return self.tarifa_por_hora
+        if self.tipo_compensacion == 'POR_DIA' and self.tarifa_por_dia:
+            return (self.tarifa_por_dia / Decimal('8')).quantize(Decimal('0.01'))
+        return (self.salario_mensual / Decimal('240')).quantize(Decimal('0.01'))
+
+
+class RegistroHorasPersonal(ClaseModelo):
+    """
+    Registro de horas extra del personal (solo horas extra).
+    """
+    TIPO_EXTRA = [
+        ('RECARGO_25', 'Extra 25% (después de 18:00)'),
+        ('RECARGO_50', 'Extra 50% (después de 20:00)'),
+        ('RECARGO_100', 'Extra 100% (feriados/domingo)'),
+        ('SABADO_MEDIO_DIA', 'Sábado medio día (USD 20)'),
+    ]
+
+    ESTADO = [
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADO', 'Aprobado'),
+        ('RECHAZADO', 'Rechazado'),
+    ]
+
+    personal = models.ForeignKey(
+        Personal,
+        on_delete=models.CASCADE,
+        related_name='horas_extra',
+        verbose_name='Personal'
+    )
+    fecha = models.DateField(verbose_name='Fecha')
+    hora_inicio = models.TimeField(verbose_name='Hora Inicio')
+    hora_fin = models.TimeField(verbose_name='Hora Fin')
+    tipo_extra = models.CharField(
+        max_length=20,
+        choices=TIPO_EXTRA,
+        default='RECARGO_25',
+        verbose_name='Tipo de Extra'
+    )
+    horas = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name='Horas'
+    )
+    valor_total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name='Valor Total'
+    )
+    estado = models.CharField(
+        max_length=10,
+        choices=ESTADO,
+        default='PENDIENTE',
+        verbose_name='Estado'
+    )
+    aprobado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='aprobaciones_horas_personal',
+        verbose_name='Aprobado por'
+    )
+    aprobado_en = models.DateTimeField(null=True, blank=True, verbose_name='Aprobado en')
+    observaciones = models.TextField(blank=True, verbose_name='Observaciones')
+
+    class Meta:
+        verbose_name = 'Registro de Horas Extra'
+        verbose_name_plural = 'Registros de Horas Extra'
+        ordering = ['-fecha', 'personal']
+
+    def __str__(self):
+        return f"{self.personal} - {self.fecha} ({self.get_tipo_extra_display()})"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if self.hora_inicio and self.hora_fin and self.hora_inicio >= self.hora_fin:
+            raise ValidationError('La hora de fin debe ser posterior a la hora de inicio')
+
+    def save(self, *args, **kwargs):
+        from datetime import datetime
+        from django.utils import timezone
+
+        if self.hora_inicio and self.hora_fin:
+            dt_inicio = datetime.combine(self.fecha, self.hora_inicio)
+            dt_fin = datetime.combine(self.fecha, self.hora_fin)
+            delta = dt_fin - dt_inicio
+            self.horas = Decimal(delta.total_seconds() / 3600).quantize(Decimal('0.01'))
+
+        if self.tipo_extra == 'SABADO_MEDIO_DIA':
+            self.valor_total = Decimal('20.00')
+            if self.horas == Decimal('0.00'):
+                self.horas = Decimal('4.00')
+        else:
+            tarifa_base = self.personal.get_tarifa_hora_base()
+            if self.tipo_extra == 'RECARGO_25':
+                factor = Decimal('1.25')
+            elif self.tipo_extra == 'RECARGO_50':
+                factor = Decimal('1.50')
+            elif self.tipo_extra == 'RECARGO_100':
+                factor = Decimal('2.00')
+            else:
+                factor = Decimal('1.00')
+            self.valor_total = (tarifa_base * factor * self.horas).quantize(Decimal('0.01'))
+
+        if self.estado == 'APROBADO' and not self.aprobado_en:
+            self.aprobado_en = timezone.now()
+
+        super().save(*args, **kwargs)
+
+
+class ExcepcionPersonal(ClaseModelo):
+    """
+    Excepciones de jornada del personal (vacaciones, permisos, capacitaciones).
+    """
+    TIPO_EXCEPCION = [
+        ('VACACIONES', 'Vacaciones'),
+        ('PERMISO', 'Permiso'),
+        ('CAPACITACION', 'Capacitación'),
+        ('OTRO', 'Otro'),
+    ]
+
+    personal = models.ForeignKey(
+        Personal,
+        on_delete=models.CASCADE,
+        related_name='excepciones',
+        verbose_name='Personal'
+    )
+    fecha_inicio = models.DateField(verbose_name='Fecha de Inicio')
+    fecha_fin = models.DateField(verbose_name='Fecha de Fin')
+    tipo = models.CharField(max_length=15, choices=TIPO_EXCEPCION, default='PERMISO')
+    motivo = models.TextField(blank=True, verbose_name='Motivo')
+
+    class Meta:
+        verbose_name = 'Excepción de Personal'
+        verbose_name_plural = 'Excepciones de Personal'
+        ordering = ['-fecha_inicio']
+
+    def __str__(self):
+        return f"{self.personal} - {self.get_tipo_display()}"

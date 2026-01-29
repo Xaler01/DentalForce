@@ -1,0 +1,24 @@
+{% extends 'base/base.html' %}
+{% block content %}
+<div class="container-fluid">
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Aprobar Horas Extra</h6>
+    </div>
+    <div class="card-body">
+      <p><strong>Personal:</strong> {{ object.personal.usuario.get_full_name|default:object.personal.usuario.username }}</p>
+      <p><strong>Fecha:</strong> {{ object.fecha }}</p>
+      <p><strong>Tipo:</strong> {{ object.get_tipo_extra_display }}</p>
+      <p><strong>Horas:</strong> {{ object.horas }}</p>
+      <p><strong>Valor:</strong> ${{ object.valor_total }}</p>
+
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        <a href="{% url 'personal:horas-extra-list' %}" class="btn btn-secondary">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

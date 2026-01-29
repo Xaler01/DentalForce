@@ -197,6 +197,19 @@ def crear_usuarios_sucursal(sender, instance, created, **kwargs):
                 activo=True,
                 contrasena_temporal=True  # Marcar como temporal
             )
+
+            # Crear perfil de Personal (administrativo/auxiliar)
+            from personal.models import Personal
+            personal = Personal.objects.create(
+                usuario=auxiliar_user,
+                uc=auxiliar_user,
+                tipo_personal='auxiliar',
+                tipo_compensacion='MENSUAL',
+                salario_mensual=482,
+                sucursal_principal=instance,
+                estado=True
+            )
+            personal.sucursales.add(instance)
             
             # Enviar credenciales al admin de la clínica (no al usuario temporal creado)
             from usuarios.utils import enviar_credenciales_a_destinatario
