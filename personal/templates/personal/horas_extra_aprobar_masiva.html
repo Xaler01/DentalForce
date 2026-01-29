@@ -1,0 +1,171 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Aprobación Masiva de Horas Extra{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-tasks"></i> Aprobación Masiva de Horas Extra
+        </h1>
+        <a href="{% url 'personal:horas-extra-list' %}" class="btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left"></i> Volver al Listado
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="clinica" class="mr-2">Clínica:</label>
+                    <select name="clinica" id="clinica" class="form-control">
+                        <option value="">Todas</option>
+                        {% for clinica in clinicas %}
+                        <option value="{{ clinica.id }}" {% if request.GET.clinica == clinica.id|stringformat:"s" %}selected{% endif %}>
+                            {{ clinica.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="sucursal" class="mr-2">Sucursal:</label>
+                    <select name="sucursal" id="sucursal" class="form-control">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id }}" {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="mes" class="mr-2">Mes:</label>
+                    <select name="mes" id="mes" class="form-control">
+                        <option value="">Todos</option>
+                        {% for m in "123456789012"|make_list %}
+                        <option value="{{ forloop.counter }}" {% if request.GET.mes == forloop.counter|stringformat:"s" %}selected{% endif %}>
+                            {{ forloop.counter }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="anio" class="mr-2">Año:</label>
+                    <input type="number" name="anio" id="anio" class="form-control" value="{{ request.GET.anio }}" placeholder="2026">
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'personal:horas-extra-aprobar-masiva' %}" class="btn btn-secondary ml-2 mb-2">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Formulario de Aprobación Masiva -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Registros Pendientes ({{ registros_pendientes.count }})
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if registros_pendientes %}
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="font-weight-bold">Acción a realizar:</label>
+                    <div class="form-check form-check-inline ml-3">
+                        <input class="form-check-input" type="radio" name="accion" id="aprobar" value="aprobar" checked>
+                        <label class="form-check-label text-success" for="aprobar">
+                            <i class="fas fa-check-circle"></i> Aprobar
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="accion" id="rechazar" value="rechazar">
+                        <label class="form-check-label text-danger" for="rechazar">
+                            <i class="fas fa-times-circle"></i> Rechazar
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="observaciones">Observaciones (Opcional):</label>
+                    <textarea name="observaciones" id="observaciones" class="form-control" rows="2" placeholder="Ingrese observaciones para los registros seleccionados..."></textarea>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" id="seleccionar-todos">
+                                </th>
+                                <th>Fecha</th>
+                                <th>Personal</th>
+                                <th>Clínica</th>
+                                <th>Sucursal</th>
+                                <th>H. Normales</th>
+                                <th>H. 25%</th>
+                                <th>H. 50%</th>
+                                <th>H. 100%</th>
+                                <th>Valor Total</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registro in registros_pendientes %}
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" name="registros_seleccionados" value="{{ registro.id }}" class="registro-checkbox">
+                                </td>
+                                <td>{{ registro.fecha|date:"d/m/Y" }}</td>
+                                <td>{{ registro.personal.usuario.get_full_name }}</td>
+                                <td>{{ registro.personal.sucursal.clinica.nombre }}</td>
+                                <td>{{ registro.personal.sucursal.nombre }}</td>
+                                <td>{{ registro.horas_normales|floatformat:2 }}</td>
+                                <td>{{ registro.horas_25_porciento|floatformat:2 }}</td>
+                                <td>{{ registro.horas_50_porciento|floatformat:2 }}</td>
+                                <td>{{ registro.horas_100_porciento|floatformat:2 }}</td>
+                                <td class="font-weight-bold">${{ registro.valor_total_horas|floatformat:2 }}</td>
+                                <td>{{ registro.motivo|truncatewords:5 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-right mt-3">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-check"></i> Procesar Seleccionados
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay registros pendientes para aprobar
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionar/Deseleccionar todos
+    document.getElementById('seleccionar-todos').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.registro-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+});
+</script>
+{% endblock %}

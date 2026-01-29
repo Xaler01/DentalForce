@@ -285,6 +285,32 @@
       </li>
       {% endif %}
 
+      <!-- Nav Item - Personal (Collapsed by Default) -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal" aria-expanded="false" aria-controls="collapsePersonal">
+          <i class="fas fa-fw fa-users-cog" style="color: #3498db;"></i>
+          <span>Personal</span>
+        </a>
+        <div id="collapsePersonal" class="collapse" aria-labelledby="headingPersonal" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Gestión de Personal</h6>
+            <a class="collapse-item" href="{% url 'personal:personal-list' %}">
+              <i class="fas fa-fw fa-users"></i><span>Lista de Personal</span>
+            </a>
+            <a class="collapse-item" href="{% url 'personal:horas-extra-list' %}">
+              <i class="fas fa-fw fa-clock"></i><span>Horas Extra</span>
+            </a>
+            <a class="collapse-item" href="{% url 'personal:horas-extra-aprobar-masiva' %}">
+              <i class="fas fa-fw fa-tasks"></i><span>Aprobar Horas</span>
+            </a>
+            <h6 class="collapse-header">Reportes</h6>
+            <a class="collapse-item" href="{% url 'personal:nomina-reporte' %}">
+              <i class="fas fa-fw fa-file-invoice-dollar"></i><span>Nómina Mensual</span>
+            </a>
+          </div>
+        </div>
+      </li>
+
       <!-- Nav Item - Inventario (Collapsed by Default) -->
       {% tiene_permiso 'inventario.ver_inventario' as puede_ver_inventario %}
       {% if puede_ver_inventario %}

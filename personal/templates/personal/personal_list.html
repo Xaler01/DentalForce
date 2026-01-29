@@ -1,44 +1,111 @@
 {% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Personal{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Personal</h1>
-    <a href="{% url 'personal:personal-create' %}" class="btn btn-primary">Nuevo Personal</a>
-  </div>
-
-  <div class="card shadow mb-4">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Sucursal Principal</th>
-              <th>Compensación</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in personal_list %}
-            <tr>
-              <td>{{ p.usuario.get_full_name|default:p.usuario.username }}</td>
-              <td>{{ p.get_tipo_personal_display }}</td>
-              <td>{{ p.sucursal_principal|default:'-' }}</td>
-              <td>{{ p.get_tipo_compensacion_display }}</td>
-              <td>{% if p.estado %}Activo{% else %}Inactivo{% endif %}</td>
-              <td>
-                <a href="{% url 'personal:personal-update' p.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="text-center text-muted">Sin registros</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-users-cog"></i> Gestión de Personal Administrativo
+        </h1>
+        <a href="{% url 'personal:personal-create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nuevo Personal
+        </a>
     </div>
-  </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="clinica" class="mr-2">Clínica:</label>
+                    <select name="clinica" id="clinica" class="form-control">
+                        <option value="">Todas las clínicas</option>
+                        {% for clinica in clinicas %}
+                        <option value="{{ clinica.id }}" {% if request.GET.clinica == clinica.id|stringformat:"s" %}selected{% endif %}>
+                            {{ clinica.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="sucursal" class="mr-2">Sucursal:</label>
+                    <select name="sucursal" id="sucursal" class="form-control">
+                        <option value="">Todas las sucursales</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id }}" {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }} ({{ sucursal.clinica.nombre }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'personal:personal-list' %}" class="btn btn-secondary ml-2 mb-2">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Personal -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Lista de Personal ({{ personal_list.count }})</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Usuario</th>
+                            <th>Clínica</th>
+                            <th>Sucursal</th>
+                            <th>Cargo</th>
+                            <th>Salario Mensual</th>
+                            <th>Tarifa/Hora</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for personal in personal_list %}
+                        <tr>
+                            <td>{{ personal.usuario.get_full_name }}</td>
+                            <td>{{ personal.usuario.username }}</td>
+                            <td>{{ personal.sucursal.clinica.nombre }}</td>
+                            <td>{{ personal.sucursal.nombre }}</td>
+                            <td>
+                                {% if personal.es_auxiliar %}
+                                    <span class="badge badge-info">Auxiliar</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Administrativo</span>
+                                {% endif %}
+                            </td>
+                            <td>${{ personal.salario_mensual|floatformat:2 }}</td>
+                            <td>${{ personal.get_tarifa_hora_base|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'personal:personal-update' personal.pk %}" class="btn btn-sm btn-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No se encontró personal registrado</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

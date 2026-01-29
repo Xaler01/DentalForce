@@ -1,0 +1,228 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de Nómina Mensual{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-file-invoice-dollar"></i> Reporte de Nómina - {{ mes_nombre }}
+        </h1>
+        <button onclick="window.print()" class="btn btn-sm btn-success shadow-sm">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4 no-print">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Seleccionar Período
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="mes" class="mr-2">Mes:</label>
+                    <select name="mes" id="mes" class="form-control" required>
+                        {% for m in "123456789012"|make_list %}
+                        <option value="{{ forloop.counter }}" {% if mes == forloop.counter %}selected{% endif %}>
+                            {{ forloop.counter|date:"F" }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="anio" class="mr-2">Año:</label>
+                    <input type="number" name="anio" id="anio" class="form-control" value="{{ anio }}" required>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="clinica" class="mr-2">Clínica:</label>
+                    <select name="clinica" id="clinica" class="form-control">
+                        <option value="">Todas</option>
+                        {% for clinica in clinicas %}
+                        <option value="{{ clinica.id }}" {% if request.GET.clinica == clinica.id|stringformat:"s" %}selected{% endif %}>
+                            {{ clinica.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="sucursal" class="mr-2">Sucursal:</label>
+                    <select name="sucursal" id="sucursal" class="form-control">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id }}" {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> Generar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen Estadístico -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Salarios Base
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                ${{ totales.salario_base|floatformat:2 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Horas Extra
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                ${{ totales.valor_horas_extra|floatformat:2 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Horas Trabajadas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ totales.horas_normales_total|floatformat:1 }}h
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-business-time fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total a Pagar
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                ${{ totales.total_pagar|floatformat:2 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Detallada de Nómina -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Detalle de Nómina - {{ nomina_data|length }} Empleados
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th rowspan="2">Personal</th>
+                            <th rowspan="2">Clínica</th>
+                            <th rowspan="2">Sucursal</th>
+                            <th rowspan="2">Salario Base</th>
+                            <th colspan="4" class="text-center bg-light">Horas Extra</th>
+                            <th rowspan="2">Valor H. Extra</th>
+                            <th rowspan="2" class="bg-warning">Total a Pagar</th>
+                        </tr>
+                        <tr>
+                            <th class="text-center">Normales</th>
+                            <th class="text-center">25%</th>
+                            <th class="text-center">50%</th>
+                            <th class="text-center">100%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in nomina_data %}
+                        <tr>
+                            <td>{{ item.personal.usuario.get_full_name }}</td>
+                            <td>{{ item.personal.sucursal.clinica.nombre }}</td>
+                            <td>{{ item.personal.sucursal.nombre }}</td>
+                            <td class="text-right">${{ item.salario_base|floatformat:2 }}</td>
+                            <td class="text-right">{{ item.horas_normales|floatformat:1 }}</td>
+                            <td class="text-right">{{ item.horas_25|floatformat:1 }}</td>
+                            <td class="text-right">{{ item.horas_50|floatformat:1 }}</td>
+                            <td class="text-right">{{ item.horas_100|floatformat:1 }}</td>
+                            <td class="text-right">${{ item.valor_horas_extra|floatformat:2 }}</td>
+                            <td class="text-right font-weight-bold bg-light">${{ item.total_pagar|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">No hay datos para el período seleccionado</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="font-weight-bold bg-secondary text-white">
+                        <tr>
+                            <td colspan="3" class="text-right">TOTALES:</td>
+                            <td class="text-right">${{ totales.salario_base|floatformat:2 }}</td>
+                            <td class="text-right">{{ totales.horas_normales_total|floatformat:1 }}</td>
+                            <td class="text-right">{{ totales.horas_25_total|floatformat:1 }}</td>
+                            <td class="text-right">{{ totales.horas_50_total|floatformat:1 }}</td>
+                            <td class="text-right">{{ totales.horas_100_total|floatformat:1 }}</td>
+                            <td class="text-right">${{ totales.valor_horas_extra|floatformat:2 }}</td>
+                            <td class="text-right">${{ totales.total_pagar|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}
