@@ -1,8 +1,30 @@
 from django import forms
+from django.contrib.auth.models import User
+
+from core.services.tenants import get_clinica_from_request
 from .models import Personal, RegistroHorasPersonal, ExcepcionPersonal
 
 
 class PersonalForm(forms.ModelForm):
+	def __init__(self, *args, **kwargs):
+		request = kwargs.pop('request', None)
+		super().__init__(*args, **kwargs)
+
+		if request:
+			clinica_activa = get_clinica_from_request(request)
+			if clinica_activa and not request.user.is_superuser:
+				self.fields['sucursal_principal'].queryset = self.fields['sucursal_principal'].queryset.filter(
+					clinica=clinica_activa,
+					estado=True,
+				)
+				self.fields['sucursales'].queryset = self.fields['sucursales'].queryset.filter(
+					clinica=clinica_activa,
+					estado=True,
+				)
+				self.fields['usuario'].queryset = User.objects.filter(
+					clinica_asignacion__clinica=clinica_activa,
+					clinica_asignacion__activo=True,
+				).order_by('first_name', 'last_name', 'username')
 	class Meta:
 		model = Personal
 		fields = [

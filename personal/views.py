@@ -9,21 +9,30 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.views import View
 
 from clinicas.models import Clinica, Sucursal
+from core.services.tenants import get_clinica_from_request
+from usuarios.views import UsuarioEsAdminMixin
 from .models import Personal, RegistroHorasPersonal
 from .forms import PersonalForm, RegistroHorasPersonalForm
 
 
-class PersonalListView(LoginRequiredMixin, ListView):
+class PersonalListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
 	model = Personal
 	template_name = 'personal/personal_list.html'
 	context_object_name = 'personal_list'
 
 	def get_queryset(self):
-		queryset = Personal.objects.select_related('sucursal_principal', 'sucursal_principal__clinica', 'usuario').filter(estado=True)
+		queryset = Personal.objects.select_related(
+			'sucursal_principal', 'sucursal_principal__clinica', 'usuario'
+		).filter(estado=True)
 		
-		# Filtro por clínica
+		# Restringir por clínica activa si no es superadmin
+		clinica_activa = get_clinica_from_request(self.request)
+		if not self.request.user.is_superuser and clinica_activa:
+			queryset = queryset.filter(sucursal_principal__clinica=clinica_activa)
+		
+		# Filtro por clínica (solo si superadmin)
 		clinica_id = self.request.GET.get('clinica')
-		if clinica_id:
+		if self.request.user.is_superuser and clinica_id:
 			queryset = queryset.filter(sucursal_principal__clinica_id=clinica_id)
 		
 		# Filtro por sucursal
@@ -35,12 +44,17 @@ class PersonalListView(LoginRequiredMixin, ListView):
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
-		context['clinicas'] = Clinica.objects.filter(estado=True)
-		context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+		clinica_activa = get_clinica_from_request(self.request)
+		if self.request.user.is_superuser:
+			context['clinicas'] = Clinica.objects.filter(estado=True)
+			context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+		else:
+			context['clinicas'] = Clinica.objects.filter(id=clinica_activa.id) if clinica_activa else Clinica.objects.none()
+			context['sucursales'] = Sucursal.objects.filter(clinica=clinica_activa, estado=True) if clinica_activa else Sucursal.objects.none()
 		return context
 
 
-class PersonalCreateView(LoginRequiredMixin, CreateView):
+class PersonalCreateView(LoginRequiredMixin, UsuarioEsAdminMixin, CreateView):
 	model = Personal
 	form_class = PersonalForm
 	template_name = 'personal/personal_form.html'
@@ -52,8 +66,13 @@ class PersonalCreateView(LoginRequiredMixin, CreateView):
 		messages.success(self.request, '✅ Personal creado correctamente')
 		return response
 
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs['request'] = self.request
+		return kwargs
 
-class PersonalUpdateView(LoginRequiredMixin, UpdateView):
+
+class PersonalUpdateView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView):
 	model = Personal
 	form_class = PersonalForm
 	template_name = 'personal/personal_form.html'
@@ -64,6 +83,11 @@ class PersonalUpdateView(LoginRequiredMixin, UpdateView):
 		response = super().form_valid(form)
 		messages.success(self.request, '✅ Personal actualizado correctamente')
 		return response
+
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs['request'] = self.request
+		return kwargs
 
 
 class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
@@ -95,6 +119,14 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 		queryset = RegistroHorasPersonal.objects.select_related(
 			'personal', 'personal__usuario', 'personal__sucursal_principal', 'personal__sucursal_principal__clinica'
 		)
+
+		# Si no es admin, solo puede ver sus propios registros
+		if not self._es_admin():
+			queryset = queryset.filter(personal__usuario=self.request.user)
+		else:
+			clinica_activa = get_clinica_from_request(self.request)
+			if clinica_activa and not self.request.user.is_superuser:
+				queryset = queryset.filter(personal__sucursal_principal__clinica=clinica_activa)
 		
 		# Filtro por estado
 		estado = self.request.GET.get('estado')
@@ -103,7 +135,7 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 		
 		# Filtro por clínica
 		clinica_id = self.request.GET.get('clinica')
-		if clinica_id:
+		if self.request.user.is_superuser and clinica_id:
 			queryset = queryset.filter(personal__sucursal_principal__clinica_id=clinica_id)
 		
 		# Filtro por sucursal
@@ -119,10 +151,23 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 		
 		return queryset.order_by('-fecha')
 
+	def _es_admin(self):
+		if self.request.user.is_superuser:
+			return True
+		try:
+			return self.request.user.clinica_asignacion.es_admin
+		except Exception:
+			return False
+
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
-		context['clinicas'] = Clinica.objects.filter(estado=True)
-		context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+		clinica_activa = get_clinica_from_request(self.request)
+		if self.request.user.is_superuser:
+			context['clinicas'] = Clinica.objects.filter(estado=True)
+			context['sucursales'] = Sucursal.objects.filter(estado=True).select_related('clinica')
+		else:
+			context['clinicas'] = Clinica.objects.filter(id=clinica_activa.id) if clinica_activa else Clinica.objects.none()
+			context['sucursales'] = Sucursal.objects.filter(clinica=clinica_activa, estado=True) if clinica_activa else Sucursal.objects.none()
 		
 		# Estadísticas de estado
 		queryset = self.get_queryset()
@@ -133,7 +178,7 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 		return context
 
 
-class PersonalHorasExtraAprobarView(LoginRequiredMixin, UpdateView):
+class PersonalHorasExtraAprobarView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView):
 	model = RegistroHorasPersonal
 	fields = ['estado', 'observaciones']
 	template_name = 'personal/horas_extra_aprobar.html'
@@ -148,7 +193,7 @@ class PersonalHorasExtraAprobarView(LoginRequiredMixin, UpdateView):
 		return response
 
 
-class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, View):
+class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, UsuarioEsAdminMixin, View):
 	"""Vista para aprobación masiva de horas extra"""
 	
 	def get(self, request):
@@ -156,10 +201,14 @@ class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, View):
 		queryset = RegistroHorasPersonal.objects.select_related(
 			'personal', 'personal__usuario', 'personal__sucursal_principal__clinica'
 		).filter(estado='PENDIENTE')
+
+		clinica_activa = get_clinica_from_request(request)
+		if clinica_activa and not request.user.is_superuser:
+			queryset = queryset.filter(personal__sucursal_principal__clinica=clinica_activa)
 		
-		# Aplicar filtros
+		# Aplicar filtros (solo superadmin puede cambiar clínica)
 		clinica_id = request.GET.get('clinica')
-		if clinica_id:
+		if request.user.is_superuser and clinica_id:
 			queryset = queryset.filter(personal__sucursal_principal__clinica_id=clinica_id)
 		
 		sucursal_id = request.GET.get('sucursal')
@@ -173,8 +222,8 @@ class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, View):
 		
 		context = {
 			'registros_pendientes': queryset.order_by('fecha'),
-			'clinicas': Clinica.objects.filter(estado=True),
-			'sucursales': Sucursal.objects.filter(estado=True).select_related('clinica'),
+			'clinicas': Clinica.objects.filter(estado=True) if request.user.is_superuser else (Clinica.objects.filter(id=clinica_activa.id) if clinica_activa else Clinica.objects.none()),
+			'sucursales': Sucursal.objects.filter(estado=True).select_related('clinica') if request.user.is_superuser else (Sucursal.objects.filter(clinica=clinica_activa, estado=True) if clinica_activa else Sucursal.objects.none()),
 		}
 		
 		return render(request, 'personal/horas_extra_aprobar_masiva.html', context)
@@ -212,7 +261,7 @@ class PersonalHorasExtraAprobarMasivaView(LoginRequiredMixin, View):
 		return redirect('personal:horas-extra-aprobar-masiva')
 
 
-class PersonalNominaReporteView(LoginRequiredMixin, View):
+class PersonalNominaReporteView(LoginRequiredMixin, UsuarioEsAdminMixin, View):
 	"""Vista para generar reporte mensual de nómina"""
 	
 	def get(self, request):
@@ -225,10 +274,13 @@ class PersonalNominaReporteView(LoginRequiredMixin, View):
 		personal_queryset = Personal.objects.filter(estado=True).select_related(
 			'usuario', 'sucursal_principal', 'sucursal_principal__clinica'
 		)
+		clinica_activa = get_clinica_from_request(request)
+		if clinica_activa and not request.user.is_superuser:
+			personal_queryset = personal_queryset.filter(sucursal_principal__clinica=clinica_activa)
 		
-		# Aplicar filtros
+		# Aplicar filtros (solo superadmin puede cambiar clínica)
 		clinica_id = request.GET.get('clinica')
-		if clinica_id:
+		if request.user.is_superuser and clinica_id:
 			personal_queryset = personal_queryset.filter(sucursal_principal__clinica_id=clinica_id)
 		
 		sucursal_id = request.GET.get('sucursal')
@@ -255,11 +307,12 @@ class PersonalNominaReporteView(LoginRequiredMixin, View):
 				fecha__year=anio,
 				estado='APROBADO'
 			).aggregate(
-				horas_normales=Sum('horas_normales') or Decimal('0'),
-				horas_25=Sum('horas_25_porciento') or Decimal('0'),
-				horas_50=Sum('horas_50_porciento') or Decimal('0'),
-				horas_100=Sum('horas_100_porciento') or Decimal('0'),
-				valor_total=Sum('valor_total_horas') or Decimal('0'),
+				horas_total=Sum('horas') or Decimal('0'),
+				horas_25=Sum('horas', filter=Q(tipo_extra='RECARGO_25')) or Decimal('0'),
+				horas_50=Sum('horas', filter=Q(tipo_extra='RECARGO_50')) or Decimal('0'),
+				horas_100=Sum('horas', filter=Q(tipo_extra='RECARGO_100')) or Decimal('0'),
+				horas_sabado=Sum('horas', filter=Q(tipo_extra='SABADO_MEDIO_DIA')) or Decimal('0'),
+				valor_total=Sum('valor_total') or Decimal('0'),
 			)
 			
 			# Calcular totales
@@ -270,17 +323,18 @@ class PersonalNominaReporteView(LoginRequiredMixin, View):
 			nomina_data.append({
 				'personal': personal,
 				'salario_base': salario,
-				'horas_normales': horas_mes['horas_normales'] or Decimal('0'),
+				'horas_normales': horas_mes['horas_total'] or Decimal('0'),
 				'horas_25': horas_mes['horas_25'] or Decimal('0'),
 				'horas_50': horas_mes['horas_50'] or Decimal('0'),
 				'horas_100': horas_mes['horas_100'] or Decimal('0'),
+				'horas_sabado': horas_mes['horas_sabado'] or Decimal('0'),
 				'valor_horas_extra': valor_horas,
 				'total_pagar': total,
 			})
 			
 			# Acumular totales generales
 			totales['salario_base'] += salario
-			totales['horas_normales_total'] += horas_mes['horas_normales'] or Decimal('0')
+			totales['horas_normales_total'] += horas_mes['horas_total'] or Decimal('0')
 			totales['horas_25_total'] += horas_mes['horas_25'] or Decimal('0')
 			totales['horas_50_total'] += horas_mes['horas_50'] or Decimal('0')
 			totales['horas_100_total'] += horas_mes['horas_100'] or Decimal('0')
@@ -293,8 +347,8 @@ class PersonalNominaReporteView(LoginRequiredMixin, View):
 			'mes': mes,
 			'anio': anio,
 			'mes_nombre': timezone.datetime(anio, mes, 1).strftime('%B %Y'),
-			'clinicas': Clinica.objects.filter(estado=True),
-			'sucursales': Sucursal.objects.filter(estado=True).select_related('clinica'),
+			'clinicas': Clinica.objects.filter(estado=True) if request.user.is_superuser else (Clinica.objects.filter(id=clinica_activa.id) if clinica_activa else Clinica.objects.none()),
+			'sucursales': Sucursal.objects.filter(estado=True).select_related('clinica') if request.user.is_superuser else (Sucursal.objects.filter(clinica=clinica_activa, estado=True) if clinica_activa else Sucursal.objects.none()),
 		}
 		
 		return render(request, 'personal/nomina_reporte.html', context)

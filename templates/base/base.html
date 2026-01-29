@@ -286,6 +286,7 @@
       {% endif %}
 
       <!-- Nav Item - Personal (Collapsed by Default) -->
+      {% if user.is_superuser or user.clinica_asignacion.es_admin or user.clinica_asignacion.rol == 'auxiliar' or user.clinica_asignacion.rol == 'asistente' or user.clinica_asignacion.rol == 'administrativo' %}
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal" aria-expanded="false" aria-controls="collapsePersonal">
           <i class="fas fa-fw fa-users-cog" style="color: #3498db;"></i>
@@ -294,26 +295,27 @@
         <div id="collapsePersonal" class="collapse" aria-labelledby="headingPersonal" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <h6 class="collapse-header">Gestión de Personal</h6>
-            {% if user.is_staff or user.is_superuser %}
+            {% if user.is_superuser or user.clinica_asignacion.es_admin %}
             <a class="collapse-item" href="{% url 'personal:personal-list' %}">
               <i class="fas fa-fw fa-users"></i><span>Lista de Personal</span>
-            {% endif %}
             </a>
+            {% endif %}
             <a class="collapse-item" href="{% url 'personal:horas-extra-list' %}">
               <i class="fas fa-fw fa-clock"></i><span>Horas Extra</span>
-            {% if user.is_staff or user.is_superuser %}
             </a>
+            {% if user.is_superuser or user.clinica_asignacion.es_admin %}
             <a class="collapse-item" href="{% url 'personal:horas-extra-aprobar-masiva' %}">
               <i class="fas fa-fw fa-tasks"></i><span>Aprobar Horas</span>
             </a>
             <h6 class="collapse-header">Reportes</h6>
             <a class="collapse-item" href="{% url 'personal:nomina-reporte' %}">
               <i class="fas fa-fw fa-file-invoice-dollar"></i><span>Nómina Mensual</span>
-            {% endif %}
             </a>
+            {% endif %}
           </div>
         </div>
       </li>
+      {% endif %}
 
       <!-- Nav Item - Inventario (Collapsed by Default) -->
       {% tiene_permiso 'inventario.ver_inventario' as puede_ver_inventario %}
