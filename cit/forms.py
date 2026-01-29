@@ -1312,14 +1312,29 @@ class ComisionDentistaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtrar especialidades: solo mostrar especialidades activas
-        from clinicas.models import Especialidad
-        self.fields['especialidad'].queryset = Especialidad.objects.filter(
-            estado=True
-        ).order_by('nombre')
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        # Filtrar especialidades: solo mostrar las asignadas al dentista y que estén activas
+        dentista = self.instance.dentista if self.instance and self.instance.pk else None
+        
+        if dentista:
+            # Si el dentista tiene especialidades asignadas, mostrar solo esas
+            especialidades = dentista.especialidades.filter(estado=True).order_by('nombre')
+            
+            if especialidades.exists():
+                self.fields['especialidad'].queryset = especialidades
+            else:
+                # Si el dentista no tiene especialidades, mostrar las activas
+                from clinicas.models import Especialidad
+                self.fields['especialidad'].queryset = Especialidad.objects.filter(
+                    estado=True
+                ).order_by('nombre')
+        else:
+            # Para nuevas comisiones, mostrar especialidades activas
+            from clinicas.models import Especialidad
+            self.fields['especialidad'].queryset = Especialidad.objects.filter(
+                estado=True
+            ).order_by('nombre')
+        
+        # Establecer defaults para nuevas comisiones
         if not self.instance.pk:
             self.fields['activo'].initial = False
             if 'porcentaje' not in self.initial:

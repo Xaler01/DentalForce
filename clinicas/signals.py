@@ -22,7 +22,10 @@ logger = logging.getLogger(__name__)
 
 def crear_comisiones_por_defecto(dentista, porcentaje_defecto=15):
     """
-    Crea comisiones por defecto para un dentista en todas sus especialidades activas.
+    Crea comisiones por defecto para un dentista en todas sus especialidades asignadas.
+    
+    Solo crea comisiones para las especialidades que el dentista tiene asignadas.
+    Si el dentista no tiene especialidades asignadas, no crea comisiones.
     
     Args:
         dentista: Instancia de Dentista
@@ -30,12 +33,15 @@ def crear_comisiones_por_defecto(dentista, porcentaje_defecto=15):
     """
     try:
         from personal.models import ComisionDentista
-        from clinicas.models import Especialidad
         
-        # Obtener especialidades activas
-        especialidades_activas = Especialidad.objects.filter(estado=True)
+        # Obtener especialidades asignadas al dentista y que estén activas
+        especialidades = dentista.especialidades.filter(estado=True)
         
-        for especialidad in especialidades_activas:
+        if not especialidades.exists():
+            logger.info(f"ℹ️  {dentista.usuario.username} no tiene especialidades asignadas, omitiendo comisiones")
+            return
+        
+        for especialidad in especialidades:
             # Verificar si ya existe comisión para esta combinación
             if not ComisionDentista.objects.filter(
                 dentista=dentista,
@@ -50,7 +56,7 @@ def crear_comisiones_por_defecto(dentista, porcentaje_defecto=15):
                     activo=True
                 )
         
-        logger.info(f"✅ Comisiones por defecto creadas para {dentista.usuario.username} (15%)")
+        logger.info(f"✅ Comisiones por defecto creadas para {dentista.usuario.username} ({especialidades.count()} especialidades, 15%)")
     except Exception as e:
         logger.error(f"❌ Error al crear comisiones para {dentista.usuario.username}: {str(e)}")
 
