@@ -1,0 +1,124 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Horas Extra{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-trash-alt"></i> Confirmar Eliminación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¿Está seguro que desea eliminar este registro?</strong>
+                        <br>Esta acción no se puede deshacer.
+                    </div>
+
+                    <h5 class="mb-3">Detalles del Registro:</h5>
+                    
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th width="30%">Personal:</th>
+                                <td>{{ object.personal.usuario.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Clínica:</th>
+                                <td>{{ object.personal.sucursal_principal.clinica.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th>Sucursal:</th>
+                                <td>{{ object.personal.sucursal_principal.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th>Fecha:</th>
+                                <td>{{ object.fecha|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Período:</th>
+                                <td>{{ object.hora_inicio }} - {{ object.hora_fin }}</td>
+                            </tr>
+                            <tr>
+                                <th>Tipo:</th>
+                                <td>{{ object.get_tipo_extra_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Horas:</th>
+                                <td>{{ object.horas|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Valor:</th>
+                                <td class="font-weight-bold">${{ object.valor_total|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    {% if object.estado == 'PENDIENTE' %}
+                                        <span class="badge badge-warning">Pendiente</span>
+                                    {% elif object.estado == 'APROBADO' %}
+                                        <span class="badge badge-success">Aprobado</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Rechazado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if object.es_desglosado %}
+                            <tr>
+                                <th>Desglose:</th>
+                                <td>
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-code-branch"></i> Registro desglosado automáticamente
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        Se eliminarán también los registros relacionados del desglose
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if object.registros_desglosados.exists %}
+                            <tr>
+                                <th>Registros desglosados:</th>
+                                <td>
+                                    <span class="badge badge-warning">
+                                        {{ object.registros_desglosados.count }} registro(s) desglosado(s)
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        También se eliminarán los registros desglosados asociados
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if object.observaciones %}
+                            <tr>
+                                <th>Observaciones:</th>
+                                <td>{{ object.observaciones }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'personal:horas-extra-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Sí, Eliminar Registro
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

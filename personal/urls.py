@@ -12,7 +12,10 @@ urlpatterns = [
     # Horas Extra
     path('horas-extra/', views.PersonalHorasExtraListView.as_view(), name='horas-extra-list'),
     path('horas-extra/nuevo/', views.PersonalHorasExtraCreateView.as_view(), name='horas-extra-create'),
+    path('horas-extra/<int:pk>/editar/', views.PersonalHorasExtraUpdateView.as_view(), name='horas-extra-update'),
+    path('horas-extra/<int:pk>/eliminar/', views.PersonalHorasExtraDeleteView.as_view(), name='horas-extra-delete'),
     path('horas-extra/<int:pk>/aprobar/', views.PersonalHorasExtraAprobarView.as_view(), name='horas-extra-approve'),
+    path('horas-extra/<int:pk>/detalle/', views.PersonalHorasExtraDetalleView.as_view(), name='horas-extra-detalle'),
     
     # Aprobación Masiva y Reportes
     path('horas-extra/aprobar-masiva/', views.PersonalHorasExtraAprobarMasivaView.as_view(), name='horas-extra-aprobar-masiva'),

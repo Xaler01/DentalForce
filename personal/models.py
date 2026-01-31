@@ -726,6 +726,20 @@ class RegistroHorasPersonal(ClaseModelo):
     )
     aprobado_en = models.DateTimeField(null=True, blank=True, verbose_name='Aprobado en')
     observaciones = models.TextField(blank=True, verbose_name='Observaciones')
+    es_desglosado = models.BooleanField(
+        default=False,
+        verbose_name='Es Desglosado',
+        help_text='True si este registro fue creado automáticamente por desglose de tiempo nocturno'
+    )
+    registro_padre = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='registros_desglosados',
+        verbose_name='Registro Padre',
+        help_text='Registro original si este fue desglosado automáticamente'
+    )
 
     class Meta:
         verbose_name = 'Registro de Horas Extra'
@@ -771,6 +785,102 @@ class RegistroHorasPersonal(ClaseModelo):
             self.aprobado_en = timezone.now()
 
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def desglosa_horas_nocturnas(personal, fecha, hora_inicio, hora_fin, observaciones=''):
+        """
+        Analiza un período de horas y lo desglose automáticamente si cruza las 20:00.
+        Retorna una lista de tuplas: (tipo_extra, horas_inicio, horas_fin)
+        
+        Lógica:
+        - 18:00 a 20:00: RECARGO_25 (25%)
+        - 20:00 en adelante: RECARGO_50 (50%) - HORAS NOCTURNAS
+        - Domingo/feriado: RECARGO_100 (100%)
+        """
+        from datetime import datetime, time
+        
+        HORA_LIMITE_NOCTURNO = time(20, 0)  # 20:00 es el límite
+        
+        # Convertir a datetime para comparación
+        dt_inicio = datetime.combine(fecha, hora_inicio)
+        dt_fin = datetime.combine(fecha, hora_fin)
+        
+        # Si el período no cruza las 20:00, retornar sin desglose
+        if hora_fin <= HORA_LIMITE_NOCTURNO:
+            return [(dt_inicio, dt_fin, 'RECARGO_25')]
+        
+        if hora_inicio >= HORA_LIMITE_NOCTURNO:
+            return [(dt_inicio, dt_fin, 'RECARGO_50')]
+        
+        # El período cruza las 20:00, crear dos registros
+        dt_limite = datetime.combine(fecha, HORA_LIMITE_NOCTURNO)
+        
+        registros = [
+            (dt_inicio, dt_limite, 'RECARGO_25'),      # Antes de 20:00 = 25%
+            (dt_limite, dt_fin, 'RECARGO_50'),          # Después de 20:00 = 50% (nocturno)
+        ]
+        
+        return registros
+
+    @classmethod
+    def crear_con_desglose(cls, personal, fecha, hora_inicio, hora_fin, observaciones='', uc=None):
+        """
+        Crea registro(s) de horas extra con desglose automático si es necesario.
+        Retorna una lista de registros creados.
+        """
+        from datetime import time
+        
+        registros_creados = []
+        desglose = cls.desglosa_horas_nocturnas(personal, fecha, hora_inicio, hora_fin, observaciones)
+        
+        # Caso 1: Sin desglose (período simple)
+        if len(desglose) == 1:
+            dt_inicio, dt_fin, tipo_extra = desglose[0]
+            registro = cls(
+                personal=personal,
+                fecha=fecha,
+                hora_inicio=dt_inicio.time(),
+                hora_fin=dt_fin.time(),
+                tipo_extra=tipo_extra,
+                observaciones=observaciones,
+                es_desglosado=False,
+                uc=uc
+            )
+            registro.save()
+            registros_creados.append(registro)
+        
+        # Caso 2: Con desglose (período cruza 20:00)
+        else:
+            # Crear registro padre
+            registro_padre = cls(
+                personal=personal,
+                fecha=fecha,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                tipo_extra='RECARGO_25',  # Será virtual, solo para referencia
+                observaciones=f"{observaciones} [PERÍODO COMPLETO: {hora_inicio}-{hora_fin}]" if observaciones else f"[PERÍODO COMPLETO: {hora_inicio}-{hora_fin}]",
+                es_desglosado=False,
+                uc=uc
+            )
+            registro_padre.save()
+            
+            # Crear registros desglosados
+            for i, (dt_inicio, dt_fin, tipo_extra) in enumerate(desglose):
+                registro_desglosado = cls(
+                    personal=personal,
+                    fecha=fecha,
+                    hora_inicio=dt_inicio.time(),
+                    hora_fin=dt_fin.time(),
+                    tipo_extra=tipo_extra,
+                    observaciones=observaciones,
+                    es_desglosado=True,
+                    registro_padre=registro_padre,
+                    uc=uc
+                )
+                registro_desglosado.save()
+                registros_creados.append(registro_desglosado)
+        
+        return registros_creados
 
 
 class ExcepcionPersonal(ClaseModelo):

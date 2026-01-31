@@ -10,9 +10,11 @@
             <i class="fas fa-clock"></i> Registro de Horas Extra
         </h1>
         <div>
+            {% if user.is_superuser or user.clinica_asignacion.es_admin %}
             <a href="{% url 'personal:horas-extra-aprobar-masiva' %}" class="btn btn-sm btn-warning shadow-sm mr-2">
                 <i class="fas fa-tasks"></i> Aprobación Masiva
             </a>
+            {% endif %}
             <a href="{% url 'personal:horas-extra-create' %}" class="btn btn-sm btn-primary shadow-sm">
                 <i class="fas fa-plus"></i> Registrar Horas Extra
             </a>
@@ -147,6 +149,16 @@
             <h6 class="m-0 font-weight-bold text-primary">Registros ({{ horas_list.count }})</h6>
         </div>
         <div class="card-body">
+            <!-- Leyenda de Desglose -->
+            <div class="alert alert-info mb-3" role="alert">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Nota importante:</strong> Los períodos que incluyen horas después de las 20:00 se desglosan automáticamente en:
+                <ul class="mb-0 mt-2">
+                    <li><strong>18:00 - 20:00:</strong> Recargo 25% (horas vespertinas)</li>
+                    <li><strong>20:00 en adelante:</strong> Recargo 50% (horas nocturnas)</li>
+                </ul>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
                     <thead>
@@ -155,28 +167,38 @@
                             <th>Personal</th>
                             <th>Clínica</th>
                             <th>Sucursal</th>
-                            <th>H. Normales</th>
-                            <th>H. 25%</th>
-                            <th>H. 50%</th>
-                            <th>H. 100%</th>
-                            <th>Valor Total</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
+                            <th style="text-align: center;">Período</th>
+                            <th style="text-align: center;">Horas</th>
+                            <th style="text-align: center;">Valor Total</th>
+                            <th style="text-align: center;">Tipo</th>
+                            <th style="text-align: center;">Estado</th>
+                            <th style="text-align: center;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for registro in horas_list %}
-                        <tr>
+                        <tr {% if registro.es_desglosado %}style="background-color: #f0f8ff;"{% endif %}>
                             <td>{{ registro.fecha|date:"d/m/Y" }}</td>
                             <td>{{ registro.personal.usuario.get_full_name }}</td>
                             <td>{{ registro.personal.sucursal_principal.clinica.nombre }}</td>
                             <td>{{ registro.personal.sucursal_principal.nombre }}</td>
-                            <td>{{ registro.horas_normales|floatformat:2 }}</td>
-                            <td>{{ registro.horas_25_porciento|floatformat:2 }}</td>
-                            <td>{{ registro.horas_50_porciento|floatformat:2 }}</td>
-                            <td>{{ registro.horas_100_porciento|floatformat:2 }}</td>
-                            <td class="font-weight-bold">${{ registro.valor_total_horas|floatformat:2 }}</td>
-                            <td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-light" style="border: 1px solid #dee2e6; padding: 6px 10px;">
+                                    <i class="fas fa-clock"></i> 
+                                    <strong>{{ registro.hora_inicio|date:"H:i" }} - {{ registro.hora_fin|date:"H:i" }}</strong>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">{{ registro.horas|floatformat:2 }}</td>
+                            <td style="text-align: center;" class="font-weight-bold">${{ registro.valor_total|floatformat:2 }}</td>
+                            <td style="text-align: center;">
+                                <small>{{ registro.get_tipo_extra_display }}</small>
+                                {% if registro.es_desglosado %}
+                                    <br><span class="badge badge-info mt-1" title="Desglosado automáticamente">
+                                        <i class="fas fa-code-branch"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
                                 {% if registro.estado == 'PENDIENTE' %}
                                     <span class="badge badge-warning">Pendiente</span>
                                 {% elif registro.estado == 'APROBADO' %}
@@ -186,15 +208,45 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if registro.estado == 'PENDIENTE' %}
-                                <a href="{% url 'personal:horas-extra-approve' registro.pk %}" class="btn btn-sm btn-primary" title="Revisar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% else %}
-                                <a href="{% url 'personal:horas-extra-approve' registro.pk %}" class="btn btn-sm btn-info" title="Ver">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                {% endif %}
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if user.is_superuser or user.clinica_asignacion.es_admin %}
+                                        <a href="{% url 'personal:horas-extra-approve' registro.pk %}" 
+                                           class="btn btn-primary" 
+                                           title="Revisar/Aprobar">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% if registro.estado == 'PENDIENTE' %}
+                                            <a href="{% url 'personal:horas-extra-update' registro.pk %}" 
+                                               class="btn btn-warning" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'personal:horas-extra-delete' registro.pk %}" 
+                                               class="btn btn-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <a href="{% url 'personal:horas-extra-detalle' registro.pk %}" 
+                                           class="btn btn-info" 
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if registro.estado == 'PENDIENTE' %}
+                                            <a href="{% url 'personal:horas-extra-update' registro.pk %}" 
+                                               class="btn btn-warning" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'personal:horas-extra-delete' registro.pk %}" 
+                                               class="btn btn-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% empty %}

@@ -114,10 +114,8 @@
                                 <th>Personal</th>
                                 <th>Clínica</th>
                                 <th>Sucursal</th>
-                                <th>H. Normales</th>
-                                <th>H. 25%</th>
-                                <th>H. 50%</th>
-                                <th>H. 100%</th>
+                                <th>Tipo</th>
+                                <th>Horas</th>
                                 <th>Valor Total</th>
                                 <th>Motivo</th>
                             </tr>
@@ -132,12 +130,10 @@
                                 <td>{{ registro.personal.usuario.get_full_name }}</td>
                                 <td>{{ registro.personal.sucursal_principal.clinica.nombre }}</td>
                                 <td>{{ registro.personal.sucursal_principal.nombre }}</td>
-                                <td>{{ registro.horas_normales|floatformat:2 }}</td>
-                                <td>{{ registro.horas_25_porciento|floatformat:2 }}</td>
-                                <td>{{ registro.horas_50_porciento|floatformat:2 }}</td>
-                                <td>{{ registro.horas_100_porciento|floatformat:2 }}</td>
-                                <td class="font-weight-bold">${{ registro.valor_total_horas|floatformat:2 }}</td>
-                                <td>{{ registro.motivo|truncatewords:5 }}</td>
+                                <td>{{ registro.get_tipo_extra_display }}</td>
+                                <td>{{ registro.horas|floatformat:2 }}</td>
+                                <td class="font-weight-bold">${{ registro.valor_total|floatformat:2 }}</td>
+                                <td>{{ registro.observaciones|default:"-"|truncatewords:5 }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

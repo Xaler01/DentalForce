@@ -5,8 +5,9 @@ from django.db.models import Sum, Q, Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 from django.views import View
+from django.urls import reverse_lazy
 
 from clinicas.models import Clinica, Sucursal
 from core.services.tenants import get_clinica_from_request
@@ -103,11 +104,36 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 			messages.error(self.request, '❌ No tiene perfil de Personal asociado')
 			return redirect('personal:personal-list')
 
-		form.instance.personal = personal
-		form.instance.uc = self.request.user
-		response = super().form_valid(form)
-		messages.success(self.request, '✅ Horas extra registradas correctamente')
-		return response
+		# No guardar el formulario directamente
+		# Extraer datos para usar método de desglose
+		fecha = form.cleaned_data.get('fecha')
+		hora_inicio = form.cleaned_data.get('hora_inicio')
+		hora_fin = form.cleaned_data.get('hora_fin')
+		observaciones = form.cleaned_data.get('observaciones', '')
+
+		# Usar método de desglose automático
+		registros = RegistroHorasPersonal.crear_con_desglose(
+			personal=personal,
+			fecha=fecha,
+			hora_inicio=hora_inicio,
+			hora_fin=hora_fin,
+			observaciones=observaciones,
+			uc=self.request.user
+		)
+
+		# Mostrar mensaje detallado
+		if len(registros) == 1:
+			messages.success(
+				self.request,
+				f'✅ Horas extra registradas correctamente ({registros[0].get_tipo_extra_display()})'
+			)
+		else:
+			msg = f'✅ Horas extra registradas con desglose automático:\n'
+			for i, reg in enumerate(registros, 1):
+				msg += f'{i}. {reg.get_tipo_extra_display()}: {reg.horas}h = ${reg.valor_total}'
+			messages.success(self.request, msg)
+
+		return redirect(self.success_url)
 
 
 class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
@@ -158,6 +184,30 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 			return self.request.user.clinica_asignacion.es_admin
 		except Exception:
 			return False
+
+
+class PersonalHorasExtraDetalleView(LoginRequiredMixin, DetailView):
+	model = RegistroHorasPersonal
+	template_name = 'personal/horas_extra_detalle.html'
+
+	def get_queryset(self):
+		queryset = RegistroHorasPersonal.objects.select_related(
+			'personal', 'personal__usuario', 'personal__sucursal_principal', 'personal__sucursal_principal__clinica'
+		)
+
+		if self.request.user.is_superuser:
+			return queryset
+
+		try:
+			if self.request.user.clinica_asignacion.es_admin:
+				clinica_activa = get_clinica_from_request(self.request)
+				if clinica_activa:
+					return queryset.filter(personal__sucursal_principal__clinica=clinica_activa)
+				return queryset.none()
+		except Exception:
+			pass
+
+		return queryset.filter(personal__usuario=self.request.user)
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
@@ -352,3 +402,215 @@ class PersonalNominaReporteView(LoginRequiredMixin, UsuarioEsAdminMixin, View):
 		}
 		
 		return render(request, 'personal/nomina_reporte.html', context)
+
+
+class PersonalHorasExtraUpdateView(LoginRequiredMixin, UpdateView):
+	"""Vista para editar horas extra (solo PENDIENTES)"""
+	model = RegistroHorasPersonal
+	form_class = RegistroHorasPersonalForm
+	template_name = 'personal/horas_extra_form.html'
+	success_url = '/personal/horas-extra/'
+
+	def get_queryset(self):
+		queryset = RegistroHorasPersonal.objects.select_related(
+			'personal', 'personal__usuario'
+		)
+		
+		# Superadmin puede editar cualquier registro pendiente
+		if self.request.user.is_superuser:
+			return queryset.filter(estado='PENDIENTE')
+		
+		# Admin de clínica puede editar registros pendientes de su clínica
+		try:
+			if self.request.user.clinica_asignacion.es_admin:
+				clinica_activa = get_clinica_from_request(self.request)
+				if clinica_activa:
+					return queryset.filter(
+						personal__sucursal_principal__clinica=clinica_activa,
+						estado='PENDIENTE'
+					)
+		except Exception:
+			pass
+		
+		# Usuario normal solo puede editar sus propios registros pendientes
+		return queryset.filter(
+			personal__usuario=self.request.user,
+			estado='PENDIENTE'
+		)
+
+	def get_initial(self):
+		"""Cargar datos iniciales del registro para editar"""
+		initial = super().get_initial()
+		obj = self.get_object()
+		initial['fecha'] = obj.fecha
+		initial['hora_inicio'] = obj.hora_inicio
+		initial['hora_fin'] = obj.hora_fin
+		initial['observaciones'] = obj.observaciones
+		return initial
+
+	def get_context_data(self, **kwargs):
+		"""Agregar contexto para la plantilla"""
+		context = super().get_context_data(**kwargs)
+		obj = self.get_object()
+		context['titulo'] = f'Editar Horas Extra - {obj.fecha.strftime("%d/%m/%Y")}'
+		return context
+
+	def get_object(self, queryset=None):
+		obj = super().get_object(queryset)
+		
+		# Validar que el registro sea editable
+		if obj.estado != 'PENDIENTE':
+			# Solo admin puede editar registros aprobados/rechazados
+			if not (self.request.user.is_superuser or 
+					(hasattr(self.request.user, 'clinica_asignacion') and 
+					 self.request.user.clinica_asignacion.es_admin)):
+				messages.error(
+					self.request,
+					'❌ No puede editar registros que ya fueron aprobados o rechazados'
+				)
+				return redirect('personal:horas-extra-list')
+		
+		# Verificar permisos de usuario normal
+		if not self.request.user.is_superuser:
+			try:
+				if not self.request.user.clinica_asignacion.es_admin:
+					if obj.personal.usuario != self.request.user:
+						messages.error(self.request, '❌ No tiene permiso para editar este registro')
+						return redirect('personal:horas-extra-list')
+			except Exception:
+				if obj.personal.usuario != self.request.user:
+					messages.error(self.request, '❌ No tiene permiso para editar este registro')
+					return redirect('personal:horas-extra-list')
+		
+		return obj
+
+	def form_valid(self, form):
+		# Si el registro fue desglosado, eliminamos los registros relacionados
+		if self.object.es_desglosado and self.object.registro_padre:
+			# Eliminar hermanos desglosados
+			RegistroHorasPersonal.objects.filter(
+				registro_padre=self.object.registro_padre
+			).exclude(pk=self.object.pk).delete()
+			# Eliminar padre
+			self.object.registro_padre.delete()
+
+		# Si tiene registros desglosados hijos, eliminarlos
+		if self.object.registros_desglosados.exists():
+			self.object.registros_desglosados.all().delete()
+
+		# Extraer datos del formulario
+		fecha = form.cleaned_data.get('fecha')
+		hora_inicio = form.cleaned_data.get('hora_inicio')
+		hora_fin = form.cleaned_data.get('hora_fin')
+		observaciones = form.cleaned_data.get('observaciones', '')
+		
+		# Eliminar el registro antiguo
+		personal = self.object.personal
+		uc = self.object.uc
+		self.object.delete()
+		
+		# Crear nuevo(s) registro(s) con desglose
+		registros = RegistroHorasPersonal.crear_con_desglose(
+			personal=personal,
+			fecha=fecha,
+			hora_inicio=hora_inicio,
+			hora_fin=hora_fin,
+			observaciones=observaciones,
+			uc=uc
+		)
+
+		if len(registros) == 1:
+			messages.success(self.request, '✅ Horas extra actualizadas correctamente')
+		else:
+			messages.success(
+				self.request,
+				f'✅ Horas extra actualizadas con desglose automático ({len(registros)} registros)'
+			)
+
+		return redirect(self.success_url)
+
+
+class PersonalHorasExtraDeleteView(LoginRequiredMixin, DeleteView):
+	"""Vista para eliminar horas extra (solo PENDIENTES para usuarios)"""
+	model = RegistroHorasPersonal
+	template_name = 'personal/horas_extra_confirm_delete.html'
+	success_url = reverse_lazy('personal:horas-extra-list')
+
+	def get_queryset(self):
+		queryset = RegistroHorasPersonal.objects.select_related(
+			'personal', 'personal__usuario'
+		)
+		
+		# Superadmin puede eliminar cualquier registro
+		if self.request.user.is_superuser:
+			return queryset
+		
+		# Admin de clínica puede eliminar registros de su clínica
+		try:
+			if self.request.user.clinica_asignacion.es_admin:
+				clinica_activa = get_clinica_from_request(self.request)
+				if clinica_activa:
+					return queryset.filter(
+						personal__sucursal_principal__clinica=clinica_activa
+					)
+		except Exception:
+			pass
+		
+		# Usuario normal solo puede eliminar sus propios registros pendientes
+		return queryset.filter(
+			personal__usuario=self.request.user,
+			estado='PENDIENTE'
+		)
+
+	def get_object(self, queryset=None):
+		obj = super().get_object(queryset)
+		
+		# Usuario normal no puede eliminar registros aprobados/rechazados
+		if obj.estado != 'PENDIENTE':
+			if not (self.request.user.is_superuser or 
+					(hasattr(self.request.user, 'clinica_asignacion') and 
+					 self.request.user.clinica_asignacion.es_admin)):
+				messages.error(
+					self.request,
+					'❌ No puede eliminar registros que ya fueron aprobados o rechazados'
+				)
+				return redirect('personal:horas-extra-list')
+		
+		# Verificar permisos de usuario normal
+		if not self.request.user.is_superuser:
+			try:
+				if not self.request.user.clinica_asignacion.es_admin:
+					if obj.personal.usuario != self.request.user:
+						messages.error(self.request, '❌ No tiene permiso para eliminar este registro')
+						return redirect('personal:horas-extra-list')
+			except Exception:
+				if obj.personal.usuario != self.request.user:
+					messages.error(self.request, '❌ No tiene permiso para eliminar este registro')
+					return redirect('personal:horas-extra-list')
+		
+		return obj
+
+	def delete(self, request, *args, **kwargs):
+		self.object = self.get_object()
+		
+		# Si es un registro desglosado, eliminar hermanos y padre
+		if self.object.es_desglosado and self.object.registro_padre:
+			# Eliminar todos los registros desglosados hermanos
+			RegistroHorasPersonal.objects.filter(
+				registro_padre=self.object.registro_padre
+			).delete()
+			# Eliminar el padre
+			self.object.registro_padre.delete()
+			messages.success(request, '✅ Registro completo eliminado (incluyendo desglose automático)')
+		else:
+			# Si tiene hijos desglosados, eliminarlos también
+			if self.object.registros_desglosados.exists():
+				count = self.object.registros_desglosados.count()
+				self.object.registros_desglosados.all().delete()
+				messages.success(request, f'✅ Registro eliminado (incluyendo {count} registros desglosados)')
+			else:
+				messages.success(request, '✅ Registro eliminado correctamente')
+			
+			self.object.delete()
+		
+		return redirect(self.success_url)

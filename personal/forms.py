@@ -56,14 +56,42 @@ class PersonalForm(forms.ModelForm):
 class RegistroHorasPersonalForm(forms.ModelForm):
 	class Meta:
 		model = RegistroHorasPersonal
-		fields = ['fecha', 'hora_inicio', 'hora_fin', 'tipo_extra', 'observaciones']
+		fields = ['fecha', 'hora_inicio', 'hora_fin', 'observaciones']
 		widgets = {
-			'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-			'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-			'hora_fin': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-			'tipo_extra': forms.Select(attrs={'class': 'form-control'}),
-			'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+			'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
+			'hora_inicio': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}, format='%H:%M'),
+			'hora_fin': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}, format='%H:%M'),
+			'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Observaciones opcionales'}),
 		}
+		labels = {
+			'hora_inicio': 'Hora Inicio',
+			'hora_fin': 'Hora Fin',
+			'observaciones': 'Observaciones',
+			'fecha': 'Fecha',
+		}
+		help_texts = {
+			'hora_inicio': 'Hora en que iniciaron las horas extra',
+			'hora_fin': 'Hora en que terminaron las horas extra. Si cruza las 20:00, se desglosará automáticamente',
+		}
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		# Configurar formatos de entrada para compatibilidad con HTML5
+		self.fields['fecha'].input_formats = ['%Y-%m-%d']
+		self.fields['hora_inicio'].input_formats = ['%H:%M']
+		self.fields['hora_fin'].input_formats = ['%H:%M']
+
+	def clean(self):
+		cleaned_data = super().clean()
+		hora_inicio = cleaned_data.get('hora_inicio')
+		hora_fin = cleaned_data.get('hora_fin')
+		fecha = cleaned_data.get('fecha')
+
+		if hora_inicio and hora_fin:
+			if hora_inicio >= hora_fin:
+				raise forms.ValidationError('La hora de fin debe ser posterior a la hora de inicio.')
+		
+		return cleaned_data
 
 
 class ExcepcionPersonalForm(forms.ModelForm):
