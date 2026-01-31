@@ -129,7 +129,7 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 		try:
 			registro_temp.full_clean()
 		except ValidationError as e:
-			messages.error(self.request, f'❌ {e.message}')
+			messages.error(self.request, f'❌ {str(e)}')
 			return redirect('personal:horas-extra-create')
 
 		# Usar método de desglose automático
