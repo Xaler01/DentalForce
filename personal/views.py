@@ -128,9 +128,11 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 				f'✅ Horas extra registradas correctamente ({registros[0].get_tipo_extra_display()})'
 			)
 		else:
-			msg = f'✅ Horas extra registradas con desglose automático:\n'
+			msg = f'✅ Horas extra registradas con desglose automático: '
+			detalles = []
 			for i, reg in enumerate(registros, 1):
-				msg += f'{i}. {reg.get_tipo_extra_display()}: {reg.horas}h = ${reg.valor_total}'
+				detalles.append(f'{reg.get_tipo_extra_display()}: {reg.horas}h = ${reg.valor_total}')
+			msg += ' | '.join(detalles)
 			messages.success(self.request, msg)
 
 		return redirect(self.success_url)

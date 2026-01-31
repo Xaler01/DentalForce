@@ -787,30 +787,40 @@
       return false;
     }
 
-    function mensaje(msg,color='green')
-    {
-      if (color=="success")
-      {
-        color="green";
-      }
-      if (color=="error")
-      {
-        color="red";
+    function mensaje(msg, tag='success') {
+      let config = {
+        icon: 'success',
+        title: 'Éxito',
+        html: msg,
+        confirmButtonText: 'OK',
+        timer: 5000,
+        timerProgressBar: true,
+      };
+
+      // Mapear tags de Django a configuración de SweetAlert2
+      if (tag.includes('error') || tag === 'danger') {
+        config.icon = 'error';
+        config.title = 'Error';
+      } else if (tag.includes('success')) {
+        config.icon = 'success';
+        config.title = 'Éxito';
+      } else if (tag.includes('warning')) {
+        config.icon = 'warning';
+        config.title = 'Advertencia';
+      } else if (tag.includes('info')) {
+        config.icon = 'info';
+        config.title = 'Información';
       }
 
-
-      $.alert({
-        title:'',
-        theme:'material',
-        type:color,
-        content:msg
-      });
+      Swal.fire(config);
     }
 
     {% if messages %}
       {% for message in messages %}
-        console.log("{{ message.tags }}");
-        mensaje("{{ message }}","{{ message.tags }}");
+        console.log("Message:", "{{ message }}", "Tags:", "{{ message.tags }}");
+        setTimeout(function() {
+          mensaje("{{ message|escapejs }}","{{ message.tags }}");
+        }, 300);
       {% endfor %}
     {% endif %}
 
