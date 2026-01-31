@@ -97,6 +97,11 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 	template_name = 'personal/horas_extra_form.html'
 	success_url = '/personal/horas-extra/'
 
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs["request"] = self.request
+		return kwargs
+
 	def form_valid(self, form):
 		try:
 			personal = self.request.user.personal_profile

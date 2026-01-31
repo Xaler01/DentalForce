@@ -54,6 +54,15 @@ class PersonalForm(forms.ModelForm):
 
 
 class RegistroHorasPersonalForm(forms.ModelForm):
+	monto_pago_dia = forms.DecimalField(
+		required=False,
+		max_digits=6,
+		decimal_places=2,
+		widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '20.00'}),
+		label='Monto por Día (opcional)',
+		help_text='Solo para trabajo por día (ej: limpieza). Dejar vacío para horas extra normales'
+	)
+	
 	class Meta:
 		model = RegistroHorasPersonal
 		fields = ['fecha', 'hora_inicio', 'hora_fin', 'observaciones']
@@ -75,11 +84,16 @@ class RegistroHorasPersonalForm(forms.ModelForm):
 		}
 
 	def __init__(self, *args, **kwargs):
+		request = kwargs.pop('request', None)
 		super().__init__(*args, **kwargs)
 		# Configurar formatos de entrada para compatibilidad con HTML5
 		self.fields['fecha'].input_formats = ['%Y-%m-%d']
 		self.fields['hora_inicio'].input_formats = ['%H:%M']
 		self.fields['hora_fin'].input_formats = ['%H:%M']
+		
+		# Asignar personal al instance si está disponible
+		if request and hasattr(request.user, 'personal_profile'):
+			self.instance.personal = request.user.personal_profile
 
 	def clean(self):
 		cleaned_data = super().clean()
@@ -109,5 +123,5 @@ class ExcepcionPersonalForm(forms.ModelForm):
 			'fecha_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
 			'fecha_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
 			'tipo': forms.Select(attrs={'class': 'form-control'}),
-			'motivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+			'motivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
 		}
