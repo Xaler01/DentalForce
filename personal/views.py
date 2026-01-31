@@ -109,13 +109,45 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 			messages.error(self.request, '❌ No tiene perfil de Personal asociado')
 			return redirect('personal:personal-list')
 
-		# No guardar el formulario directamente
-		# Extraer datos para usar método de desglose
+		# Extraer datos del formulario
 		fecha = form.cleaned_data.get('fecha')
 		hora_inicio = form.cleaned_data.get('hora_inicio')
 		hora_fin = form.cleaned_data.get('hora_fin')
 		observaciones = form.cleaned_data.get('observaciones', '')
+		monto_pago_dia = form.cleaned_data.get('monto_pago_dia')
 
+		# Si se especificó monto por día, crear un registro simple sin desglose
+		if monto_pago_dia:
+			from django.core.exceptions import ValidationError
+			registro = RegistroHorasPersonal(
+				personal=personal,
+				fecha=fecha,
+				hora_inicio=hora_inicio,
+				hora_fin=hora_fin,
+				tipo_extra='SABADO_MEDIO_DIA',  # Tipo genérico para pagos por día
+				horas=0,  # No calculamos horas en este caso
+				valor_unitario=monto_pago_dia,
+				valor_total=monto_pago_dia,
+				observaciones=observaciones or 'Pago por día',
+				es_desglosado=False,
+				estado='PENDIENTE',
+				uc=self.request.user
+			)
+			
+			try:
+				registro.full_clean()
+				registro.save()
+				messages.success(
+					self.request,
+					f'✅ Pago por día registrado correctamente (${monto_pago_dia})'
+				)
+			except ValidationError as e:
+				messages.error(self.request, f'❌ {str(e)}')
+				return redirect('personal:horas-extra-create')
+			
+			return redirect(self.success_url)
+
+		# Si NO se especificó monto por día, usar desglose automático de horas extra
 		# Crear un registro temporal para validar conflictos
 		from django.core.exceptions import ValidationError
 		registro_temp = RegistroHorasPersonal(

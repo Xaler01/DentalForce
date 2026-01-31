@@ -74,6 +74,26 @@
           </div>
         </div>
 
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <div class="alert alert-info" role="alert">
+              <i class="fas fa-hand-holding-usd"></i>
+              <strong>Pago por Día (opcional):</strong> Use este campo SOLO para pagos por día completo (ej: limpieza, personal temporal). Si especifica un monto, se creará un registro de pago por día en lugar de horas extra con desglose.
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <div class="form-group">
+              {{ form.monto_pago_dia.label_tag }}
+              {{ form.monto_pago_dia }}
+              {% if form.monto_pago_dia.errors %}<small class="text-danger">{{ form.monto_pago_dia.errors }}</small>{% endif %}
+              <small class="form-text text-muted">{{ form.monto_pago_dia.help_text }}</small>
+            </div>
+          </div>
+        </div>
+
         <div class="mt-3">
           {% if object %}
             <button class="btn btn-success" type="submit">
