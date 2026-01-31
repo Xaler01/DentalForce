@@ -123,7 +123,8 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 			fecha=fecha,
 			hora_inicio=hora_inicio,
 			hora_fin=hora_fin,
-			es_desglosado=False
+			es_desglosado=False,
+			uc=self.request.user
 		)
 		
 		try:
