@@ -1,4 +1,5 @@
 from decimal import Decimal
+import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Q, Count
@@ -122,13 +123,12 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 			registro = RegistroHorasPersonal(
 				personal=personal,
 				fecha=fecha,
-				hora_inicio=hora_inicio,
-				hora_fin=hora_fin,
-				tipo_extra='SABADO_MEDIO_DIA',  # Tipo genérico para pagos por día
-				horas=0,  # No calculamos horas en este caso
-				valor_unitario=monto_pago_dia,
+				hora_inicio=hora_inicio or datetime.time(8, 0),
+				hora_fin=hora_fin or datetime.time(17, 0),
+				tipo_extra='SABADO_MEDIO_DIA',
+				horas=Decimal('0.00'),
 				valor_total=monto_pago_dia,
-				observaciones=observaciones or 'Pago por día',
+				observaciones=observaciones or f'Pago por día: ${monto_pago_dia}',
 				es_desglosado=False,
 				estado='PENDIENTE',
 				uc=self.request.user
@@ -139,7 +139,7 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 				registro.save()
 				messages.success(
 					self.request,
-					f'✅ Pago por día registrado correctamente (${monto_pago_dia})'
+					f'✅ Pago por día registrado correctamente: ${monto_pago_dia}'
 				)
 			except ValidationError as e:
 				messages.error(self.request, f'❌ {str(e)}')

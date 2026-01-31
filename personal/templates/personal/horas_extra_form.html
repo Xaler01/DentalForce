@@ -74,25 +74,88 @@
           </div>
         </div>
 
+        <hr class="mt-4 mb-4">
+        
+        <div class="row">
+          <div class="col-md-12">
+            <h5 class="text-primary"><i class="fas fa-dollar-sign"></i> Tipo de Compensación</h5>
+            <p class="text-muted"><small>Seleccione cómo desea registrar este trabajo</small></p>
+          </div>
+        </div>
+
         <div class="row mt-3">
           <div class="col-md-12">
-            <div class="alert alert-info" role="alert">
-              <i class="fas fa-hand-holding-usd"></i>
-              <strong>Pago por Día (opcional):</strong> Use este campo SOLO para pagos por día completo (ej: limpieza, personal temporal). Si especifica un monto, se creará un registro de pago por día en lugar de horas extra con desglose.
+            <div class="form-group">
+              {% for choice in form.tipo_registro %}
+                <div class="form-check mb-2">
+                  {{ choice.tag }}
+                  <label class="form-check-label" for="{{ choice.id_for_label }}">
+                    <strong>{{ choice.choice_label }}</strong>
+                    {% if choice.data.value == 'HORAS_EXTRA' %}
+                      <br><small class="text-muted">El sistema calculará automáticamente el monto según la hora de inicio y fin (recargos 25%, 50% o 100%)</small>
+                    {% else %}
+                      <br><small class="text-muted">Use esto para pagos fijos por día (limpieza, ayudantes, etc.). Especifique el monto total acordado.</small>
+                    {% endif %}
+                  </label>
+                </div>
+              {% endfor %}
+              {% if form.tipo_registro.errors %}<small class="text-danger">{{ form.tipo_registro.errors }}</small>{% endif %}
             </div>
           </div>
         </div>
 
-        <div class="row mt-2">
+        <div class="row mt-3" id="monto_dia_container" style="display: none;">
           <div class="col-md-6">
+            <div class="alert alert-success" role="alert">
+              <i class="fas fa-hand-holding-usd"></i>
+              <strong>Pago por Día:</strong> Ingrese el monto total que se pagará por el día de trabajo.
+            </div>
             <div class="form-group">
               {{ form.monto_pago_dia.label_tag }}
-              {{ form.monto_pago_dia }}
+              <div class="input-group">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">$</span>
+                </div>
+                {{ form.monto_pago_dia }}
+              </div>
               {% if form.monto_pago_dia.errors %}<small class="text-danger">{{ form.monto_pago_dia.errors }}</small>{% endif %}
               <small class="form-text text-muted">{{ form.monto_pago_dia.help_text }}</small>
             </div>
           </div>
         </div>
+
+        <script>
+          // Mostrar/ocultar campo de monto según selección
+          document.addEventListener('DOMContentLoaded', function() {
+            const radioHorasExtra = document.querySelector('input[value="HORAS_EXTRA"]');
+            const radioPagoDia = document.querySelector('input[value="PAGO_DIA"]');
+            const montoDiaContainer = document.getElementById('monto_dia_container');
+            const horasContainer = document.querySelectorAll('.col-md-4'); // Contenedores de hora_inicio y hora_fin
+            
+            function toggleFields() {
+              if (radioPagoDia && radioPagoDia.checked) {
+                montoDiaContainer.style.display = 'block';
+                // Marcar campos de hora como opcionales visualmente
+                horasContainer.forEach(container => {
+                  const label = container.querySelector('label');
+                  if (label && (label.textContent.includes('Inicio') || label.textContent.includes('Fin'))) {
+                    container.style.opacity = '0.6';
+                  }
+                });
+              } else {
+                montoDiaContainer.style.display = 'none';
+                horasContainer.forEach(container => {
+                  container.style.opacity = '1';
+                });
+              }
+            }
+            
+            if (radioHorasExtra) radioHorasExtra.addEventListener('change', toggleFields);
+            if (radioPagoDia) radioPagoDia.addEventListener('change', toggleFields);
+            
+            toggleFields(); // Llamar al cargar la página
+          });
+        </script>
 
         <div class="mt-3">
           {% if object %}

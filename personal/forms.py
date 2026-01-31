@@ -54,13 +54,31 @@ class PersonalForm(forms.ModelForm):
 
 
 class RegistroHorasPersonalForm(forms.ModelForm):
+	TIPO_REGISTRO = [
+		('HORAS_EXTRA', 'Horas Extra (cálculo automático según horario)'),
+		('PAGO_DIA', 'Pago por Día (monto fijo acordado)'),
+	]
+	
+	tipo_registro = forms.ChoiceField(
+		choices=TIPO_REGISTRO,
+		widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+		label='Tipo de Registro',
+		initial='HORAS_EXTRA',
+		required=True
+	)
+	
 	monto_pago_dia = forms.DecimalField(
 		required=False,
 		max_digits=6,
 		decimal_places=2,
-		widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '20.00'}),
-		label='Monto por Día (opcional)',
-		help_text='Solo para trabajo por día (ej: limpieza). Dejar vacío para horas extra normales'
+		widget=forms.NumberInput(attrs={
+			'class': 'form-control',
+			'placeholder': 'Ej: 20.00',
+			'step': '0.01',
+			'min': '0.01'
+		}),
+		label='Monto Total a Pagar',
+		help_text='Ingrese el monto total acordado por el día de trabajo'
 	)
 	
 	class Meta:
