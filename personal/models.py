@@ -752,13 +752,49 @@ class RegistroHorasPersonal(ClaseModelo):
     def clean(self):
         from django.core.exceptions import ValidationError
         super().clean()
+        # Validar que la hora de fin sea posterior a la hora de inicio
         if self.hora_inicio and self.hora_fin and self.hora_inicio >= self.hora_fin:
             raise ValidationError('La hora de fin debe ser posterior a la hora de inicio')
+        
+        # Verificar conflictos de horarios para el mismo personal en la misma fecha
+        if self.fecha and self.hora_inicio and self.hora_fin:
+            from datetime import datetime, time
+            
+            # No buscar conflictos si es un registro desglosado (hijo)
+            # solo si es el registro principal
+            if not self.es_desglosado:
+                # Buscar registros conflictivos del mismo personal en la misma fecha
+                conflictos = RegistroHorasPersonal.objects.filter(
+                    personal=self.personal,
+                    fecha=self.fecha,
+                    estado='PENDIENTE'  # Solo verificar pendientes
+                )
+                
+                # Si es una actualización, excluir el registro actual
+                if self.pk:
+                    conflictos = conflictos.exclude(pk=self.pk)
+                
+                for reg in conflictos:
+                    # Verificar si hay superposición de horarios
+                    if self._horarios_se_superponen(self.hora_inicio, self.hora_fin, reg.hora_inicio, reg.hora_fin):
+                        raise ValidationError(
+                            f'Ya existe un registro de horas extra para el {self.fecha.strftime("%d/%m/%Y")} '
+                            f'en el horario {reg.hora_inicio.strftime("%H:%M")} - {reg.hora_fin.strftime("%H:%M")}. '
+                            f'No se pueden crear registros con horarios conflictivos.'
+                        )
 
     def save(self, *args, **kwargs):
         from datetime import datetime
         from django.utils import timezone
-
+    
+    @staticmethod
+    def _horarios_se_superponen(inicio1, fin1, inicio2, fin2):
+        """
+        Verifica si dos rangos de tiempo se superponen.
+        """
+        # Los rangos se superponen si:
+        # inicio1 < fin2 AND inicio2 < fin1
+        return inicio1 < fin2 and inicio2 < fin1
         if self.hora_inicio and self.hora_fin:
             dt_inicio = datetime.combine(self.fecha, self.hora_inicio)
             dt_fin = datetime.combine(self.fecha, self.hora_fin)

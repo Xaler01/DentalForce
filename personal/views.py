@@ -111,6 +111,22 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 		hora_fin = form.cleaned_data.get('hora_fin')
 		observaciones = form.cleaned_data.get('observaciones', '')
 
+		# Crear un registro temporal para validar conflictos
+		from django.core.exceptions import ValidationError
+		registro_temp = RegistroHorasPersonal(
+			personal=personal,
+			fecha=fecha,
+			hora_inicio=hora_inicio,
+			hora_fin=hora_fin,
+			es_desglosado=False
+		)
+		
+		try:
+			registro_temp.full_clean()
+		except ValidationError as e:
+			messages.error(self.request, f'❌ {e.message}')
+			return redirect('personal:horas-extra-add')
+
 		# Usar método de desglose automático
 		registros = RegistroHorasPersonal.crear_con_desglose(
 			personal=personal,

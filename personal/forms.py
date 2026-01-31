@@ -91,6 +91,12 @@ class RegistroHorasPersonalForm(forms.ModelForm):
 			if hora_inicio >= hora_fin:
 				raise forms.ValidationError('La hora de fin debe ser posterior a la hora de inicio.')
 		
+		# Validar que no haya conflictos de horarios si es para crear (no actualizar)
+		if fecha and hora_inicio and hora_fin and not self.instance.pk:
+			# Obtener el personal del usuario actual (se asignará en la vista)
+			# Por ahora, simplemente validar que el modelo lo haga en save()
+			pass
+		
 		return cleaned_data
 
 
