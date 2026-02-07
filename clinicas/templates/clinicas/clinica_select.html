@@ -1,0 +1,207 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_title %}Seleccionar Clínica{% endblock %}
+
+{% block page_content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/css/select2.min.css" integrity="sha512-UGoq7l+ULy2PUw6x6o7GxOKMiz0bzfIUX++ImQJbXgXwtB9kO4DYGAPvjKzjVfa+ogxdlOG4VDs3Yl6lC5lIPA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<section class="clinica-selector d-flex align-items-center justify-content-center" style="flex: 1;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-7 col-xl-6">
+                <div class="card clinica-card shadow-lg border-0">
+                    <div class="card-header text-white d-flex align-items-center clinica-card__header">
+                        <div class="clinica-card__icon me-3 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-hospital-user"></i>
+                        </div>
+                        <div>
+                            <p class="mb-1 text-white-50 small text-uppercase fw-bold">Contexto de trabajo</p>
+                            <h4 class="mb-0 clinica-card__title">Selecciona una Clínica</h4>
+                        </div>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <p class="text-muted mb-4">
+                            Encuentra rápidamente la clínica con la que deseas trabajar. Usa la búsqueda si tienes muchas opciones.
+                        </p>
+
+                        {% if clinicas %}
+                        <form method="post" id="clinicaForm">
+                            {% csrf_token %}
+                            <div class="form-group mb-3">
+                                <label for="clinica_select" class="form-label fw-bold text-secondary">
+                                    <i class="fas fa-search me-2"></i>Clínica
+                                </label>
+                                <select name="clinica_id" id="clinica_select" class="form-select" required style="width: 100%;">
+                                    <option value="">-- Selecciona una clínica --</option>
+                                    {% for clinica in clinicas %}
+                                    <option value="{{ clinica.id }}"
+                                            data-direccion="{{ clinica.direccion }}"
+                                            data-telefono="{{ clinica.telefono }}"
+                                            data-estado="{{ clinica.estado }}">
+                                        {{ clinica.nombre }}{% if not clinica.estado %} (Inactiva){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle"></i> Usa la búsqueda o escribe parte del nombre.
+                                </small>
+                            </div>
+
+                            <div id="clinicaInfo" class="alert alert-info bg-white border-0 shadow-sm clinica-info" style="display: none;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="clinica-info__badge me-3" id="infoEstado">Activa</div>
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>Detalles de la clínica
+                                    </h6>
+                                </div>
+                                <p class="mb-2"><strong>Dirección:</strong><br><span id="infoDireccion" class="text-muted">-</span></p>
+                                <p class="mb-0"><strong>Teléfono:</strong><br><span id="infoTelefono" class="text-muted">-</span></p>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 mt-2">
+                                <i class="fas fa-check me-2"></i>Confirmar selección
+                            </button>
+                        </form>
+                        {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            <strong><i class="fas fa-exclamation-triangle me-2"></i>Sin clínicas disponibles</strong><br>
+                            No se encontraron clínicas en el sistema. Contacte al administrador.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .clinica-selector {
+        background: radial-gradient(120% 140% at 20% 20%, rgba(255,255,255,0.45), rgba(255,255,255,0)),
+                    linear-gradient(135deg, #eef2ff 0%, #f7f9ff 45%, #ffffff 100%);
+        min-height: calc(100vh - 140px);
+    }
+
+    .clinica-card {
+        border-radius: 1.25rem;
+        overflow: hidden;
+        backdrop-filter: blur(4px);
+    }
+
+    .clinica-card__header {
+        background: linear-gradient(120deg, #4f46e5 0%, #2563eb 55%, #0ea5e9 100%);
+        padding: 0.75rem 1.1rem;
+        min-height: 64px;
+    }
+
+    .clinica-card__title {
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    .clinica-card__icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        font-size: 1rem;
+    }
+
+    .clinica-info {
+        border-radius: 1rem;
+    }
+
+    .clinica-info__badge {
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background: #e8f1ff;
+        color: #1d4ed8;
+        border: 1px solid #d3e3ff;
+        min-width: 96px;
+        text-align: center;
+    }
+
+    .clinica-info__badge.inactiva {
+        background: #fff4ed;
+        border-color: #ffd5bd;
+        color: #c2410c;
+    }
+
+    .select2-container--default .select2-selection--single {
+        border: 1px solid #d6d9e0 !important;
+        border-radius: 0.75rem;
+        height: 46px;
+        font-size: 1rem;
+        padding: 0.25rem 0.5rem;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 1.6;
+        color: #1f2937;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #4f46e5 transparent transparent transparent;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #7c8cff !important;
+        box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.18);
+    }
+    .select2-dropdown { border-color: #e5e7eb; border-radius: 0.75rem; overflow: hidden; }
+    .select2-results__option--highlighted { background-color: #4f46e5 !important; color: #ffffff !important; }
+    .select2-container--open .select2-dropdown--below { border-top: 1px solid #e5e7eb; }
+    .select2-search__field { border-radius: 0.5rem; }
+    .select2-results__option--selected { background-color: #6366f1 !important; color: #ffffff !important; }
+</style>
+{% endblock page_content %}
+
+{% block js_page %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js" integrity="sha512-qs+H2et1PTUKuSdGblT6UlWYCyM54q9WlH3yt7NJ+cHBCN8woS8coYrhSCUEqzXj69bXBUsoPs0rTf7jq7V0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Select2
+    $('#clinica_select').select2({
+        language: 'es',
+        placeholder: '-- Selecciona una clínica --',
+        allowClear: true,
+        width: '100%',
+        matcher: function(params, data) {
+            if ($.trim(params.term) === '') { return data; }
+            if (typeof data.text === 'undefined') { return null; }
+            if (data.text.toUpperCase().indexOf(params.term.toUpperCase()) > -1) { return data; }
+            return null;
+        }
+    });
+
+    // Mostrar info de la clínica seleccionada
+    $('#clinica_select').on('change', function() {
+        const selected = $(this).find(':selected');
+        const direccion = selected.data('direccion');
+        const telefono = selected.data('telefono');
+        const estado = selected.data('estado');
+        const estadoBadge = $('#infoEstado');
+        if (selected.val()) {
+            $('#clinicaInfo').show();
+            $('#infoDireccion').text(direccion || 'No disponible');
+            $('#infoTelefono').text(telefono || 'No disponible');
+            estadoBadge.text(estado ? 'Activa' : 'Inactiva');
+            estadoBadge.toggleClass('inactiva', !estado);
+        } else {
+            $('#clinicaInfo').hide();
+        }
+    });
+
+    // Validación simple
+    $('#clinicaForm').on('submit', function(e) {
+        if (!$('#clinica_select').val()) {
+            e.preventDefault();
+            alert('Por favor, selecciona una clínica antes de continuar.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock js_page %}

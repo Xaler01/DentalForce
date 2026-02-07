@@ -1,0 +1,37 @@
+{% extends 'base/base.html' %}
+{% block page_content %}
+<div class="container-fluid">
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">{% if object %}Editar{% else %}Nuevo{% endif %} Personal</h6>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-6">{{ form.usuario.label_tag }}{{ form.usuario }}</div>
+          <div class="col-md-6">{{ form.tipo_personal.label_tag }}{{ form.tipo_personal }}</div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-6">{{ form.sucursal_principal.label_tag }}{{ form.sucursal_principal }}</div>
+          <div class="col-md-6">{{ form.sucursales.label_tag }}{{ form.sucursales }}</div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-4">{{ form.tipo_compensacion.label_tag }}{{ form.tipo_compensacion }}</div>
+          <div class="col-md-4">{{ form.salario_mensual.label_tag }}{{ form.salario_mensual }}</div>
+          <div class="col-md-4">{{ form.tarifa_por_hora.label_tag }}{{ form.tarifa_por_hora }}</div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-4">{{ form.tarifa_por_dia.label_tag }}{{ form.tarifa_por_dia }}</div>
+          <div class="col-md-4">{{ form.fecha_contratacion.label_tag }}{{ form.fecha_contratacion }}</div>
+          <div class="col-md-4">{{ form.estado.label_tag }} {{ form.estado }}</div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-primary" type="submit">Guardar</button>
+          <a href="{% url 'personal:personal-list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

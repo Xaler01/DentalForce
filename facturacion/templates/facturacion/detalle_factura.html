@@ -1,0 +1,316 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Factura {{ factura.numero_factura }} - {{ clinica.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .factura-header { background-color: #f8f9fa; border-bottom: 3px solid #34495e; padding: 20px; }
+    .factura-numero { font-size: 24px; font-weight: bold; color: #34495e; }
+    .badge-pendiente { background-color: #f39c12; }
+    .badge-pagada { background-color: #27ae60; }
+    .badge-anulada { background-color: #e74c3c; }
+    .tabla-items th { background-color: #ecf0f1; }
+    .saldo-pendiente { background-color: #fff3cd; border-left: 4px solid #f39c12; padding: 15px; }
+    .print-button { margin: 10px; }
+    
+    @media print {
+        /* Ocultar elementos de navegación y botones */
+        #sidebar, .sidebar, #accordionSidebar, 
+        nav, .navbar, .topbar,
+        .print-button, .btn, button, a.btn,
+        .card-footer, .no-print,
+        #content-wrapper > .container-fluid > .d-sm-flex,
+        footer, .page-footer {
+            display: none !important;
+        }
+        
+        /* Ajustar contenedor principal */
+        #wrapper, #content-wrapper, #content, .content-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        
+        .container, .container-fluid {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 15px !important;
+        }
+        
+        /* Estilos para impresión limpia */
+        body {
+            background: white !important;
+            font-size: 12pt;
+        }
+        
+        .factura-header {
+            border: 2px solid #000;
+            page-break-after: avoid;
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .card {
+            border: 1px solid #000;
+            box-shadow: none;
+            page-break-inside: avoid;
+        }
+        
+        .table {
+            page-break-inside: avoid;
+        }
+        
+        /* Forzar visibilidad del contenido */
+        .card-body, .card-header {
+            display: block !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container mt-4">
+    <!-- Header de factura -->
+    <div class="factura-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h4 class="factura-numero">{{ factura.numero_factura }}</h4>
+                <p class="text-muted mb-0"><strong>Clínica:</strong> {{ clinica.nombre }}</p>
+                <p class="text-muted mb-0"><strong>RUC:</strong> {{ clinica.ruc }}</p>
+            </div>
+            <div class="col-md-6 text-right">
+                <h5>
+                    {% if factura.estado == 'PEN' %}
+                        <span class="badge badge-pendiente">Pendiente de Pago</span>
+                    {% elif factura.estado == 'PAG' %}
+                        <span class="badge badge-pagada">Pagada</span>
+                    {% else %}
+                        <span class="badge badge-anulada">Anulada</span>
+                    {% endif %}
+                </h5>
+                <p class="text-muted mb-0"><strong>Emisión:</strong> {{ factura.fecha_emision|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos del paciente -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-user"></i> Datos del Paciente</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Nombre:</strong> {{ factura.paciente.apellidos }}, {{ factura.paciente.nombres }}</p>
+                    <p><strong>Cédula:</strong> {{ factura.paciente.cedula }}</p>
+                    <p><strong>Email:</strong> {{ factura.paciente.email }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Teléfono:</strong> {{ factura.paciente.telefono }}</p>
+                    <p><strong>Dirección:</strong> {{ factura.paciente.direccion }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items de la factura -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Detalles de Servicios</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-items tabla-items">
+                    <thead>
+                        <tr>
+                            <th width="40%">Descripción</th>
+                            <th width="10%" class="text-center">Cantidad</th>
+                            <th width="15%" class="text-right">Precio Unitario</th>
+                            <th width="10%" class="text-right">Descuento</th>
+                            <th width="15%" class="text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.descripcion }}</td>
+                            <td class="text-center">{{ item.cantidad }}</td>
+                            <td class="text-right">${{ item.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-right">
+                                {% if item.descuento_item %}
+                                    -${{ item.descuento_item|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-right"><strong>${{ item.total|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de totales -->
+    <div class="row mt-4">
+        <div class="col-md-8"></div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Subtotal:</strong></div>
+                        <div class="col-6 text-right">${{ factura.subtotal|floatformat:2 }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Descuento:</strong></div>
+                        <div class="col-6 text-right">
+                            {% if factura.descuento %}
+                                -${{ factura.descuento|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Subtotal Neto:</strong></div>
+                        <div class="col-6 text-right">${{ factura.subtotal_neto|floatformat:2 }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>IVA (12%):</strong></div>
+                        <div class="col-6 text-right">${{ factura.iva_monto|floatformat:2 }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><h5>TOTAL:</h5></div>
+                        <div class="col-6 text-right"><h5>${{ factura.total|floatformat:2 }}</h5></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado de pago -->
+    {% if factura.estado != 'ANU' %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-money-bill"></i> Estado de Pago</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p class="text-muted">Total Factura</p>
+                    <h4>${{ factura.total|floatformat:2 }}</h4>
+                </div>
+                <div class="col-md-4">
+                    <p class="text-muted">Total Pagado</p>
+                    <h4 style="color: #27ae60;">${{ factura.total_pagado|floatformat:2 }}</h4>
+                </div>
+                <div class="col-md-4">
+                    <p class="text-muted">Saldo Pendiente</p>
+                    <h4 style="color: #f39c12;">
+                        ${{ factura.saldo_pendiente|floatformat:2 }}
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registro de pagos -->
+    {% if pagos %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-receipt"></i> Historial de Pagos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr style="background-color: #ecf0f1;">
+                            <th>Fecha</th>
+                            <th>Forma de Pago</th>
+                            <th>Referencia</th>
+                            <th class="text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                            <td>{{ pago.get_forma_pago_display }}</td>
+                            <td>{{ pago.referencia_pago|default:"-" }}</td>
+                            <td class="text-right"><strong>${{ pago.monto|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Observaciones -->
+    {% if factura.observaciones %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Observaciones</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ factura.observaciones }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div class="mt-4 mb-4">
+        <a href="{% url 'facturacion:lista' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+        
+        {% if factura.estado == 'PEN' %}
+        <a href="{% url 'facturacion:registrar_pago' factura.pk %}" class="btn btn-success print-button">
+            <i class="fas fa-dollar-sign"></i> Registrar Pago
+        </a>
+        <a href="{% url 'facturacion:editar_items' factura.pk %}" class="btn btn-warning print-button">
+            <i class="fas fa-edit"></i> Editar Items
+        </a>
+        <button onclick="anularFactura({{ factura.pk }})" class="btn btn-danger print-button" id="btnAnular">
+            <i class="fas fa-ban"></i> Anular
+        </button>
+        {% endif %}
+        
+        <a href="{% url 'facturacion:imprimir' factura.pk %}" target="_blank" class="btn btn-info print-button">
+            <i class="fas fa-print"></i> Imprimir
+        </a>
+    </div>
+</div>
+
+<form id="formAnular" action="{% url 'facturacion:anular' factura.pk %}" method="POST" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<script>
+function anularFactura(pk) {
+    // Mostrar modal de confirmación con Bootstrap
+    Swal.fire({
+        title: '¿Anular Factura?',
+        text: 'Esta acción no se puede deshacer. La factura será marcada como anulada y no contará en los totales pendientes.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('formAnular').submit();
+        }
+    });
+}
+</script>
+{% endblock %}

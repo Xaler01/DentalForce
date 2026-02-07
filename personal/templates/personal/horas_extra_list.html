@@ -1,0 +1,263 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Horas Extra - Personal{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock"></i> Registro de Horas Extra
+        </h1>
+        <div>
+            {% if user.is_superuser or user.clinica_asignacion.es_admin %}
+            <a href="{% url 'personal:horas-extra-aprobar-masiva' %}" class="btn btn-sm btn-warning shadow-sm mr-2">
+                <i class="fas fa-tasks"></i> Aprobación Masiva
+            </a>
+            {% endif %}
+            <a href="{% url 'personal:horas-extra-create' %}" class="btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-plus"></i> Registrar Horas Extra
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pendientes de Aprobación
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_pendientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Aprobados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_aprobados }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Rechazados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_rechazados }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="estado" class="mr-2">Estado:</label>
+                    <select name="estado" id="estado" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="PENDIENTE" {% if request.GET.estado == 'PENDIENTE' %}selected{% endif %}>Pendiente</option>
+                        <option value="APROBADO" {% if request.GET.estado == 'APROBADO' %}selected{% endif %}>Aprobado</option>
+                        <option value="RECHAZADO" {% if request.GET.estado == 'RECHAZADO' %}selected{% endif %}>Rechazado</option>
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="clinica" class="mr-2">Clínica:</label>
+                    <select name="clinica" id="clinica" class="form-control">
+                        <option value="">Todas</option>
+                        {% for clinica in clinicas %}
+                        <option value="{{ clinica.id }}" {% if request.GET.clinica == clinica.id|stringformat:"s" %}selected{% endif %}>
+                            {{ clinica.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="sucursal" class="mr-2">Sucursal:</label>
+                    <select name="sucursal" id="sucursal" class="form-control">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id }}" {% if request.GET.sucursal == sucursal.id|stringformat:"s" %}selected{% endif %}>
+                            {{ sucursal.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="mes" class="mr-2">Mes:</label>
+                    <select name="mes" id="mes" class="form-control">
+                        <option value="">Todos</option>
+                        {% for m in "123456789012"|make_list %}
+                        <option value="{{ forloop.counter }}" {% if request.GET.mes == forloop.counter|stringformat:"s" %}selected{% endif %}>
+                            {{ forloop.counter }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mr-3 mb-2">
+                    <label for="anio" class="mr-2">Año:</label>
+                    <input type="number" name="anio" id="anio" class="form-control" value="{{ request.GET.anio }}" placeholder="2026">
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <a href="{% url 'personal:horas-extra-list' %}" class="btn btn-secondary ml-2 mb-2">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Registros ({{ horas_list.count }})</h6>
+        </div>
+        <div class="card-body">
+            <!-- Leyenda de Desglose -->
+            <div class="alert alert-info mb-3" role="alert">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Nota importante:</strong> Los períodos que incluyen horas después de las 20:00 se desglosan automáticamente en:
+                <ul class="mb-0 mt-2">
+                    <li><strong>18:00 - 20:00:</strong> Recargo 25% (horas vespertinas)</li>
+                    <li><strong>20:00 en adelante:</strong> Recargo 50% (horas nocturnas)</li>
+                </ul>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Personal</th>
+                            <th>Clínica</th>
+                            <th>Sucursal</th>
+                            <th style="text-align: center;">Período</th>
+                            <th style="text-align: center;">Horas</th>
+                            <th style="text-align: center;">Valor Total</th>
+                            <th style="text-align: center;">Tipo</th>
+                            <th style="text-align: center;">Estado</th>
+                            <th style="text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in horas_list %}
+                        <tr {% if registro.es_desglosado %}style="background-color: #f0f8ff;"{% endif %}>
+                            <td>{{ registro.fecha|date:"d/m/Y" }}</td>
+                            <td>{{ registro.personal.usuario.get_full_name }}</td>
+                            <td>{{ registro.personal.sucursal_principal.clinica.nombre }}</td>
+                            <td>{{ registro.personal.sucursal_principal.nombre }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-light" style="border: 1px solid #dee2e6; padding: 6px 10px;">
+                                    <i class="fas fa-clock"></i> 
+                                    <strong>{{ registro.hora_inicio|date:"H:i" }} - {{ registro.hora_fin|date:"H:i" }}</strong>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">{{ registro.display_horas|floatformat:2 }}</td>
+                            <td style="text-align: center;" class="font-weight-bold">${{ registro.display_valor_total|floatformat:2 }}</td>
+                            <td style="text-align: center;">
+                                <small>{{ registro.get_tipo_extra_display }}</small>
+                                {% if registro.es_desglosado %}
+                                    <br><span class="badge badge-info mt-1" title="Desglosado automáticamente">
+                                        <i class="fas fa-code-branch"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if registro.estado == 'PENDIENTE' %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                {% elif registro.estado == 'APROBADO' %}
+                                    <span class="badge badge-success">Aprobado</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Rechazado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if user.is_superuser or user.clinica_asignacion.es_admin %}
+                                        <a href="{% url 'personal:horas-extra-approve' registro.pk %}" 
+                                           class="btn btn-primary" 
+                                           title="Revisar/Aprobar">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% if registro.estado == 'PENDIENTE' %}
+                                            <a href="{% url 'personal:horas-extra-update' registro.pk %}" 
+                                               class="btn btn-warning" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'personal:horas-extra-delete' registro.pk %}" 
+                                               class="btn btn-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <a href="{% url 'personal:horas-extra-detalle' registro.pk %}" 
+                                           class="btn btn-info" 
+                                           title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if registro.estado == 'PENDIENTE' %}
+                                            <a href="{% url 'personal:horas-extra-update' registro.pk %}" 
+                                               class="btn btn-warning" 
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'personal:horas-extra-delete' registro.pk %}" 
+                                               class="btn btn-danger" 
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="text-center">No se encontraron registros</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

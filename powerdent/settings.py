@@ -50,11 +50,14 @@ INSTALLED_APPS = [
     'inv',
     'cmp',
     'cit',
-    'clinicas',
+    'clinicas.apps.ClinicasConfig',  # Usar AppConfig para registrar signals
     'personal',
     'pacientes',
     'facturacion',
     'enfermedades',  # SOOD-70: Sistema de enfermedades y alertas
+    'usuarios',     # SOOD-USU: Sistema de usuarios, roles y perfiles por clínica
+    'procedimientos',  # SOOD-CAT-101: Catálogo de procedimientos odontológicos
+    'evolucion',    # SOOD-EVO-201: Módulo de evolución odontológica
 ]
 
 
@@ -67,6 +70,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'powerdent.middleware.ClinicaMiddleware',  # Multi-tenant segregation
+    'powerdent.middleware_contrasena.ForzarCambioContrasenaTemporalMiddleware',  # Forzar cambio de contraseña temporal
 ]
 
 ROOT_URLCONF = 'powerdent.urls'
@@ -83,7 +88,11 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'powerdent.context_processors.clinica_context',
+                'powerdent.context_processors.menu_urls',
             ],
+            'libraries': {
+                'permisos_tags': 'usuarios.templatetags.permisos_tags',
+            },
         },
     },
 ]
@@ -156,3 +165,13 @@ LOGOUT_REDIRECT_URL = '/login/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Message tags para mapear a clases Bootstrap
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'error',
+}

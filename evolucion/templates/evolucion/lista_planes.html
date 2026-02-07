@@ -1,0 +1,151 @@
+{% extends "base/base.html" %}
+
+{% block title %}Planes de Tratamiento{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">📋 Planes de Tratamiento</h1>
+            <p class="text-muted">Gestión de planes de tratamiento para pacientes</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:seleccionar_paciente_plan' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Plan
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="text-primary font-weight-bold text-uppercase mb-1">Total Planes</div>
+                    <div class="h3 mb-0">{{ total_planes }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="text-warning font-weight-bold text-uppercase mb-1">Planes Activos</div>
+                    <div class="h3 mb-0">{{ planes_activos }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="text-success font-weight-bold text-uppercase mb-1">Planes Pendientes</div>
+                    <div class="h3 mb-0">{{ planes_pendientes }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Planes Table -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-list"></i> Lista de Planes
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Paciente</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Presupuesto</th>
+                            <th class="text-center">Progreso</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in page_obj %}
+                        <tr>
+                            <td><strong>{{ plan.nombre }}</strong></td>
+                            <td>{{ plan.paciente.nombres }}</td>
+                            <td>
+                                {% if plan.prioridad == 'URGENTE' %}
+                                    <span class="badge badge-danger">URGENTE</span>
+                                {% elif plan.prioridad == 'NECESARIO' %}
+                                    <span class="badge badge-warning">NECESARIO</span>
+                                {% else %}
+                                    <span class="badge badge-info">ELECTIVO</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.estado == 'PENDIENTE' %}
+                                    <span class="badge badge-secondary">PENDIENTE</span>
+                                {% elif plan.estado == 'ACTIVO' %}
+                                    <span class="badge badge-warning">ACTIVO</span>
+                                {% elif plan.estado == 'COMPLETADO' %}
+                                    <span class="badge badge-success">COMPLETADO</span>
+                                {% else %}
+                                    <span class="badge badge-danger">CANCELADO</span>
+                                {% endif %}
+                            </td>
+                            <td>${{ plan.presupuesto_estimado|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ plan.get_progreso }}%;" 
+                                         aria-valuenow="{{ plan.get_progreso }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ plan.get_progreso }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'evolucion:detalle_plan' plan.pk %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay planes de tratamiento registrados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

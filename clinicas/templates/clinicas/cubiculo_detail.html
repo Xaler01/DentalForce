@@ -1,0 +1,88 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-door-open"></i> {{ cubiculo.nombre }}
+        </h1>
+        <div>
+            <a href="{% url 'clinicas:cubiculo_update' cubiculo.pk %}" class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'clinicas:cubiculo_list' %}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información General -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex align-items-center">
+                    <div>
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i> Información General
+                        </h6>
+                    </div>
+                    {% if cubiculo.estado %}
+                        <span class="badge badge-success ml-auto">Activo</span>
+                    {% else %}
+                        <span class="badge badge-secondary ml-auto">Inactivo</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Nombre:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.nombre }}</dd>
+
+                        <dt class="col-sm-5">Número:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.numero }}</dd>
+
+                        <dt class="col-sm-5">Sucursal:</dt>
+                        <dd class="col-sm-7">
+                            <a href="{% url 'clinicas:sucursal_detail' cubiculo.sucursal.pk %}" class="text-decoration-none">
+                                {{ cubiculo.sucursal.nombre }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-5">Capacidad:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.capacidad }} personas</dd>
+
+                        <dt class="col-sm-5">Equipamiento:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.equipamiento|default:"No especificado" }}</dd>
+
+                        {% if cubiculo.descripcion %}
+                        <dt class="col-sm-5">Descripción:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.descripcion }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de Auditoría -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-clock"></i> Información de Auditoría
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Creado:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.fc|date:"d/m/Y H:i" }}</dd>
+
+                        <dt class="col-sm-5">Modificado:</dt>
+                        <dd class="col-sm-7">{{ cubiculo.fm|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

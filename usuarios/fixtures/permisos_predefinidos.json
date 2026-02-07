@@ -1,0 +1,492 @@
+[
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 1,
+    "fields": {
+      "codigo": "recepcion.ver_citas",
+      "nombre": "Ver Citas",
+      "descripcion": "Permite visualizar el calendario y listado de citas",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 2,
+    "fields": {
+      "codigo": "recepcion.crear_cita",
+      "nombre": "Crear Cita",
+      "descripcion": "Permite crear nuevas citas para pacientes",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 3,
+    "fields": {
+      "codigo": "recepcion.editar_cita",
+      "nombre": "Editar Cita",
+      "descripcion": "Permite editar citas existentes",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 4,
+    "fields": {
+      "codigo": "recepcion.cancelar_cita",
+      "nombre": "Cancelar Cita",
+      "descripcion": "Permite cancelar citas programadas",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 5,
+    "fields": {
+      "codigo": "recepcion.gestionar_pacientes",
+      "nombre": "Gestionar Pacientes",
+      "descripcion": "Permite crear y editar información básica de pacientes",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 6,
+    "fields": {
+      "codigo": "recepcion.ver_historiales",
+      "nombre": "Ver Historiales de Pacientes",
+      "descripcion": "Permite visualizar historiales médicos de pacientes",
+      "categoria": "recepcion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 7,
+    "fields": {
+      "codigo": "asistencia.asistir_procedimiento",
+      "nombre": "Asistir Procedimiento",
+      "descripcion": "Permite asistir en procedimientos odontológicos",
+      "categoria": "asistencia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 8,
+    "fields": {
+      "codigo": "asistencia.preparar_instrumentos",
+      "nombre": "Preparar Instrumentos",
+      "descripcion": "Permite preparar y esterilizar instrumentos",
+      "categoria": "asistencia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 9,
+    "fields": {
+      "codigo": "asistencia.limpiar_cubiculos",
+      "nombre": "Limpiar Cubículos",
+      "descripcion": "Permite limpiar y desinfectar espacios de trabajo",
+      "categoria": "asistencia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 10,
+    "fields": {
+      "codigo": "asistencia.registrar_medicinas",
+      "nombre": "Registrar Medicinas",
+      "descripcion": "Permite registrar uso de medicinas y consumibles",
+      "categoria": "asistencia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 11,
+    "fields": {
+      "codigo": "inventario.ver_inventario",
+      "nombre": "Ver Inventario",
+      "descripcion": "Permite visualizar el inventario de materiales",
+      "categoria": "inventario",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 12,
+    "fields": {
+      "codigo": "inventario.solicitar_inventario",
+      "nombre": "Solicitar Inventario",
+      "descripcion": "Permite solicitar materiales del inventario",
+      "categoria": "inventario",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 13,
+    "fields": {
+      "codigo": "odontologia.crear_procedimiento",
+      "nombre": "Crear Procedimiento",
+      "descripcion": "Permite crear registros de procedimientos odontológicos",
+      "categoria": "odontologia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 14,
+    "fields": {
+      "codigo": "odontologia.editar_diagnostico",
+      "nombre": "Editar Diagnóstico",
+      "descripcion": "Permite editar diagnósticos en los procedimientos",
+      "categoria": "odontologia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 15,
+    "fields": {
+      "codigo": "odontologia.registrar_evolucion",
+      "nombre": "Registrar Evolución",
+      "descripcion": "Permite registrar la evolución del tratamiento",
+      "categoria": "odontologia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 16,
+    "fields": {
+      "codigo": "odontologia.prescribir_medicinas",
+      "nombre": "Prescribir Medicinas",
+      "descripcion": "Permite prescribir medicinas a pacientes",
+      "categoria": "odontologia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 17,
+    "fields": {
+      "codigo": "odontologia.ver_radiografias",
+      "nombre": "Ver Radiografías",
+      "descripcion": "Permite visualizar radiografías de pacientes",
+      "categoria": "odontologia",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 18,
+    "fields": {
+      "codigo": "facturacion.ver_facturas",
+      "nombre": "Ver Facturas",
+      "descripcion": "Permite visualizar facturas emitidas",
+      "categoria": "facturacion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 19,
+    "fields": {
+      "codigo": "facturacion.crear_factura",
+      "nombre": "Crear Factura",
+      "descripcion": "Permite crear nuevas facturas",
+      "categoria": "facturacion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 20,
+    "fields": {
+      "codigo": "facturacion.editar_factura",
+      "nombre": "Editar Factura",
+      "descripcion": "Permite editar facturas pendientes",
+      "categoria": "facturacion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 21,
+    "fields": {
+      "codigo": "facturacion.anular_factura",
+      "nombre": "Anular Factura",
+      "descripcion": "Permite anular facturas emitidas",
+      "categoria": "facturacion",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 22,
+    "fields": {
+      "codigo": "admin.gestionar_usuarios",
+      "nombre": "Gestionar Usuarios",
+      "descripcion": "Permite crear, editar y desactivar usuarios",
+      "categoria": "admin",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 23,
+    "fields": {
+      "codigo": "admin.asignar_roles",
+      "nombre": "Asignar Roles y Permisos",
+      "descripcion": "Permite asignar roles y permisos a usuarios",
+      "categoria": "admin",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 24,
+    "fields": {
+      "codigo": "admin.gestionar_sucursales",
+      "nombre": "Gestionar Sucursales",
+      "descripcion": "Permite crear y editar sucursales",
+      "categoria": "admin",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 25,
+    "fields": {
+      "codigo": "reportes.ver_reportes_general",
+      "nombre": "Ver Reportes Generales",
+      "descripcion": "Permite visualizar reportes generales de la clínica",
+      "categoria": "reportes",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 26,
+    "fields": {
+      "codigo": "reportes.ver_reportes_financiero",
+      "nombre": "Ver Reportes Financieros",
+      "descripcion": "Permite visualizar reportes financieros detallados",
+      "categoria": "reportes",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.permisopersonalizado",
+    "pk": 27,
+    "fields": {
+      "codigo": "reportes.exportar_reportes",
+      "nombre": "Exportar Reportes",
+      "descripcion": "Permite exportar reportes a PDF/Excel",
+      "categoria": "reportes",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent",
+    "pk": 1,
+    "fields": {
+      "nombre": "Recepcionista",
+      "descripcion": "Personal encargado de recepción y gestión de citas. Acceso limitado a funciones de atención al paciente.",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent",
+    "pk": 2,
+    "fields": {
+      "nombre": "Auxiliar Odontológico",
+      "descripcion": "Asiste en procedimientos odontológicos y maneja instrumentos y materiales.",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent",
+    "pk": 3,
+    "fields": {
+      "nombre": "Dentista",
+      "descripcion": "Profesional odontológico con acceso a historiales, diagnósticos y procedimientos completos.",
+      "clinica": null,
+      "activo": true
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 1,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 1
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 2,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 2
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 3,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 3
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 4,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 4
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 5,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 5
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 6,
+    "fields": {
+      "rolusuariopowerdent_id": 1,
+      "permisopersonalizado_id": 6
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 7,
+    "fields": {
+      "rolusuariopowerdent_id": 2,
+      "permisopersonalizado_id": 7
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 8,
+    "fields": {
+      "rolusuariopowerdent_id": 2,
+      "permisopersonalizado_id": 8
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 9,
+    "fields": {
+      "rolusuariopowerdent_id": 2,
+      "permisopersonalizado_id": 9
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 10,
+    "fields": {
+      "rolusuariopowerdent_id": 2,
+      "permisopersonalizado_id": 10
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 11,
+    "fields": {
+      "rolusuariopowerdent_id": 2,
+      "permisopersonalizado_id": 11
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 12,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 13
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 13,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 14
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 14,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 15
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 15,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 16
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 16,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 17
+    }
+  },
+  {
+    "model": "usuarios.rolusuariopowerdent_permisos",
+    "pk": 17,
+    "fields": {
+      "rolusuariopowerdent_id": 3,
+      "permisopersonalizado_id": 1
+    }
+  }
+]

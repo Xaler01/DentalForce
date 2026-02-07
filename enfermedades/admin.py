@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente, AlertaPaciente
+from .models import CategoriaEnfermedad, Enfermedad, EnfermedadPaciente, AlertaPaciente, ClinicaEnfermedad
 
 
 @admin.register(CategoriaEnfermedad)
@@ -425,4 +425,51 @@ class AlertaPacienteAdmin(admin.ModelAdmin):
         )
         self.message_user(request, f'{count} alerta(s) desactivada(s).')
     desactivar_alertas.short_description = "Desactivar alertas seleccionadas"
+
+
+@admin.register(ClinicaEnfermedad)
+class ClinicaEnfermedadAdmin(admin.ModelAdmin):
+    """Administración de configuraciones por clínica del catálogo de enfermedades."""
+    list_display = (
+        'clinica',
+        'enfermedad',
+        'habilitada',
+        'ocultar',
+        'nombre_personalizado',
+        'estado',
+        'fc',
+        'uc'
+    )
+    list_filter = (
+        'clinica',
+        'habilitada',
+        'ocultar',
+        'estado'
+    )
+    search_fields = (
+        'clinica__nombre',
+        'enfermedad__nombre',
+        'nombre_personalizado'
+    )
+    autocomplete_fields = ['clinica', 'enfermedad']
+    readonly_fields = ('fc', 'fm', 'uc', 'um')
+
+    fieldsets = (
+        ('Relación', {
+            'fields': ('clinica', 'enfermedad', 'estado')
+        }),
+        ('Configuración', {
+            'fields': ('habilitada', 'ocultar', 'nombre_personalizado', 'notas')
+        }),
+        ('Auditoría', {
+            'fields': ('fc', 'fm', 'uc', 'um'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.uc = request.user
+        obj.um = request.user
+        super().save_model(request, obj, form, change)
 

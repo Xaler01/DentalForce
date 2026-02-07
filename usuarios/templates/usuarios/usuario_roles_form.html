@@ -1,0 +1,219 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Asignar Roles y Permisos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">
+                <i class="fas fa-user-shield"></i>
+                Asignar Roles y Permisos
+            </h1>
+            <p class="text-muted">
+                Usuario: <strong>{{ usuario_editado.get_full_name|default:usuario_editado.username }}</strong>
+                ({{ usuario_editado.email }})
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="alert-messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Roles del Usuario -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users"></i>
+                            Roles Asignados ({{ roles_actuales|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="{{ form.roles_personalizados.id_for_label }}" class="form-label">
+                                Seleccionar Roles
+                            </label>
+                            <div class="roles-container" id="rolesContainer" style="max-height: 400px; overflow-y: auto;">
+                                {% for role_id, role_label in form.roles_personalizados %}
+                                <div class="form-check p-2 border-bottom">
+                                    {{ role_id }}
+                                    <label class="form-check-label" for="{{ role_id.id_for_label }}">
+                                        {% if "Sistema" in role_label %}
+                                        <i class="fas fa-globe text-info"></i>
+                                        {% else %}
+                                        <i class="fas fa-clinic-medical text-success"></i>
+                                        {% endif %}
+                                        {{ role_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.roles_personalizados.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ form.roles_personalizados.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if roles_actuales %}
+                        <div class="alert alert-info mt-3">
+                            <h6 class="mb-2">
+                                <i class="fas fa-check-circle"></i>
+                                Roles Actuales:
+                            </h6>
+                            <div class="flex-wrap">
+                                {% for rol in roles_actuales %}
+                                <span class="badge bg-primary me-2 mb-1">{{ rol.nombre }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Permisos Adicionales -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key"></i>
+                            Permisos Adicionales ({{ permisos_actuales|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Asigne permisos adicionales más allá de los incluidos en los roles.
+                            Útil para dar acceso específico a funcionalidades particulares.
+                        </p>
+
+                        <div class="permisos-container" id="permisosContainer" style="max-height: 400px; overflow-y: auto;">
+                            {% for permiso_id, permiso_label in form.permisos_adicionales %}
+                            <div class="form-check p-2 border-bottom">
+                                {{ permiso_id }}
+                                <label class="form-check-label" for="{{ permiso_id.id_for_label }}">
+                                    <i class="fas fa-key text-warning"></i>
+                                    {{ permiso_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.permisos_adicionales.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.permisos_adicionales.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="d-flex gap-2 mb-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                    <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen Lateral -->
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 80px;">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-summary"></i>
+                            Resumen de Permisos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Permisos Totales ({{ permisos_totales|length }})</h6>
+
+                        {% if permisos_totales %}
+                        <div class="mb-3">
+                            {% regroup permisos_totales by categoria as permisos_por_cat %}
+                            {% for categoria, permisos in permisos_por_cat %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2">
+                                    <strong>{{ categoria.get_categoria_display }}</strong>
+                                </small>
+                                <div class="ps-2">
+                                    {% for permiso in permisos %}
+                                    <div class="small mb-1">
+                                        <i class="fas fa-check text-success"></i>
+                                        {{ permiso.nombre }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning small mb-0">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Sin permisos asignados
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-info">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            Ayuda
+                        </h5>
+                    </div>
+                    <div class="card-body small text-muted">
+                        <p>
+                            Los <strong>roles</strong> agrupan conjuntos de permisos.
+                            Un usuario puede tener múltiples roles.
+                        </p>
+                        <p>
+                            Los <strong>permisos adicionales</strong> permiten dar
+                            acceso granular a funcionalidades específicas.
+                        </p>
+                        <hr>
+                        <p class="mb-0">
+                            Los cambios se guardan inmediatamente al hacer clic en
+                            "Guardar Cambios".
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-check {
+        transition: background-color 0.2s;
+    }
+    .form-check:hover {
+        background-color: #f8f9fa;
+    }
+    .form-check input[type="checkbox"]:checked ~ label {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}

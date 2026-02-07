@@ -42,7 +42,7 @@ Este agente debe revisar TODOS los archivos staged antes de realizar un commit y
 Los siguientes archivos/carpetas están en `.gitignore` y deben permanecer locales:
 
 ```
-.jira-docs/          # Scripts y configuraciones de Jira
+.copilot-workspace/  # Salidas de GitHub Copilot: prompts, documentación generada, análisis
 .env                 # Variables de entorno
 settings_local.py    # Configuraciones locales de Django
 db.sqlite3          # Base de datos de desarrollo
@@ -50,14 +50,44 @@ media/              # Archivos multimedia (pueden contener datos de pacientes)
 *.csv               # Archivos CSV que pueden contener datos sensibles
 ```
 
+**Nota:** Anteriormente esta carpeta se llamaba `.jira-docs/`. Se renombró a `.copilot-workspace/` para reflejar su propósito más amplio como repositorio de salidas de agentes GitHub Copilot.
+
+#### Contenido de `.copilot-workspace/`
+
+Esta carpeta contiene archivos generados por agentes GitHub Copilot y documentación auxiliar:
+
+**Documentación de uso único (se genera por sesión):**
+- `prompts/` - Prompts personalizados para agentes
+- `RESUMEN_SESION_*.md` - Resúmenes de sesiones de trabajo
+- `ACTUALIZACIÓN_*.md` - Cambios y actualizaciones por fecha
+- `PLAN_*.md` - Planes de implementación para características específicas
+- `GUION_PRUEBAS_*.md` - Guiones de prueba generados
+
+**Documentación relevante para nuevo personal:**
+- `DocCompleta/` - Carpeta con documentación consolidada del proyecto
+  - Guías de arquitectura, módulos, APIs
+  - Especificaciones técnicas mantenidas
+  - Referencias de seguridad y mejores prácticas
+- `scripts/` - Scripts auxiliares de configuración y migración
+- `QUICKSTART.md` - Guía rápida de inicio
+
+**Archivos de configuración y sincronización:**
+- (Anteriormente `.jira-docs/`) Configuraciones locales
+- Archivos de agentes: `AGENTE_*.md` (instrucciones específicas)
+- Historiales de tickets y cambios
+
 ### Proceso de Revisión
 
-1. **Listar archivos staged**
+1. **Verificar carpeta `.copilot-workspace/`**
+   - Confirmar que archivos no suban a `.copilot-workspace/` (la carpeta está en `.gitignore`)
+   - Esta carpeta es local y contiene salidas de agentes Copilot
+
+2. **Listar archivos staged**
    ```bash
    git diff --cached --name-only
    ```
 
-2. **Para cada archivo, buscar patrones sensibles:**
+3. **Para cada archivo, buscar patrones sensibles:**
    - Tokens API: `API_TOKEN`, `API_KEY`, `SECRET`, `TOKEN`
    - Emails: Patrones de email que no sean ejemplos
    - URLs con credenciales: `https://usuario:password@...`
@@ -65,13 +95,13 @@ media/              # Archivos multimedia (pueden contener datos de pacientes)
    - Database strings: `postgresql://`, `mysql://`, `mongodb://`
    - IP addresses privadas: `192.168.x.x`, `10.x.x.x`
 
-3. **Verificar extensiones de archivos sensibles:**
+4. **Verificar extensiones de archivos sensibles:**
    - `.env` (solo si tiene valores reales)
    - `.pem`, `.key`, `.p12`, `.pfx` (certificados)
    - `.csv` con datos de producción
    - Backups de BD: `.sql`, `.dump`
 
-4. **Revisar contenido de archivos Python:**
+5. **Revisar contenido de archivos Python:**
    ```python
    # PATRONES PROHIBIDOS:
    JIRA_API_TOKEN = "ATATT3x..."  # ❌ Token real
@@ -109,7 +139,7 @@ Archivo: utils/payment.py
 🛠️  ACCIONES REQUERIDAS:
 
 1. Mover 'scripts/config.py' a carpeta segura según tipo:
-   - Archivos de Jira → .jira-docs/
+   - Archivos de configuración de agentes → .copilot-workspace/
    - Configuraciones DB → Usar settings_local.py
    - Credenciales de pago → Variables de entorno
 
@@ -146,13 +176,26 @@ Una vez completada la revisión exitosamente, el agente debe:
    - Sugerencias de mensaje de commit basadas en los cambios
    - Confirmación de que se puede proceder
 
+### Reglas del Agente de Commits (Horario Ecuador)
+
+El agente de commits **debe bloquear** cualquier commit o push a ramas de desarrollo en el siguiente horario:
+
+- **Zona horaria**: Ecuador (UTC-5)
+- **Días**: Lunes a Viernes
+- **Horario restringido**: 08:30 a 18:30
+
+**Regla obligatoria**:
+- Si la fecha/hora local de Ecuador está dentro de ese rango, **NO** se permite commit ni push a ramas de desarrollo (por ejemplo: `develop`, `release/*`, `staging/*`).
+- Los commits y push **solo** están permitidos fuera del horario restringido o en fines de semana.
+- El agente debe validar la hora de Ecuador **antes** de ejecutar cualquier commit/push.
+
 ### Configuración de Categorías de Archivos
 
 ```yaml
 carpetas_seguras:
-  jira:
-    destino: .jira-docs/
-    patrones: ["*jira*", "*JIRA*", "ATATT3x*"]
+  copilot_workspace:
+    destino: .copilot-workspace/
+    patrones: ["*agente*", "*sesion*", "*resumen*", "*.prompt*"]
     
   database:
     destino: settings_local.py
@@ -163,7 +206,7 @@ carpetas_seguras:
     patrones: ["PAYPAL_*", "STRIPE_*", "CRYPTO_*", "*_SECRET*", "*_KEY*"]
     
   servidores:
-    destino: .env (como variables)ªª
+    destino: .env (como variables)
     patrones: ["SSH_*", "SERVER_*", "HOST=", "PORT="]
     
   personal:
@@ -196,16 +239,35 @@ Archivos que pueden contener "credenciales" de ejemplo:
 - Archivos de test con datos de fixture
 - Documentación con placeholders: `YOUR_API_KEY_HERE`
 
-### Mantenimiento
+### Mantenimiento de `.copilot-workspace/`
+
+La carpeta `.copilot-workspace/` debe:
+- Permanecer en `.gitignore` (nunca subirla al repositorio)
+- Limpiarse regularmente (archivar sesiones antiguas)
+- Contener solo archivos actuales o de referencia
+- Mantener `DocCompleta/` con documentación de proyecto relevante
+
+**Limpieza recomendada:**
+```bash
+# Mover archivos de un solo uso a historial
+mv .copilot-workspace/RESUMEN_SESION_*.md .copilot-workspace/historial/
+mv .copilot-workspace/PLAN_*.md .copilot-workspace/historial/
+
+# Mantener solo DocCompleta/ con docs vivas
+# Y scripts/ con configuraciones reutilizables
+```
+
+### Mantenimiento General
 
 Este archivo debe actualizarse cuando:
 - Se agreguen nuevos servicios externos al proyecto
 - Se identifiquen nuevos patrones de seguridad
 - Se reorganice la estructura de carpetas seguras
 - Se implementen nuevas integraciones que requieran credenciales
+- Se cambie el nombre o propósito de `.copilot-workspace/`
 
 ---
 
-**Última actualización**: 2025-11-15  
-**Versión**: 1.0  
+**Última actualización**: 2026-02-07  
+**Versión**: 1.2 (actualizado: cambio de `.jira-docs/` a `.copilot-workspace/`)  
 **Responsable**: Equipo de Desarrollo PowerDent

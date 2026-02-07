@@ -9,6 +9,7 @@ from cit.models import Clinica, Sucursal, Cita
 from cit.forms import SucursalForm
 from datetime import time, datetime, timedelta
 from django.utils import timezone
+from cit.tests.base import MultiTenantTestCase
 
 
 class SucursalModelTest(TestCase):
@@ -213,21 +214,11 @@ class SucursalFormTest(TestCase):
         self.assertEqual(form.cleaned_data['dias_atencion'], 'LMXV')
 
 
-class SucursalViewsTest(TestCase):
+class SucursalViewsTest(MultiTenantTestCase):
     """Tests para las vistas CRUD de Sucursal"""
     
     def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username='testuser', password='test123')
-        self.client.login(username='testuser', password='test123')
-        
-        self.clinica = Clinica.objects.create(
-            nombre='Clínica Test',
-            direccion='Av. Test 123',
-            telefono='02-1234567',
-            email='test@clinica.com',
-            uc=self.user
-        )
+        super().setUp()  # Get multi-tenant context (user, clinica, client con session)
         
         self.sucursal = Sucursal.objects.create(
             clinica=self.clinica,

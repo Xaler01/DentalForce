@@ -19,6 +19,8 @@ from cit.models import Cita
 from enfermedades.forms import EnfermedadPacienteForm
 from enfermedades.models import EnfermedadPaciente, AlertaPaciente
 from enfermedades.utils import CalculadorAlerta
+from core.services.tenants import get_clinica_from_request
+from pacientes.services import pacientes_para_clinica, get_paciente_para_clinica
 
 
 class PacienteListView(LoginRequiredMixin, ListView):
@@ -31,9 +33,12 @@ class PacienteListView(LoginRequiredMixin, ListView):
     login_url = 'login'
     
     def get_queryset(self):
-        """Filtrar pacientes según búsqueda"""
+        """Filtrar pacientes según búsqueda y clínica activa (tenant-aware service)"""
+        clinica = get_clinica_from_request(self.request)
         incluir_inactivos = self.request.GET.get('incluir_inactivos') == '1'
-        qs = Paciente.objects.all().order_by('apellidos', 'nombres') if incluir_inactivos else Paciente.objects.filter(estado=True).order_by('apellidos', 'nombres')
+        if not clinica:
+            return Paciente.objects.none()
+        qs = pacientes_para_clinica(clinica, incluir_inactivos).order_by('apellidos', 'nombres')
         
         form = PacienteBuscarForm(self.request.GET)
         if form.is_valid():
@@ -93,10 +98,42 @@ class PacienteCreateView(LoginRequiredMixin, CreateView):
     login_url = 'login'
     
     def form_valid(self, form):
-        """Agregar usuario de auditoría"""
+        """Agregar usuario de auditoría, clínica activa y validar duplicados por clínica"""
+        cedula = form.cleaned_data.get('cedula')
+        clinica = get_clinica_from_request(self.request)
+        
+        if not clinica:
+            messages.error(self.request, 'No tiene clínica seleccionada')
+            return self.form_invalid(form)
+        
+        # Validar duplicado de cédula EN ESTA CLÍNICA
+        if cedula:
+            duplicado_activo = Paciente.objects.filter(
+                cedula=cedula,
+                clinica=clinica,
+                estado=True
+            ).exists()
+            
+            if duplicado_activo:
+                form.add_error('cedula', 'Ya existe un paciente activo con esta cédula en esta clínica')
+                return self.form_invalid(form)
+            
+            # Verificar si existe inactivo en esta clínica
+            duplicado_inactivo = Paciente.objects.filter(
+                cedula=cedula,
+                clinica=clinica,
+                estado=False
+            ).first()
+            
+            if duplicado_inactivo:
+                form.add_error('cedula', f'Existe un paciente desactivado con esta cédula ({duplicado_inactivo.get_nombre_completo()}). Reactívalo en lugar de crear uno nuevo.')
+                return self.form_invalid(form)
+        
         paciente = form.save(commit=False)
         paciente.uc = self.request.user
         paciente.um = self.request.user.id
+        paciente.clinica = clinica
+        
         paciente.save()
 
         # Relación M2M con enfermedades, guardando auditoría en through
@@ -133,9 +170,11 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
     login_url = 'login'
     
     def form_valid(self, form):
-        """Actualizar usuario de auditoría"""
+        """Actualizar usuario de auditoría y preservar la clínica"""
         paciente = form.save(commit=False)
         paciente.um = self.request.user.id
+        # NO permitir cambiar la clínica - preservar la original
+        paciente.clinica = self.get_object().clinica
         paciente.save()
 
         enfermedades = form.cleaned_data.get('enfermedades')
@@ -156,8 +195,8 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         return super(UpdateView, self).form_valid(form)
     
     def get_success_url(self):
-        """Redirigir al detalle del paciente"""
-        return reverse_lazy('pacientes:paciente-detail', kwargs={'pk': self.object.pk})
+        """Redirigir al listado de pacientes"""
+        return reverse_lazy('pacientes:paciente-list')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -166,8 +205,11 @@ class PacienteUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def get_queryset(self):
-        """Operar solo sobre pacientes activos"""
-        return Paciente.objects.filter(estado=True)
+        """Filtrar por clínica del usuario y solo pacientes activos"""
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Paciente.objects.none()
+        return Paciente.objects.filter(estado=True, clinica=clinica)
 
 
 class PacienteDetailView(LoginRequiredMixin, DetailView):
@@ -179,7 +221,10 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
     login_url = 'login'
 
     def get_queryset(self):
-        return Paciente.objects.filter(estado=True)
+        clinica = get_clinica_from_request(self.request)
+        if not clinica:
+            return Paciente.objects.none()
+        return Paciente.objects.filter(estado=True, clinica=clinica)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -245,6 +290,8 @@ class PacienteDetailView(LoginRequiredMixin, DetailView):
         context['alertas_historial'] = alertas_query[:30]
         
         context['title'] = f'Detalle de {self.object.get_nombre_completo()}'
+        # Garantizar disponibilidad de mensajes en contexto para tests
+        context['messages'] = messages.get_messages(self.request)
         return context
 
 
@@ -308,7 +355,8 @@ class PacienteEnfermedadAddView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def post(self, request, pk):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         form = EnfermedadPacienteForm(request.POST)
         if form.is_valid():
             try:
@@ -328,7 +376,8 @@ class PacienteEnfermedadDeleteView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def post(self, request, pk, ep_id):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         ep = get_object_or_404(EnfermedadPaciente, pk=ep_id, paciente=paciente)
         ep.delete()
         return JsonResponse({'success': True})
@@ -339,7 +388,8 @@ class PacienteAlertasDetallesAJAXView(LoginRequiredMixin, View):
     login_url = 'login'
 
     def get(self, request, pk):
-        paciente = get_object_or_404(Paciente, pk=pk, estado=True)
+        clinica = get_clinica_from_request(request)
+        paciente = get_object_or_404(Paciente, pk=pk, estado=True, clinica=clinica)
         
         # Calcular nivel de alerta y factores
         calculador = CalculadorAlerta(paciente)

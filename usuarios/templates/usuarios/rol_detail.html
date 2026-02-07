@@ -1,0 +1,126 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Detalles del Rol{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">
+                {% if rol.es_global %}
+                    <i class="fas fa-globe text-info"></i>
+                {% else %}
+                    <i class="fas fa-clinic-medical text-success"></i>
+                {% endif %}
+                {{ rol.nombre }}
+            </h1>
+            <p class="text-muted">Detalles del rol y permisos asignados</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'usuarios:roles_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Información General</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="text-muted"><small>Nombre</small></label>
+                    <p class="h6">{{ rol.nombre }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted"><small>Tipo</small></label>
+                    <p>
+                        {% if rol.es_global %}
+                        <span class="badge bg-info">
+                            <i class="fas fa-globe"></i> Sistema (Global)
+                        </span>
+                        {% else %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-clinic-medical"></i> Clínica
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="text-muted"><small>Estado</small></label>
+                    <p>
+                        {% if rol.activo %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check"></i> Activo
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times"></i> Inactivo
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted"><small>Fecha de Creación</small></label>
+                    <p class="h6">{{ rol.fecha_creacion|date:"d/m/Y H:i:s" }}</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <label class="text-muted"><small>Descripción</small></label>
+                    <p class="h6">{{ rol.descripcion|default:"Sin descripción" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-key"></i>
+                Permisos Asignados ({{ rol.permisos.count }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if rol.permisos.all %}
+            <div class="row">
+                {% for permiso in rol.permisos.all|dictsort:"categoria" %}
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 border rounded bg-light">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    {{ permiso.nombre }}
+                                </h6>
+                                <code class="text-muted text-sm">{{ permiso.codigo }}</code>
+                                <p class="text-muted small mb-0">{{ permiso.descripcion }}</p>
+                            </div>
+                            <span class="badge bg-secondary">{{ permiso.get_categoria_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                Este rol no tiene permisos asignados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="{% url 'usuarios:usuario_roles' 0 %}" class="btn btn-primary">
+            <i class="fas fa-user-check"></i> Asignar Rol a Usuarios
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends "base/base.html" %}
+
+{% block title %}Editar Procedimientos - Evolución {% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">{{ titulo }}</h1>
+            <p class="text-muted">Evolución del {{ evolucion.fecha_consulta|date:"d/m/Y" }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:detalle' evolucion.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-tools"></i> Procedimientos en Evolución
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="procedimientos-table">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Procedimiento</th>
+                                <th>Cantidad</th>
+                                <th>Observaciones</th>
+                                <th class="text-center">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr class="formset-row">
+                                {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                                {% endfor %}
+                                <td class="procedimiento-cell">
+                                    {{ form.procedimiento }}
+                                    {% if form.procedimiento.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.procedimiento.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.cantidad }}
+                                    {% if form.cantidad.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.cantidad.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.observaciones }}
+                                </td>
+                                <td class="text-center">
+                                    {{ form.DELETE }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-group mt-3 d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-primary mr-3" id="add-procedimiento">
+                        <i class="fas fa-plus"></i> Agregar procedimiento
+                    </button>
+                    <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <a href="{% url 'evolucion:detalle' evolucion.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock page_content %}
+
+{% block js_page %}
+<script>
+$(document).ready(function() {
+    const prefix = '{{ formset.prefix }}';
+    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
+
+    // Configuración Select2 con búsqueda
+    const select2Opts = {
+        theme: "bootstrap",
+        width: '100%',
+        placeholder: 'Buscar procedimiento...',
+        language: {
+            noResults: function() { return "No se encontraron resultados"; },
+            searching: function() { return "Buscando..."; }
+        }
+    };
+
+    // Initialize Select2
+    $('.select2').each(function() {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+            $(this).select2(select2Opts);
+        }
+    });
+
+    // Agregar procedimiento
+    $('#add-procedimiento').click(function(e) {
+        e.preventDefault();
+        
+        const $tbody = $('#procedimientos-table tbody');
+        let $newRow;
+        
+        // Si hay filas, clonar la primera; si no, crear manualmente
+        const $firstRow = $tbody.find('tr').first();
+        
+        if ($firstRow.length > 0) {
+            // Clonar fila existente
+            $newRow = $firstRow.clone(false);
+            
+            // Limpiar valores
+            $newRow.find('input[type="hidden"]').val('');
+            $newRow.find('input[type="number"]').val('1');
+            $newRow.find('textarea').val('');
+            $newRow.find('input[type="checkbox"]').prop('checked', false);
+            
+            // Limpiar Select2
+            $newRow.find('.select2-container').remove();
+            const $select = $newRow.find('select');
+            $select.removeClass('select2-hidden-accessible')
+                .removeData('select2')
+                .off('select2:*')
+                .removeAttr('data-select2-id aria-hidden tabindex');
+            $select.find('option').removeAttr('data-select2-id');
+        } else {
+            // Tabla vacía: obtener opciones del empty_form
+            const emptyFormHtml = '{{ formset.empty_form|escapejs }}';
+            const $tempForm = $('<div>').html(emptyFormHtml);
+            const $templateSelect = $tempForm.find('select');
+            const optionsHtml = $templateSelect.html(); // Copiar todas las opciones
+            
+            // Crear fila nueva manualmente
+            $newRow = $('<tr class="formset-row"></tr>');
+            
+            // Hidden fields
+            $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-id" name="${prefix}-${totalForms}-id">`);
+            $newRow.append(`<input type="hidden" id="id_${prefix}-${totalForms}-evolucion" name="${prefix}-${totalForms}-evolucion">`);
+            
+            // Procedimiento (select con opciones del template)
+            const $tdProc = $('<td class="procedimiento-cell"></td>');
+            $tdProc.html(`<select id="id_${prefix}-${totalForms}-procedimiento" name="${prefix}-${totalForms}-procedimiento" class="form-control select2">${optionsHtml}</select>`);
+            $newRow.append($tdProc);
+            
+            // Cantidad
+            const $tdCant = $('<td></td>');
+            $tdCant.html(`<input type="number" id="id_${prefix}-${totalForms}-cantidad" name="${prefix}-${totalForms}-cantidad" min="1" value="1" class="form-control">`);
+            $newRow.append($tdCant);
+            
+            // Observaciones
+            const $tdObs = $('<td></td>');
+            $tdObs.html(`<textarea id="id_${prefix}-${totalForms}-observaciones" name="${prefix}-${totalForms}-observaciones" class="form-control" rows="2"></textarea>`);
+            $newRow.append($tdObs);
+            
+            // Delete
+            const $tdDel = $('<td class="text-center"></td>');
+            $tdDel.html(`<input type="checkbox" id="id_${prefix}-${totalForms}-DELETE" name="${prefix}-${totalForms}-DELETE">`);
+            $newRow.append($tdDel);
+        }
+        
+        // Actualizar IDs y names
+        $newRow.find('input, select, textarea').each(function() {
+            let name = $(this).attr('name');
+            let id = $(this).attr('id');
+            
+            if (name && name.includes(prefix)) {
+                $(this).attr('name', name.replace(/-\d+-/, '-' + totalForms + '-'));
+            }
+            if (id && id.includes(prefix)) {
+                $(this).attr('id', id.replace(/-\d+-/, '-' + totalForms + '-'));
+            }
+        });
+        
+        // Agregar fila
+        $tbody.append($newRow);
+        
+        // Copiar options del primer select si existe
+        if ($firstRow.length > 0) {
+            const $origSelect = $firstRow.find('select');
+            const $newSelect = $newRow.find('select');
+            $newSelect.html($origSelect.html());
+        }
+        
+        // Inicializar Select2
+        $newRow.find('select').select2(select2Opts);
+        
+        totalForms++;
+        $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
+    });
+});
+</script>
+<style>
+/* Tabla scrollable sin restricciones para dropdown */
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* Fijar cabecera de tabla */
+#procedimientos-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 5;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Mejorar apariencia del Select2 */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container .select2-selection--single {
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.select2-container--bootstrap .select2-selection--single .select2-selection__rendered {
+    line-height: calc(1.5em + 0.75rem);
+    padding: 0;
+}
+
+.select2-container--bootstrap .select2-selection--single .select2-selection__arrow {
+    height: calc(1.5em + 0.75rem);
+}
+
+.select2-dropdown {
+    z-index: 9999;
+    border: 1px solid #ced4da;
+}
+
+/* Limitar altura del dropdown a ~5 opciones */
+.select2-results__options {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Mejorar alineación de tabla */
+#procedimientos-table th,
+#procedimientos-table td {
+    vertical-align: middle;
+}
+
+#procedimientos-table th:nth-child(1),
+#procedimientos-table td:nth-child(1) {
+    width: 40%;
+}
+
+#procedimientos-table th:nth-child(2),
+#procedimientos-table td:nth-child(2) {
+    width: 10%;
+    text-align: center;
+}
+
+#procedimientos-table th:nth-child(3),
+#procedimientos-table td:nth-child(3) {
+    width: 40%;
+}
+
+#procedimientos-table th:nth-child(4),
+#procedimientos-table td:nth-child(4) {
+    width: 10%;
+    text-align: center;
+}
+</style>
+{% endblock js_page %}

@@ -604,6 +604,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         <div class="row mb-2">
                             <div class="col-6">
+                                <strong><i class="fas fa-phone"></i> Teléfono:</strong>
+                            </div>
+                            <div class="col-6">
+                                <a href="tel:${props.paciente_telefono}" style="color: #3498db; text-decoration: none;">
+                                    ${props.paciente_telefono}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
                                 <strong><i class="fas fa-user-md"></i> Dentista:</strong>
                             </div>
                             <div class="col-6">
@@ -616,7 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <strong><i class="fas fa-tooth"></i> Especialidad:</strong>
                             </div>
                             <div class="col-6">
-                                <span class="badge" style="background-color: ${props.especialidad_color};">
+                                <span class="badge" style="background-color: ${props.especialidad_color}; color: white;">
                                     ${props.especialidad}
                                 </span>
                             </div>

@@ -11,7 +11,10 @@ from .models import (
 	ComisionDentista,
 	DisponibilidadDentista,
 	ExcepcionDisponibilidad,
+	Personal,
+	RegistroHorasPersonal,
 )
+from .forms import RegistroHorasPersonalForm
 
 
 class BasePersonalTestCase(TestCase):
@@ -237,6 +240,75 @@ class ExcepcionDisponibilidadModelTest(BasePersonalTestCase):
 		)
 		with self.assertRaises(ValidationError):
 			exc.full_clean()
+
+
+class RegistroHorasPersonalModelTest(BasePersonalTestCase):
+	def setUp(self):
+		super().setUp()
+		self.personal_user = User.objects.create_user(
+			username="auxiliar",
+			password="testpass123",
+			first_name="Aux",
+			last_name="Test",
+		)
+		self.personal = Personal.objects.create(
+			usuario=self.personal_user,
+			tipo_personal='auxiliar',
+			sucursal_principal=self.sucursal,
+			tipo_compensacion='POR_HORA',
+			tarifa_por_hora=Decimal('5.00'),
+			estado=True,
+			uc=self.user,
+			um=self.user.id,
+		)
+
+	def test_desglose_sabado_recargo_100(self):
+		fecha_sabado = date(2026, 1, 31)  # sábado
+		desglose = RegistroHorasPersonal.desglosa_horas_nocturnas(
+			self.personal,
+			fecha_sabado,
+			time(9, 0),
+			time(12, 0),
+		)
+		self.assertEqual(desglose[0][2], 'RECARGO_100')
+
+	def test_pago_por_dia_respeta_valor_total(self):
+		registro = RegistroHorasPersonal(
+			personal=self.personal,
+			fecha=date(2026, 1, 31),
+			hora_inicio=time(8, 0),
+			hora_fin=time(17, 0),
+			tipo_extra='SABADO_MEDIO_DIA',
+			horas=Decimal('0.00'),
+			valor_total=Decimal('50.00'),
+			observaciones='Pago por día prueba',
+			es_desglosado=False,
+			estado='PENDIENTE',
+			uc=self.user,
+		)
+		registro.full_clean()
+		registro.save()
+		registro.refresh_from_db()
+		self.assertEqual(registro.valor_total, Decimal('50.00'))
+		self.assertEqual(registro.horas, Decimal('4.00'))
+
+	def test_form_inicial_pago_por_dia(self):
+		registro = RegistroHorasPersonal.objects.create(
+			personal=self.personal,
+			fecha=date(2026, 1, 31),
+			hora_inicio=time(8, 0),
+			hora_fin=time(17, 0),
+			tipo_extra='SABADO_MEDIO_DIA',
+			horas=Decimal('0.00'),
+			valor_total=Decimal('35.00'),
+			observaciones='Pago por día',
+			es_desglosado=False,
+			estado='PENDIENTE',
+			uc=self.user,
+		)
+		form = RegistroHorasPersonalForm(instance=registro)
+		self.assertEqual(form.fields['tipo_registro'].initial, 'PAGO_DIA')
+		self.assertEqual(form.fields['monto_pago_dia'].initial, Decimal('35.00'))
 
 	def test_horas_requeridas_si_no_es_todo_el_dia(self):
 		exc = ExcepcionDisponibilidad(

@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from pacientes.models import Paciente
 from enfermedades.models import Enfermedad, EnfermedadPaciente, CategoriaEnfermedad
 from cit.models import Dentista, Especialidad
+from clinicas.models import Clinica
 
 
 class EnfermedadesAlertasE2ETest(TestCase):
@@ -17,6 +18,10 @@ class EnfermedadesAlertasE2ETest(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Configuración de datos comunes para todos los tests"""
+        # Clínica activa para sesión (middleware requiere clinica_id)
+        cls.clinica = Clinica.objects.create(
+            nombre='Clinica Test', direccion='Dir', telefono='099999999', email='test@clinic.local', uc=User.objects.create_user(username='owner')
+        )
         # Usuario y dentista
         cls.user = User.objects.create_user(
             username='testuser',
@@ -87,6 +92,7 @@ class EnfermedadesAlertasE2ETest(TestCase):
             apellidos='Pérez',
             cedula='12345678',
             genero='M',
+            clinica=cls.clinica,
             uc=cls.user,
             um=cls.user.id
         )
@@ -97,6 +103,7 @@ class EnfermedadesAlertasE2ETest(TestCase):
             apellidos='García',
             cedula='87654321',
             genero='F',
+            clinica=cls.clinica,
             uc=cls.user,
             um=cls.user.id
         )
@@ -109,6 +116,7 @@ class EnfermedadesAlertasE2ETest(TestCase):
             genero='M',
             es_vip=True,
             categoria_vip='PREMIUM',
+            clinica=cls.clinica,
             uc=cls.user,
             um=cls.user.id
         )
@@ -117,6 +125,10 @@ class EnfermedadesAlertasE2ETest(TestCase):
         """Preparación antes de cada test"""
         self.client = Client()
         self.client.login(username='testuser', password='testpass123')
+        # Activar clínica en sesión para evitar redirección del middleware
+        session = self.client.session
+        session['clinica_id'] = self.clinica.id
+        session.save()
 
     def test_e2e_crear_paciente_asignar_enfermedad(self):
         """E2E: Crear paciente y asignarle una enfermedad vía API enfermedades"""
@@ -126,6 +138,7 @@ class EnfermedadesAlertasE2ETest(TestCase):
             apellidos='Rodríguez',
             cedula='55667788',
             genero='M',
+            clinica=self.clinica,
             uc=self.user,
             um=self.user.id
         )

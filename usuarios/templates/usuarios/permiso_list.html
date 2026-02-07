@@ -1,0 +1,114 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Permisos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">🔐 Permisos Disponibles - {{ clinica.nombre }}</h1>
+            <p class="text-muted">Todos los permisos que pueden asignarse a roles y usuarios</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Usuarios
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="alert-messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if permisos_por_categoria %}
+    {% for categoria, permisos in permisos_por_categoria.items %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-folder-open"></i> {{ categoria }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for permiso in permisos %}
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <i class="fas fa-key text-success"></i>
+                                    {{ permiso.nombre }}
+                                </h6>
+                                <code class="text-muted text-sm d-block mb-2">{{ permiso.codigo }}</code>
+                                <p class="text-muted small mb-0">{{ permiso.descripcion }}</p>
+                            </div>
+                            {% if permiso.es_global %}
+                            <span class="badge bg-info ms-2">
+                                <i class="fas fa-globe"></i> Global
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success ms-2">
+                                <i class="fas fa-clinic-medical"></i> Personalizado
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <small class="text-muted d-block pt-2 border-top">
+                            Creado: {{ permiso.fecha_creacion|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle"></i>
+        No hay permisos disponibles en este momento.
+    </div>
+    {% endif %}
+
+    <div class="card mt-4">
+        <div class="card-header bg-info">
+            <h5 class="mb-0">
+                <i class="fas fa-book"></i> Información sobre Permisos
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                Los permisos granulares permiten un control fino sobre las capacidades de cada usuario.
+                Puede asignar permisos directamente a usuarios o agruparlos en roles para facilitar la gestión.
+            </p>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Categorías de Permisos:</h6>
+                    <ul class="text-muted small">
+                        <li><strong>Recepción:</strong> Gestión de citas y pacientes</li>
+                        <li><strong>Asistencia:</strong> Asistencia en procedimientos</li>
+                        <li><strong>Odontología:</strong> Procedimientos y diagnósticos</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Categorías de Permisos (Cont.):</h6>
+                    <ul class="text-muted small">
+                        <li><strong>Administración:</strong> Gestión de usuarios y roles</li>
+                        <li><strong>Facturación:</strong> Gestión de facturas</li>
+                        <li><strong>Reportes:</strong> Acceso a reportes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

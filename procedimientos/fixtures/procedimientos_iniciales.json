@@ -1,0 +1,818 @@
+[
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 1,
+    "fields": {
+      "codigo": "DIA-EX001",
+      "codigo_cdt": "D0150",
+      "nombre": "Examen clínico completo",
+      "descripcion": "Evaluación integral del paciente nuevo con historia clínica completa",
+      "categoria": "DIAGNOSTICO",
+      "duracion_estimada": 30,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 2,
+    "fields": {
+      "codigo": "DIA-EX002",
+      "codigo_cdt": "D0120",
+      "nombre": "Examen periódico",
+      "descripcion": "Control de paciente establecido",
+      "categoria": "DIAGNOSTICO",
+      "duracion_estimada": 15,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 3,
+    "fields": {
+      "codigo": "DIA-RX001",
+      "codigo_cdt": "D0220",
+      "nombre": "Radiografía periapical",
+      "descripcion": "Radiografía de un solo diente",
+      "categoria": "DIAGNOSTICO",
+      "duracion_estimada": 5,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 4,
+    "fields": {
+      "codigo": "DIA-RX002",
+      "codigo_cdt": "D0330",
+      "nombre": "Radiografía panorámica",
+      "descripcion": "Radiografía completa de maxilares",
+      "categoria": "DIAGNOSTICO",
+      "duracion_estimada": 15,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 5,
+    "fields": {
+      "codigo": "DIA-RX003",
+      "codigo_cdt": "D0270",
+      "nombre": "Radiografía bite-wing",
+      "descripcion": "Radiografía interproximal",
+      "categoria": "DIAGNOSTICO",
+      "duracion_estimada": 5,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 6,
+    "fields": {
+      "codigo": "PRE-LIM001",
+      "codigo_cdt": "D1110",
+      "nombre": "Limpieza dental (profilaxis)",
+      "descripcion": "Limpieza de adulto",
+      "categoria": "PREVENTIVA",
+      "duracion_estimada": 45,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 7,
+    "fields": {
+      "codigo": "PRE-LIM002",
+      "codigo_cdt": "D1120",
+      "nombre": "Limpieza dental infantil",
+      "descripcion": "Limpieza pediátrica",
+      "categoria": "PREVENTIVA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 8,
+    "fields": {
+      "codigo": "PRE-FLU001",
+      "codigo_cdt": "D1206",
+      "nombre": "Aplicación de flúor",
+      "descripcion": "Barniz de flúor",
+      "categoria": "PREVENTIVA",
+      "duracion_estimada": 10,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 9,
+    "fields": {
+      "codigo": "PRE-SEL001",
+      "codigo_cdt": "D1351",
+      "nombre": "Sellante por diente",
+      "descripcion": "Sellante de fosas y fisuras",
+      "categoria": "PREVENTIVA",
+      "duracion_estimada": 15,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 10,
+    "fields": {
+      "codigo": "PRE-EDU001",
+      "codigo_cdt": "D1330",
+      "nombre": "Educación en higiene oral",
+      "descripcion": "Instrucción de cepillado",
+      "categoria": "PREVENTIVA",
+      "duracion_estimada": 20,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 11,
+    "fields": {
+      "codigo": "RES-OBT001",
+      "codigo_cdt": "D2140",
+      "nombre": "Obturación 1 superficie",
+      "descripcion": "Resina/amalgama simple",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 12,
+    "fields": {
+      "codigo": "RES-OBT002",
+      "codigo_cdt": "D2150",
+      "nombre": "Obturación 2 superficies",
+      "descripcion": "Resina/amalgama compuesta",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 45,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 13,
+    "fields": {
+      "codigo": "RES-OBT003",
+      "codigo_cdt": "D2160",
+      "nombre": "Obturación 3 superficies",
+      "descripcion": "Resina/amalgama compleja",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 14,
+    "fields": {
+      "codigo": "RES-OBT004",
+      "codigo_cdt": "D2161",
+      "nombre": "Obturación 4+ superficies",
+      "descripcion": "Resina/amalgama extensa",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 75,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 15,
+    "fields": {
+      "codigo": "RES-REC001",
+      "codigo_cdt": "D2330",
+      "nombre": "Reconstrucción dental",
+      "descripcion": "Reconstrucción con resina",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 90,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 16,
+    "fields": {
+      "codigo": "RES-INC001",
+      "codigo_cdt": "D2542",
+      "nombre": "Incrustación (Onlay)",
+      "descripcion": "Restauración indirecta",
+      "categoria": "RESTAURATIVA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 17,
+    "fields": {
+      "codigo": "END-CON001",
+      "codigo_cdt": "D3310",
+      "nombre": "Endodoncia unirradicular",
+      "descripcion": "Conducto anterior",
+      "categoria": "ENDODONCIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 18,
+    "fields": {
+      "codigo": "END-CON002",
+      "codigo_cdt": "D3320",
+      "nombre": "Endodoncia birradicular",
+      "descripcion": "Conducto premolar",
+      "categoria": "ENDODONCIA",
+      "duracion_estimada": 90,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 19,
+    "fields": {
+      "codigo": "END-CON003",
+      "codigo_cdt": "D3330",
+      "nombre": "Endodoncia trirradicular",
+      "descripcion": "Conducto molar",
+      "categoria": "ENDODONCIA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 20,
+    "fields": {
+      "codigo": "END-RET001",
+      "codigo_cdt": "D3346",
+      "nombre": "Retratamiento unirradicular",
+      "descripcion": "Repetir endodoncia",
+      "categoria": "ENDODONCIA",
+      "duracion_estimada": 90,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 21,
+    "fields": {
+      "codigo": "END-API001",
+      "codigo_cdt": "D3410",
+      "nombre": "Apicectomía",
+      "descripcion": "Cirugía apical",
+      "categoria": "ENDODONCIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 22,
+    "fields": {
+      "codigo": "PER-RAS001",
+      "codigo_cdt": "D4341",
+      "nombre": "Raspado y alisado (cuadrante)",
+      "descripcion": "Limpieza profunda",
+      "categoria": "PERIODONCIA",
+      "duracion_estimada": 45,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 23,
+    "fields": {
+      "codigo": "PER-CUR001",
+      "codigo_cdt": "D4210",
+      "nombre": "Curetaje periodontal",
+      "descripcion": "Por cuadrante",
+      "categoria": "PERIODONCIA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 24,
+    "fields": {
+      "codigo": "PER-GIN001",
+      "codigo_cdt": "D4210",
+      "nombre": "Gingivectomía (por diente)",
+      "descripcion": "Eliminación de tejido",
+      "categoria": "PERIODONCIA",
+      "duracion_estimada": 20,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 25,
+    "fields": {
+      "codigo": "PER-INJ001",
+      "codigo_cdt": "D4270",
+      "nombre": "Injerto gingival",
+      "descripcion": "Cirugía de encía",
+      "categoria": "PERIODONCIA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 26,
+    "fields": {
+      "codigo": "CIR-EXT001",
+      "codigo_cdt": "D7140",
+      "nombre": "Extracción simple",
+      "descripcion": "Extracción no complicada",
+      "categoria": "CIRUGIA",
+      "duracion_estimada": 20,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 27,
+    "fields": {
+      "codigo": "CIR-EXT002",
+      "codigo_cdt": "D7210",
+      "nombre": "Extracción quirúrgica",
+      "descripcion": "Requiere colgajo",
+      "categoria": "CIRUGIA",
+      "duracion_estimada": 45,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 28,
+    "fields": {
+      "codigo": "CIR-EXT003",
+      "codigo_cdt": "D7240",
+      "nombre": "Extracción muela del juicio",
+      "descripcion": "Tercer molar impactado",
+      "categoria": "CIRUGIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 29,
+    "fields": {
+      "codigo": "CIR-ALV001",
+      "codigo_cdt": "D7310",
+      "nombre": "Alveoloplastia",
+      "descripcion": "Regularización de hueso",
+      "categoria": "CIRUGIA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 30,
+    "fields": {
+      "codigo": "CIR-BIO001",
+      "codigo_cdt": "D7285",
+      "nombre": "Biopsia de tejido oral",
+      "descripcion": "Toma de muestra",
+      "categoria": "CIRUGIA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 31,
+    "fields": {
+      "codigo": "PRO-COR001",
+      "codigo_cdt": "D2750",
+      "nombre": "Corona metal-porcelana",
+      "descripcion": "Corona PFM",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 32,
+    "fields": {
+      "codigo": "PRO-COR002",
+      "codigo_cdt": "D2740",
+      "nombre": "Corona porcelana pura",
+      "descripcion": "Corona cerámica",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 33,
+    "fields": {
+      "codigo": "PRO-COR003",
+      "codigo_cdt": "D2740",
+      "nombre": "Corona circonio",
+      "descripcion": "Corona estética",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 60,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 34,
+    "fields": {
+      "codigo": "PRO-PUE001",
+      "codigo_cdt": "D6240",
+      "nombre": "Puente 3 unidades",
+      "descripcion": "Puente fijo",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 90,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 35,
+    "fields": {
+      "codigo": "PRO-DEN001",
+      "codigo_cdt": "D5110",
+      "nombre": "Dentadura completa",
+      "descripcion": "Prótesis total",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 180,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 36,
+    "fields": {
+      "codigo": "PRO-DEN002",
+      "codigo_cdt": "D5211",
+      "nombre": "Dentadura parcial",
+      "descripcion": "Prótesis removible",
+      "categoria": "PROSTODONCIA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 37,
+    "fields": {
+      "codigo": "IMP-COL001",
+      "codigo_cdt": "D6010",
+      "nombre": "Colocación de implante",
+      "descripcion": "Implante endoóseo",
+      "categoria": "IMPLANTES",
+      "duracion_estimada": 90,
+      "requiere_anestesia": true,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 38,
+    "fields": {
+      "codigo": "IMP-PIL001",
+      "codigo_cdt": "D6056",
+      "nombre": "Pilar (abutment)",
+      "descripcion": "Conector de implante",
+      "categoria": "IMPLANTES",
+      "duracion_estimada": 30,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 39,
+    "fields": {
+      "codigo": "IMP-COR001",
+      "codigo_cdt": "D6058",
+      "nombre": "Corona sobre implante",
+      "descripcion": "Restauración final",
+      "categoria": "IMPLANTES",
+      "duracion_estimada": 60,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 40,
+    "fields": {
+      "codigo": "IMP-INJ001",
+      "codigo_cdt": "D7953",
+      "nombre": "Injerto óseo",
+      "descripcion": "Regeneración ósea",
+      "categoria": "IMPLANTES",
+      "duracion_estimada": 120,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 41,
+    "fields": {
+      "codigo": "ORT-EVA001",
+      "codigo_cdt": "D8660",
+      "nombre": "Evaluación ortodóntica",
+      "descripcion": "Estudio inicial",
+      "categoria": "ORTODONCIA",
+      "duracion_estimada": 45,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 42,
+    "fields": {
+      "codigo": "ORT-BRA001",
+      "codigo_cdt": "D8080",
+      "nombre": "Brackets metálicos",
+      "descripcion": "Aparatología fija",
+      "categoria": "ORTODONCIA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 43,
+    "fields": {
+      "codigo": "ORT-BRA002",
+      "codigo_cdt": "D8080",
+      "nombre": "Brackets estéticos",
+      "descripcion": "Cerámica/zafiro",
+      "categoria": "ORTODONCIA",
+      "duracion_estimada": 120,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 44,
+    "fields": {
+      "codigo": "ORT-CON001",
+      "codigo_cdt": "D8670",
+      "nombre": "Control mensual",
+      "descripcion": "Ajuste de aparatos",
+      "categoria": "ORTODONCIA",
+      "duracion_estimada": 20,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 45,
+    "fields": {
+      "codigo": "ORT-RET001",
+      "codigo_cdt": "D8680",
+      "nombre": "Retenedor",
+      "descripcion": "Post-tratamiento",
+      "categoria": "ORTODONCIA",
+      "duracion_estimada": 30,
+      "requiere_anestesia": false,
+      "afecta_odontograma": true,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 46,
+    "fields": {
+      "codigo": "URG-DOL001",
+      "codigo_cdt": "D9110",
+      "nombre": "Atención por dolor",
+      "descripcion": "Urgencia dental",
+      "categoria": "URGENCIAS",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 47,
+    "fields": {
+      "codigo": "URG-DRE001",
+      "codigo_cdt": "D7510",
+      "nombre": "Drenaje de absceso",
+      "descripcion": "Urgencia infección",
+      "categoria": "URGENCIAS",
+      "duracion_estimada": 30,
+      "requiere_anestesia": true,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 48,
+    "fields": {
+      "codigo": "URG-CEM001",
+      "codigo_cdt": "D6930",
+      "nombre": "Recementación corona/puente",
+      "descripcion": "Urgencia restauración",
+      "categoria": "URGENCIAS",
+      "duracion_estimada": 20,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 49,
+    "fields": {
+      "codigo": "URG-REP001",
+      "codigo_cdt": "D2940",
+      "nombre": "Reparación provisional",
+      "descripcion": "Restauración temporal",
+      "categoria": "URGENCIAS",
+      "duracion_estimada": 20,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 50,
+    "fields": {
+      "codigo": "OTR-BLA001",
+      "codigo_cdt": "D9972",
+      "nombre": "Blanqueamiento dental",
+      "descripcion": "Por sesión",
+      "categoria": "OTROS",
+      "duracion_estimada": 60,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  },
+  {
+    "model": "procedimientos.procedimientoodontologico",
+    "pk": 51,
+    "fields": {
+      "codigo": "OTR-FER001",
+      "codigo_cdt": "D9944",
+      "nombre": "Férula oclusal",
+      "descripcion": "Para bruxismo",
+      "categoria": "OTROS",
+      "duracion_estimada": 30,
+      "requiere_anestesia": false,
+      "afecta_odontograma": false,
+      "estado": true,
+      "uc": 1
+    }
+  }
+]

@@ -166,13 +166,21 @@ class PacienteCRUDTests(TestCase):
 			email="carlos@test.com",
 			direccion="Calle test",
 			estado=True,
+			clinica=self.clinica,
 			uc=self.user,
 			um=self.user.id,
 		)
+
+	def _login_with_clinic(self):
+		"""Login y set clinica en sesión para cumplir middleware."""
+		self.client.login(username='doctor', password='testpass123')
+		session = self.client.session
+		session['clinica_id'] = self.clinica.id
+		session.save()
 	
 	def test_list_view_with_login(self):
 		"""Test lista de pacientes con login"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(reverse('pacientes:paciente-list'))
 		self.assertEqual(response.status_code, 200)
 		self.assertTemplateUsed(response, 'pacientes/paciente_list.html')
@@ -181,35 +189,35 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_list_view_search(self):
 		"""Test búsqueda en lista de pacientes"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(reverse('pacientes:paciente-list') + '?buscar=Carlos')
 		self.assertEqual(response.status_code, 200)
 		self.assertIn(self.paciente, response.context['pacientes'])
 	
 	def test_list_view_search_by_cedula(self):
 		"""Test búsqueda por cédula"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(reverse('pacientes:paciente-list') + '?buscar=9876543210')
 		self.assertEqual(response.status_code, 200)
 		self.assertIn(self.paciente, response.context['pacientes'])
 	
 	def test_list_view_filter_by_gender(self):
 		"""Test filtrar por género"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(reverse('pacientes:paciente-list') + '?genero=M')
 		self.assertEqual(response.status_code, 200)
 		self.assertIn(self.paciente, response.context['pacientes'])
 	
 	def test_create_view_get(self):
 		"""Test GET a formulario de crear paciente"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(reverse('pacientes:paciente-create'))
 		self.assertEqual(response.status_code, 200)
 		self.assertTemplateUsed(response, 'pacientes/paciente_form.html')
 	
 	def test_create_paciente_valid_post(self):
 		"""Test crear paciente con datos válidos"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		cat = CategoriaEnfermedad.objects.create(
 			nombre="Respiratoria",
 			descripcion="",
@@ -246,7 +254,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_create_paciente_duplicate_cedula(self):
 		"""Test crear paciente con cédula duplicada"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		data = {
 			'nombres': 'Test',
 			'apellidos': 'User',
@@ -263,7 +271,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_detail_view_get(self):
 		"""Test GET a detalle de paciente"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(
 			reverse('pacientes:paciente-detail', kwargs={'pk': self.paciente.pk})
 		)
@@ -275,7 +283,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_update_paciente_valid_post(self):
 		"""Test editar paciente con datos válidos"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		data = {
 			'nombres': 'Carlos Updated',
 			'apellidos': 'Rodriguez',
@@ -297,7 +305,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_delete_view_get(self):
 		"""Test GET a confirmación de eliminar"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.get(
 			reverse('pacientes:paciente-delete', kwargs={'pk': self.paciente.pk})
 		)
@@ -306,7 +314,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_soft_delete_paciente(self):
 		"""Test soft delete (desactivar) de paciente"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		# Verify paciente exists before delete
 		self.assertTrue(Paciente.objects.filter(pk=self.paciente.pk).exists())
 		response = self.client.post(
@@ -318,7 +326,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_pagination_list_view(self):
 		"""Test paginación en lista de pacientes"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		# Crear 25 pacientes adicionales
 		for i in range(25):
 			Paciente.objects.create(
@@ -330,6 +338,7 @@ class PacienteCRUDTests(TestCase):
 				telefono='0999999999',
 				email=f'paciente{i}@test.com',
 				estado=True,
+				clinica=self.clinica,
 				uc=self.user,
 				um=self.user.id,
 			)
@@ -340,7 +349,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_messages_on_update(self):
 		"""Test que se muestran mensajes al editar paciente"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		data = {
 			'nombres': 'Carlos',
 			'apellidos': 'Rodriguez',
@@ -362,7 +371,7 @@ class PacienteCRUDTests(TestCase):
 	
 	def test_messages_on_delete(self):
 		"""Test que se muestran mensajes al eliminar paciente"""
-		self.client.login(username='doctor', password='testpass123')
+		self._login_with_clinic()
 		response = self.client.post(
 			reverse('pacientes:paciente-delete', kwargs={'pk': self.paciente.pk}),
 			follow=True

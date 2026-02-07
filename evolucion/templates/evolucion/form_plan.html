@@ -1,0 +1,123 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">{{ titulo }}</h1>
+            <p class="text-muted">Paciente: {{ paciente.nombres }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:lista_planes' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.nombre.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.descripcion.id_for_label }}">{{ form.descripcion.label }}</label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.descripcion.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="{{ form.estado.id_for_label }}">{{ form.estado.label }}</label>
+                        {{ form.estado }}
+                        {% if form.estado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.estado.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label for="{{ form.prioridad.id_for_label }}">{{ form.prioridad.label }}</label>
+                        {{ form.prioridad }}
+                        {% if form.prioridad.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.prioridad.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label for="{{ form.presupuesto_estimado.id_for_label }}">{{ form.presupuesto_estimado.label }}</label>
+                        {{ form.presupuesto_estimado }}
+                        {% if form.presupuesto_estimado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.presupuesto_estimado.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.fecha_inicio.id_for_label }}">{{ form.fecha_inicio.label }}</label>
+                        {{ form.fecha_inicio }}
+                        {% if form.fecha_inicio.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fecha_inicio.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.fecha_estimada_fin.id_for_label }}">{{ form.fecha_estimada_fin.label }}</label>
+                        {{ form.fecha_estimada_fin }}
+                        {% if form.fecha_estimada_fin.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fecha_estimada_fin.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Plan
+                    </button>
+                    <a href="{% url 'evolucion:lista_planes' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: "bootstrap"
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Reportes de Facturación - {{ clinica.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { border-radius: 5px; padding: 20px; margin-bottom: 15px; }
+    .stat-card.ingresos { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .stat-card.pagadas { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+    .stat-card.pendientes { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+    .chart-container { position: relative; height: 400px; margin-bottom: 30px; }
+    .tabla-reporte th { background-color: #34495e; color: white; font-size: 12px; }
+    .tabla-reporte td { font-size: 12px; white-space: nowrap; }
+    .tabla-reporte { font-size: 12px; }
+    .table-responsive { overflow-x: auto; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-chart-line"></i> Reportes de Facturación</h2>
+            <p class="text-muted">{{ clinica.nombre }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-2">
+                    <label class="mr-2">Desde:</label>
+                    <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde }}">
+                </div>
+                <div class="form-group mr-2">
+                    <label class="mr-2">Hasta:</label>
+                    <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta }}">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen general -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card ingresos">
+                <h6>Ingresos Totales</h6>
+                <h3>${{ resumen.ingresos|floatformat:2 }}</h3>
+                <small>{{ resumen.facturas_emitidas }} facturas</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card pagadas">
+                <h6>Recaudado</h6>
+                <h3>${{ resumen.total_pagado|floatformat:2 }}</h3>
+                <small>{{ resumen.facturas_pagadas }} facturas pagadas</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card pendientes">
+                <h6>Cuentas por Cobrar</h6>
+                <h3>${{ resumen.total_pendiente|floatformat:2 }}</h3>
+                <small>{{ resumen.facturas_pendientes }} facturas pendientes</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                <h6>Tasa de Cobranza</h6>
+                <h3>
+                    {% if resumen.ingresos > 0 %}
+                        {{ resumen.tasa_cobranza|floatformat:1 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </h3>
+                <small>Del total facturado</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Distribución de Estado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartEstado"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Formas de Pago</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartFormasPago"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles por estado -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Resumen Detallado</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table tabla-reporte">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th class="text-right">Facturas</th>
+                            <th class="text-right">Monto Total</th>
+                            <th class="text-right">Porcentaje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: #ecf0f1;">
+                            <td><strong>Facturas Emitidas</strong></td>
+                            <td class="text-right">{{ resumen.facturas_emitidas }}</td>
+                            <td class="text-right"><strong>${{ resumen.ingresos|floatformat:2 }}</strong></td>
+                            <td class="text-right">100%</td>
+                        </tr>
+                        <tr style="background-color: #d5f4e6;">
+                            <td><i class="fas fa-check-circle"></i> Pagadas</td>
+                            <td class="text-right">{{ resumen.facturas_pagadas }}</td>
+                            <td class="text-right"><strong style="color: #27ae60;">${{ resumen.total_pagado|floatformat:2 }}</strong></td>
+                            <td class="text-right">
+                                {% if resumen.ingresos > 0 %}
+                                    {{ resumen.tasa_pagadas|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr style="background-color: #ffeaa7;">
+                            <td><i class="fas fa-hourglass-end"></i> Pendientes</td>
+                            <td class="text-right">{{ resumen.facturas_pendientes }}</td>
+                            <td class="text-right"><strong style="color: #f39c12;">${{ resumen.total_pendiente|floatformat:2 }}</strong></td>
+                            <td class="text-right">
+                                {% if resumen.ingresos > 0 %}
+                                    {{ resumen.tasa_pendientes|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información del Período</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Fecha desde:</strong> {{ fecha_desde }}</p>
+                    <p><strong>Fecha hasta:</strong> {{ fecha_hasta }}</p>
+                    <p><strong>Clínica:</strong> {{ clinica.nombre }}</p>
+                    <p><strong>Moneda:</strong> {{ clinica.get_moneda_display }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Indicadores Clave</h5>
+                </div>
+                <div class="card-body">
+                    {% if resumen.facturas_pagadas > 0 %}
+                    <p>
+                        <strong>Promedio por Factura (Pagadas):</strong>
+                        ${% widthratio resumen.total_pagado resumen.facturas_pagadas 1 %}
+                    </p>
+                    {% endif %}
+                    {% if resumen.facturas_pendientes > 0 %}
+                    <p>
+                        <strong>Promedio por Factura (Pendientes):</strong>
+                        ${% widthratio resumen.total_pendiente resumen.facturas_pendientes 1 %}
+                    </p>
+                    {% endif %}
+                    <p>
+                        <strong>Tasa de Cobranza:</strong>
+                        {% if resumen.ingresos > 0 %}
+                            {{ resumen.tasa_cobranza|floatformat:1 }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="mt-4 mb-4">
+        <a href="{% url 'facturacion:imprimir_reporte' %}?fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}" class="btn btn-info" target="_blank">
+            <i class="fas fa-print"></i> Ver e Imprimir
+        </a>
+        <button onclick="exportarCSV()" class="btn btn-success">
+            <i class="fas fa-download"></i> Descargar CSV
+        </button>
+        <a href="{% url 'facturacion:lista' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Tabla de Facturas del Período -->
+    {% if facturas %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-receipt"></i> Facturas del Período ({{ fecha_desde }} al {{ fecha_hasta }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm tabla-reporte">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 110px;">Número</th>
+                            <th style="min-width: 90px;">Fecha</th>
+                            <th style="min-width: 150px;">Paciente</th>
+                            <th class="text-right" style="min-width: 90px;">Subtotal</th>
+                            <th class="text-right" style="min-width: 90px;">Total</th>
+                            <th class="text-right" style="min-width: 90px;">Pagado</th>
+                            <th class="text-right" style="min-width: 90px;">Saldo</th>
+                            <th style="min-width: 85px;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factura in facturas %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'facturacion:detalle' factura.pk %}">
+                                    {{ factura.numero_factura }}
+                                </a>
+                            </td>
+                            <td>{{ factura.fecha_emision|date:"d/m/Y" }}</td>
+                            <td>{{ factura.paciente.apellidos }}, {{ factura.paciente.nombres }}</td>
+                            <td class="text-right">${{ factura.subtotal|floatformat:2 }}</td>
+                            <td class="text-right"><strong>${{ factura.total|floatformat:2 }}</strong></td>
+                            <td class="text-right" style="color: #27ae60;">${{ factura.total_pagado|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #f39c12;">${{ factura.saldo_pendiente|floatformat:2 }}</td>
+                            <td>
+                                {% if factura.estado == 'PEN' %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                {% elif factura.estado == 'PAG' %}
+                                    <span class="badge badge-success">Pagada</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Anulada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #ecf0f1; font-weight: bold;">
+                            <td colspan="3">TOTALES DEL PERÍODO</td>
+                            <td class="text-right">${{ resumen.ingresos|floatformat:2 }}</td>
+                            <td class="text-right">${{ resumen.ingresos|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #27ae60;">${{ resumen.total_pagado|floatformat:2 }}</td>
+                            <td class="text-right" style="color: #f39c12;">${{ resumen.total_pendiente|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de estados
+    const ctxEstado = document.getElementById('chartEstado');
+    if (ctxEstado) {
+        const totalPagado = parseFloat('{{ resumen.total_pagado|floatformat:2 }}');
+        const totalPendiente = parseFloat('{{ resumen.total_pendiente|floatformat:2 }}');
+        
+        new Chart(ctxEstado, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pagadas', 'Pendientes'],
+                datasets: [{
+                    data: [totalPagado, totalPendiente],
+                    backgroundColor: ['#27ae60', '#f39c12'],
+                    borderColor: ['#229954', '#e67e22'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'bottom',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        return {
+                                            text: label,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: value === 0,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': $' + context.parsed.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico de formas de pago
+    const ctxFormas = document.getElementById('chartFormasPago');
+    if (ctxFormas) {
+        const formasPagoData = {{ formas_pago_json|safe }};
+        const formasLabels = Object.keys(formasPagoData);
+        const formasValues = Object.values(formasPagoData);
+        
+        new Chart(ctxFormas, {
+            type: 'bar',
+            data: {
+                labels: formasLabels.length > 0 ? formasLabels : ['Sin datos'],
+                datasets: [{
+                    label: 'Monto por Forma de Pago',
+                    data: formasValues.length > 0 ? formasValues : [0],
+                    backgroundColor: ['#667eea', '#f093fb', '#4facfe', '#fa709a', '#fee140', '#43e97b'],
+                    borderColor: '#5568d3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+function exportarCSV() {
+    // Crear encabezados
+    const headers = ['Número', 'Fecha', 'Paciente', 'Subtotal', 'Total', 'Pagado', 'Saldo', 'Estado'];
+    
+    // Recolectar datos de la tabla
+    const rows = [];
+    // Buscar SOLO las filas del tbody, no del tfoot
+    const filasData = document.querySelectorAll('table tbody tr');
+    
+    filasData.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        
+        if (celdas.length >= 8 && !fila.textContent.includes('TOTALES')) {
+            // Extraer número de factura (puede estar en un enlace)
+            const numeroCelda = celdas[0];
+            let numero = numeroCelda.querySelector('a') ? numeroCelda.querySelector('a').textContent.trim() : numeroCelda.textContent.trim();
+            
+            // Extraer estado (está dentro de un badge span)
+            const estadoCelda = celdas[7];
+            let estado = estadoCelda.querySelector('span') ? estadoCelda.querySelector('span').textContent.trim() : estadoCelda.textContent.trim();
+            
+            const row = [
+                numero,
+                celdas[1].textContent.trim(),
+                celdas[2].textContent.trim(),
+                celdas[3].textContent.trim(),
+                celdas[4].textContent.trim(),
+                celdas[5].textContent.trim(),
+                celdas[6].textContent.trim(),
+                estado
+            ];
+            
+            // Solo agregar si tiene número de factura
+            if (row[0].length > 0) {
+                rows.push(row);
+            }
+        }
+    });
+    
+    // Generar contenido CSV
+    let csvContent = '\uFEFF'; // BOM para Excel
+    csvContent += headers.join(',') + '\n';
+    rows.forEach(row => {
+        csvContent += row.map(cell => '"' + cell.replace(/"/g, '""') + '"').join(',') + '\n';
+    });
+    
+    // Crear archivo y descargar con nombre de clínica + período
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const nombreClinica = '{{ nombre_clinica }}'.replace(/\s+/g, '_');
+    const fechaDesde = '{{ fecha_desde_formato }}';
+    const fechaHasta = '{{ fecha_hasta_formato }}';
+    const nombreArchivo = `${nombreClinica}_REP_FACTURACION_${fechaDesde}_al_${fechaHasta}.csv`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', nombreArchivo);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Notificar éxito
+    Swal.fire({
+        title: 'CSV Exportado',
+        text: 'Archivo ' + nombreArchivo + ' descargado correctamente.',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#27ae60',
+        timer: 3000
+    });
+}
+</script>
+
+<style>
+    @media print {
+        .btn, .form-inline { display: none; }
+        .card { page-break-inside: avoid; }
+    }
+</style>
+{% endblock %}

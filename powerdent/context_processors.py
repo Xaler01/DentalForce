@@ -1,5 +1,6 @@
 from cit.models import ConfiguracionClinica
 from clinicas.models import Clinica
+from django.urls import reverse
 
 
 def clinica_context(request):
@@ -37,9 +38,8 @@ def clinica_context(request):
         except Exception:
             clinica = None
 
-    # 4) Fallback: primera clínica registrada
-    if not clinica:
-        clinica = Clinica.objects.filter(estado=True).order_by("id").first()
+    # 4) NO hay fallback a primera clínica por seguridad multi-tenant
+    # Si el usuario no tiene clínica seleccionada, el middleware lo redirigirá al selector
 
     if clinica:
         nombre = clinica.nombre or default_nombre
@@ -54,4 +54,12 @@ def clinica_context(request):
         })
 
     return context
+
+
+def menu_urls(request):
+    """URLs globales para el menú lateral"""
+    return {
+        'procedimiento_list_url': reverse('procedimientos:procedimiento-list'),
+        'precio_list_url': reverse('procedimientos:precio-list'),
+    }
 

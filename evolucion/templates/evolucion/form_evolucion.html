@@ -1,0 +1,131 @@
+{% extends "base/base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">{{ titulo }}</h1>
+            <p class="text-muted">Paciente: {{ paciente.nombres }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.fecha_consulta.id_for_label }}">{{ form.fecha_consulta.label }}</label>
+                        {{ form.fecha_consulta }}
+                        {% if form.fecha_consulta.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fecha_consulta.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.cita.id_for_label }}">{{ form.cita.label }}</label>
+                        {{ form.cita }}
+                        {% if form.cita.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cita.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.dentista.id_for_label }}">{{ form.dentista.label }}</label>
+                    {{ form.dentista }}
+                    {% if form.dentista.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.dentista.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.motivo_consulta.id_for_label }}">{{ form.motivo_consulta.label }}</label>
+                    {{ form.motivo_consulta }}
+                    {% if form.motivo_consulta.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.motivo_consulta.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.hallazgos_clinicos.id_for_label }}">{{ form.hallazgos_clinicos.label }}</label>
+                    {{ form.hallazgos_clinicos }}
+                    {% if form.hallazgos_clinicos.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.hallazgos_clinicos.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.recomendaciones.id_for_label }}">{{ form.recomendaciones.label }}</label>
+                    {{ form.recomendaciones }}
+                    {% if form.recomendaciones.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.recomendaciones.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.cambios_odontograma.id_for_label }}">{{ form.cambios_odontograma.label }}</label>
+                    {{ form.cambios_odontograma }}
+                    {% if form.cambios_odontograma.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.cambios_odontograma.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.fecha_proximo_control.id_for_label }}">{{ form.fecha_proximo_control.label }}</label>
+                    {{ form.fecha_proximo_control }}
+                    {% if form.fecha_proximo_control.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.fecha_proximo_control.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Evolución
+                    </button>
+                    <a href="{% url 'evolucion:lista' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    $('.select2').select2({
+        theme: "bootstrap"
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

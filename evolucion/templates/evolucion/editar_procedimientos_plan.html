@@ -1,0 +1,161 @@
+{% extends "base/base.html" %}
+
+{% block title %}Editar Procedimientos - {{ plan.nombre }}{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">Editar Procedimientos del Plan</h1>
+            <p class="text-muted">Plan: {{ plan.nombre }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'evolucion:detalle_plan' plan.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Form -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-tools"></i> Procedimientos
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="procedimientos-plan-table">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Procedimiento</th>
+                                <th>Orden</th>
+                                <th>Precio</th>
+                                <th>Observaciones</th>
+                                <th class="text-center" style="width: 80px;">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr class="formset-row">
+                                {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                                {% endfor %}
+                                <td class="procedimiento-cell">
+                                    {{ form.procedimiento }}
+                                    {% if form.procedimiento.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.procedimiento.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td style="width: 80px;">
+                                    {{ form.orden }}
+                                </td>
+                                <td style="width: 100px;">
+                                    {{ form.precio }}
+                                    {% if form.precio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.precio.errors }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ form.observaciones }}
+                                </td>
+                                <td class="text-center">
+                                    {{ form.DELETE }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-group mt-3 d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-primary mr-3" id="add-procedimiento-plan">
+                        <i class="fas fa-plus"></i> Agregar procedimiento
+                    </button>
+                    <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-save"></i> Guardar Procedimientos
+                    </button>
+                    <a href="{% url 'evolucion:detalle_plan' plan.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock page_content %}
+
+{% block js_page %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2
+    const select2Opts = { theme: "bootstrap" };
+    $('.select2').select2(select2Opts);
+
+    const prefix = '{{ formset.prefix }}';
+    let totalForms = parseInt($('#id_' + prefix + '-TOTAL_FORMS').val(), 10) || 0;
+
+    const emptyFormHtml = `
+    <tr class="formset-row">
+        ${`{{ formset.empty_form.id|escapejs }}`}
+        ${`{{ formset.empty_form.plan|default:''|escapejs }}`}
+        <td class="procedimiento-cell">
+            ${`{{ formset.empty_form.procedimiento|escapejs }}`}
+        </td>
+        <td style="width: 80px;">
+            ${`{{ formset.empty_form.orden|escapejs }}`}
+        </td>
+        <td style="width: 100px;">
+            ${`{{ formset.empty_form.precio|escapejs }}`}
+        </td>
+        <td>
+            ${`{{ formset.empty_form.observaciones|escapejs }}`}
+        </td>
+        <td class="text-center">
+            ${`{{ formset.empty_form.DELETE|escapejs }}`}
+        </td>
+    </tr>`;
+
+    $('#add-procedimiento-plan').on('click', function(e) {
+        e.preventDefault();
+        
+        const newForm = emptyFormHtml.replace(/__prefix__/g, totalForms);
+        $('#procedimientos-plan-table tbody').append(newForm);
+        
+        // Init select2 for the newly added select
+        const selectId = `id_${prefix}-${totalForms}-procedimiento`;
+        const newSelect = $(`#${selectId}`);
+        
+        if (newSelect.length > 0) {
+            newSelect.select2(select2Opts);
+        }
+        
+        totalForms += 1;
+        $('#id_' + prefix + '-TOTAL_FORMS').val(totalForms);
+    });
+});
+</script>
+<style>
+.procedimiento-cell .select2-container{ width: 100% !important; }
+.procedimiento-cell .select2-selection--single{
+    border: 1px solid #ced4da;
+    border-radius: .35rem;
+    min-height: calc(1.5em + .75rem + 2px);
+    display: flex;
+    align-items: center;
+    background: #fff;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+}
+.procedimiento-cell .select2-selection__rendered{ line-height: 1.25rem; }
+.procedimiento-cell .select2-selection__arrow{ height: 100%; }
+</style>
+{% endblock js_page %}

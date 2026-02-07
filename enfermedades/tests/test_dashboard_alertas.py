@@ -12,6 +12,7 @@ from enfermedades.models import (
     EnfermedadPaciente,
     AlertaPaciente
 )
+from clinicas.models import Clinica
 
 
 class DashboardAlertasPermisosTest(TestCase):
@@ -47,6 +48,11 @@ class DashboardAlertasPermisosTest(TestCase):
     def test_acceso_denegado_usuario_normal(self):
         """Usuario normal no debe poder acceder al dashboard."""
         self.client.login(username='usuario_normal', password='test123')
+        # Activar clínica en sesión
+        clinica = Clinica.objects.create(nombre='Clinica Test', direccion='Dir', telefono='099999999', email='c@test.local', uc=self.usuario_normal)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         response = self.client.get(self.url)
         
         # Debe redirigir al login de admin
@@ -56,6 +62,10 @@ class DashboardAlertasPermisosTest(TestCase):
     def test_acceso_permitido_usuario_staff(self):
         """Usuario staff debe poder acceder al dashboard."""
         self.client.login(username='usuario_staff', password='test123')
+        clinica = Clinica.objects.create(nombre='Clinica Staff', direccion='Dir', telefono='099999998', email='s@test.local', uc=self.usuario_staff)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         response = self.client.get(self.url)
         
         self.assertEqual(response.status_code, 200)
@@ -64,6 +74,10 @@ class DashboardAlertasPermisosTest(TestCase):
     def test_acceso_permitido_superusuario(self):
         """Superusuario debe poder acceder al dashboard."""
         self.client.login(username='admin', password='admin123')
+        clinica = Clinica.objects.create(nombre='Clinica Admin', direccion='Dir', telefono='099999997', email='a@test.local', uc=self.usuario_admin)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         response = self.client.get(self.url)
         
         self.assertEqual(response.status_code, 200)
@@ -137,6 +151,11 @@ class DashboardAlertasEstadisticasTest(TestCase):
         
         self.client = Client()
         self.client.login(username='admin', password='admin123')
+        # Activar clínica en sesión
+        clinica = Clinica.objects.create(nombre='Clinica Estadisticas', direccion='Dir', telefono='099999996', email='e@test.local', uc=self.usuario_admin)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         self.url = reverse('enfermedades:dashboard_alertas')
     
     def test_estadisticas_generales_presentes(self):
@@ -234,6 +253,10 @@ class DashboardAlertasFiltrosTest(TestCase):
         
         self.client = Client()
         self.client.login(username='admin', password='admin123')
+        clinica = Clinica.objects.create(nombre='Clinica Filtros', direccion='Dir', telefono='099999995', email='f@test.local', uc=self.usuario_admin)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         self.url = reverse('enfermedades:dashboard_alertas')
     
     def test_filtro_sin_nivel(self):
@@ -294,6 +317,10 @@ class DashboardAlertasIntegracionTest(TestCase):
         
         self.client = Client()
         self.client.login(username='admin', password='admin123')
+        clinica = Clinica.objects.create(nombre='Clinica Integracion', direccion='Dir', telefono='099999994', email='i@test.local', uc=self.usuario_admin)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         self.url = reverse('enfermedades:dashboard_alertas')
     
     def test_dashboard_carga_sin_errores(self):

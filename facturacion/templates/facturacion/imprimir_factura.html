@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ factura.numero_factura}} - {{ factura.paciente.apellidos}}, {{ factura.paciente.nombres }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+            padding: 0;
+            background: white;
+        }
+        
+        .factura-container {
+            max-width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .header-left h1 {
+            font-size: 18pt;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+        
+        .header-left p {
+            margin: 2px 0;
+            font-size: 10pt;
+        }
+        
+        .header-right {
+            text-align: right;
+        }
+        
+        .numero-factura {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 2px;
+            color: white;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+        
+        .badge-pendiente { background-color: #f39c12; }
+        .badge-pagada { background-color: #27ae60; }
+        .badge-anulada { background-color: #e74c3c; }
+        
+        .seccion {
+            margin: 12px 0;
+        }
+        
+        .seccion-titulo {
+            font-size: 12pt;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .datos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px 15px;
+            font-size: 10pt;
+        }
+        
+        .dato {
+            margin: 2px 0;
+        }
+        
+        .dato strong {
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        table thead {
+            background-color: #e8e8e8;
+        }
+        
+        table th, table td {
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #ccc;
+            font-size: 10pt;
+        }
+        
+        table th {
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        table td.text-right {
+            text-align: right;
+        }
+        
+        table td.text-center {
+            text-align: center;
+        }
+        
+        .totales {
+            margin-top: 10px;
+            float: right;
+            width: 280px;
+        }
+        
+        .totales table {
+            margin: 0;
+        }
+        
+        .totales table td {
+            padding: 5px 8px;
+            font-size: 10pt;
+        }
+        
+        .total-final {
+            background-color: #e8e8e8;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+        
+        .estado-pago {
+            clear: both;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .factura-container {
+                border: none;
+                max-width: 100%;
+            }
+            
+            @page {
+                margin: 1.5cm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="factura-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <div class="header-left">
+                    <h1>{{ clinica.nombre }}</h1>
+                    <p><strong>RUC:</strong> {{ clinica.ruc }}</p>
+                    {% if clinica.direccion %}<p>{{ clinica.direccion }}</p>{% endif %}
+                    {% if clinica.telefono %}<p>Tel: {{ clinica.telefono }}</p>{% endif %}
+                </div>
+                <div class="header-right">
+                    <div class="numero-factura">{{ factura.numero_factura }}</div>
+                    <span class="badge {% if factura.estado == 'PEN' %}badge-pendiente{% elif factura.estado == 'PAG' %}badge-pagada{% else %}badge-anulada{% endif %}">
+                        {% if factura.estado == 'PEN' %}Pendiente{% elif factura.estado == 'PAG' %}Pagada{% else %}Anulada{% endif %}
+                    </span>
+                    <p style="margin-top: 10px;"><strong>Emisión:</strong> {{ factura.fecha_emision|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos del Paciente -->
+        <div class="seccion">
+            <div class="seccion-titulo">Datos del Paciente</div>
+            <div class="datos-grid">
+                <div class="dato"><strong>Nombre:</strong> {{ factura.paciente.apellidos }}, {{ factura.paciente.nombres }}</div>
+                <div class="dato"><strong>Teléfono:</strong> {{ factura.paciente.telefono|default:"-" }}</div>
+                <div class="dato"><strong>Cédula:</strong> {{ factura.paciente.cedula|default:"-" }}</div>
+                <div class="dato"><strong>Dirección:</strong> {{ factura.paciente.direccion|default:"-" }}</div>
+                <div class="dato"><strong>Email:</strong> {{ factura.paciente.email|default:"-" }}</div>
+            </div>
+        </div>
+
+        <!-- Detalles de Servicios -->
+        <div class="seccion">
+            <div class="seccion-titulo">Detalles de Servicios</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Descripción</th>
+                        <th style="width: 80px; text-align: center;">Cantidad</th>
+                        <th style="width: 100px; text-align: right;">Precio Unit.</th>
+                        <th style="width: 100px; text-align: right;">Descuento</th>
+                        <th style="width: 120px; text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.descripcion }}</td>
+                        <td style="text-align: center;">{{ item.cantidad }}</td>
+                        <td class="text-right">${{ item.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-right">{% if item.descuento_item %}-${{ item.descuento_item|floatformat:2 }}{% else %}-{% endif %}</td>
+                        <td class="text-right"><strong>${{ item.total|floatformat:2 }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="clearfix">
+            <div class="totales">
+                <table>
+                    <tr>
+                        <td>Subtotal:</td>
+                        <td class="text-right">${{ factura.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% if factura.descuento and factura.descuento > 0 %}
+                    <tr>
+                        <td>Descuento General:</td>
+                        <td class="text-right">-${{ factura.descuento|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Subtotal Neto:</td>
+                        <td class="text-right">${{ factura.subtotal_neto|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>IVA ({{ factura.iva_porcentaje }}%):</td>
+                        <td class="text-right">${{ factura.iva_monto|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="total-final">
+                        <td>TOTAL:</td>
+                        <td class="text-right">${{ factura.total|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Estado de Pago -->
+        {% if factura.estado != 'ANU' %}
+        <div class="estado-pago">
+            <div class="seccion-titulo">Estado de Pago</div>
+            <div class="datos-grid">
+                <div class="dato"><strong>Total Factura:</strong> ${{ factura.total|floatformat:2 }}</div>
+                <div class="dato"><strong>Total Pagado:</strong> <span style="color: #27ae60;">${{ total_pagado|floatformat:2 }}</span></div>
+                <div class="dato"><strong>Saldo Pendiente:</strong> <span style="color: #e74c3c;">${{ saldo_pendiente|floatformat:2 }}</span></div>
+            </div>
+            
+            {% if pagos %}
+            <div style="margin-top: 15px;">
+                <strong>Historial de Pagos:</strong>
+                <table style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Forma de Pago</th>
+                            <th>Referencia</th>
+                            <th style="text-align: right;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                            <td>{{ pago.get_forma_pago_display }}</td>
+                            <td>{{ pago.referencia_pago|default:"-" }}</td>
+                            <td class="text-right"><strong>${{ pago.monto|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Observaciones -->
+        {% if factura.observaciones %}
+        <div class="seccion">
+            <div class="seccion-titulo">Observaciones</div>
+            <p>{{ factura.observaciones }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; text-align: center; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">
+            <p><strong>{{ clinica.nombre }}</strong> - RUC: {{ clinica.ruc }}</p>
+            <p style="font-size: 9pt; margin: 5px 0;">Impreso el {{ fecha_impresion_display }}</p>
+            <p style="margin: 5px 0; font-size: 9pt; color: #999;">
+                <small><strong>Archivo:</strong> {{ factura.numero_factura }} - {{ nombre_paciente_completo }} - {{ fecha_impresion_display }}</small>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Cambiar el título del documento para que se use como nombre de archivo al imprimir
+        document.title = '{{ factura.numero_factura }}_{{ nombre_paciente_completo }}_{{ fecha_impresion_display }}'.replace(/[/:]/g, '-').replace(/\s+/g, '_');
+        
+        // Auto-imprimir al cargar
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

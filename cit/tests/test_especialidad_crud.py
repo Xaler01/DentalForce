@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from cit.models import Especialidad
 from cit.forms import EspecialidadForm
+from cit.tests.base import MultiTenantTestCase
 
 User = get_user_model()
 
@@ -180,17 +181,12 @@ class EspecialidadFormTest(TestCase):
         self.assertEqual(form.cleaned_data['nombre'], 'Rehabilitación Oral')
 
 
-class EspecialidadViewsTest(TestCase):
+class EspecialidadViewsTest(MultiTenantTestCase):
     """Tests para las vistas del CRUD de Especialidades"""
     
     def setUp(self):
         """Configuración inicial: crear usuario y especialidades"""
-        self.client = Client()
-        self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
-        )
-        self.client.login(username='testuser', password='testpass123')
+        super().setUp()  # Get multi-tenant context
         
         # Crear especialidades de prueba
         self.especialidad1 = Especialidad.objects.create(

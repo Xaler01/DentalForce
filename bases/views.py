@@ -18,10 +18,17 @@ class MixinFormInvalid:
             return response
 
 
+from usuarios.utils_permisos import tiene_permiso_granular
+
+
 class SinPrivilegios(LoginRequiredMixin, PermissionRequiredMixin, MixinFormInvalid):
     login_url = 'bases:login'
     raise_exception = False
     redirect_field_name = "redirecto_to"
+
+    def has_permission(self):
+        required = self.get_permission_required()
+        return tiene_permiso_granular(self.request.user, required)
 
     def handle_no_permission(self):
         from django.contrib.auth.models import AnonymousUser

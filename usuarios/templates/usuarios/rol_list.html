@@ -1,0 +1,143 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Roles{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">👥 Gestión de Roles - {{ clinica.nombre }}</h1>
+            <p class="text-muted">Roles disponibles en su clínica para asignar a usuarios</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'usuarios:lista' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Usuarios
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="alert-messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            {% if roles %}
+            <div class="row">
+                {% for rol in roles %}
+                <div class="col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title">
+                                    {% if rol.es_global %}
+                                        <i class="fas fa-globe text-info"></i>
+                                    {% else %}
+                                        <i class="fas fa-clinic-medical text-success"></i>
+                                    {% endif %}
+                                    {{ rol.nombre }}
+                                </h5>
+                                <span class="badge bg-secondary">
+                                    {{ rol.permisos.count }} permisos
+                                </span>
+                            </div>
+
+                            <p class="card-text text-muted">{{ rol.descripcion }}</p>
+
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2"><strong>Permisos asignados:</strong></small>
+                                <div class="flex-wrap">
+                                    {% for permiso in rol.permisos.all %}
+                                    <span class="badge bg-light text-dark me-2 mb-1">
+                                        <i class="fas fa-check text-success"></i>
+                                        {{ permiso.nombre }}
+                                    </span>
+                                    {% empty %}
+                                    <span class="text-muted">Sin permisos asignados</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-top">
+                                <small class="text-muted d-block">
+                                    Creado: {{ rol.fecha_creacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">Primera</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i>
+                No hay roles disponibles en este momento.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-info">
+            <h5 class="mb-0">
+                <i class="fas fa-book"></i> Información sobre Roles
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                Los roles agrupan conjuntos de permisos relacionados. Cada usuario puede tener múltiples roles,
+                lo que permite mayor flexibilidad para adaptarse a las necesidades de su clínica.
+            </p>
+            <ul class="text-muted">
+                <li>Los roles <i class="fas fa-globe text-info"></i> son globales del sistema</li>
+                <li>Los roles <i class="fas fa-clinic-medical text-success"></i> son personalizados para su clínica</li>
+                <li>Asigne roles en la sección de <strong>Gestión de Usuarios</strong></li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

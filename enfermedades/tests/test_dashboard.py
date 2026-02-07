@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from pacientes.models import Paciente
 from enfermedades.models import Enfermedad, CategoriaEnfermedad, EnfermedadPaciente, AlertaPaciente
 from datetime import date, timedelta
+from clinicas.models import Clinica
 
 
 class DashboardAlertasViewTests(TestCase):
@@ -17,6 +18,11 @@ class DashboardAlertasViewTests(TestCase):
     def setUp(self):
         """Configuración inicial para todos los tests."""
         self.client = Client()
+        # Activar clínica en sesión para satisfacer middleware multi-tenant
+        clinica = Clinica.objects.create(nombre='Clinica Dashboard', direccion='Dir', telefono='099999993', email='d@test.local', uc=User.objects.create_user(username='owner_dash'))
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         
         # Crear usuarios
         self.staff_user = User.objects.create_user(
@@ -137,6 +143,11 @@ class DashboardAlertasViewTests(TestCase):
         
         # Usuario staff
         self.client.login(username='admin', password='admin123')
+        # Re-activar clínica tras login (el login puede resetear sesión)
+        clinica = Clinica.objects.create(nombre='Clinica Dashboard Staff', direccion='Dir', telefono='099999992', email='ds@test.local', uc=self.staff_user)
+        session = self.client.session
+        session['clinica_id'] = clinica.id
+        session.save()
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
     
