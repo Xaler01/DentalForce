@@ -792,9 +792,13 @@
         icon: 'success',
         title: 'Éxito',
         html: msg,
-        confirmButtonText: 'OK',
-        timer: 5000,
-        timerProgressBar: true,
+        confirmButtonText: 'Cerrar',
+        didOpen: () => {
+          const btn = Swal.getConfirmButton();
+          if (btn) {
+            btn.id = 'swal-close-btn';
+          }
+        },
       };
 
       // Mapear tags de Django a configuración de SweetAlert2

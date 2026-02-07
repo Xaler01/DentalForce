@@ -115,10 +115,14 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 		hora_inicio = form.cleaned_data.get('hora_inicio')
 		hora_fin = form.cleaned_data.get('hora_fin')
 		observaciones = form.cleaned_data.get('observaciones', '')
+		tipo_registro = form.cleaned_data.get('tipo_registro')
 		monto_pago_dia = form.cleaned_data.get('monto_pago_dia')
 
-		# Si se especificó monto por día, crear un registro simple sin desglose
-		if monto_pago_dia:
+		# Si seleccionó pago por día, validar y crear un registro simple
+		if tipo_registro == 'PAGO_DIA':
+			if not monto_pago_dia:
+				messages.error(self.request, '❌ Debe ingresar el monto a pagar por día')
+				return redirect('personal:horas-extra-create')
 			from django.core.exceptions import ValidationError
 			registro = RegistroHorasPersonal(
 				personal=personal,
@@ -147,7 +151,7 @@ class PersonalHorasExtraCreateView(LoginRequiredMixin, CreateView):
 			
 			return redirect(self.success_url)
 
-		# Si NO se especificó monto por día, usar desglose automático de horas extra
+		# Si seleccionó horas extra, usar desglose automático
 		# Crear un registro temporal para validar conflictos
 		from django.core.exceptions import ValidationError
 		registro_temp = RegistroHorasPersonal(
@@ -196,6 +200,24 @@ class PersonalHorasExtraListView(LoginRequiredMixin, ListView):
 	model = RegistroHorasPersonal
 	template_name = 'personal/horas_extra_list.html'
 	context_object_name = 'horas_list'
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		# Calcular valores a mostrar (si existe desglose usar sumatoria de hijos)
+		from decimal import Decimal
+		for reg in context.get('horas_list', []):
+			try:
+				if reg.registros_desglosados.exists():
+					ag = reg.registros_desglosados.aggregate(horas_sum=Sum('horas'), valor_sum=Sum('valor_total'))
+					reg.display_horas = ag.get('horas_sum') or Decimal('0.00')
+					reg.display_valor_total = ag.get('valor_sum') or Decimal('0.00')
+				else:
+					reg.display_horas = reg.horas
+					reg.display_valor_total = reg.valor_total
+			except Exception:
+				reg.display_horas = reg.horas
+				reg.display_valor_total = reg.valor_total
+		return context
 
 	def get_queryset(self):
 		queryset = RegistroHorasPersonal.objects.select_related(
@@ -467,6 +489,11 @@ class PersonalHorasExtraUpdateView(LoginRequiredMixin, UpdateView):
 	template_name = 'personal/horas_extra_form.html'
 	success_url = '/personal/horas-extra/'
 
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs['request'] = self.request
+		return kwargs
+
 	def get_queryset(self):
 		queryset = RegistroHorasPersonal.objects.select_related(
 			'personal', 'personal__usuario'
@@ -559,12 +586,37 @@ class PersonalHorasExtraUpdateView(LoginRequiredMixin, UpdateView):
 		hora_inicio = form.cleaned_data.get('hora_inicio')
 		hora_fin = form.cleaned_data.get('hora_fin')
 		observaciones = form.cleaned_data.get('observaciones', '')
+		tipo_registro = form.cleaned_data.get('tipo_registro')
+		monto_pago_dia = form.cleaned_data.get('monto_pago_dia')
 		
 		# Eliminar el registro antiguo
 		personal = self.object.personal
 		uc = self.object.uc
 		self.object.delete()
-		
+
+		if tipo_registro == 'PAGO_DIA':
+			if not monto_pago_dia:
+				messages.error(self.request, '❌ Debe ingresar el monto a pagar por día')
+				return redirect('personal:horas-extra-edit', pk=self.kwargs.get('pk'))
+
+			registro = RegistroHorasPersonal(
+				personal=personal,
+				fecha=fecha,
+				hora_inicio=hora_inicio or datetime.time(8, 0),
+				hora_fin=hora_fin or datetime.time(17, 0),
+				tipo_extra='SABADO_MEDIO_DIA',
+				horas=Decimal('0.00'),
+				valor_total=monto_pago_dia,
+				observaciones=observaciones or f'Pago por día: ${monto_pago_dia}',
+				es_desglosado=False,
+				estado='PENDIENTE',
+				uc=uc
+			)
+			registro.full_clean()
+			registro.save()
+			messages.success(self.request, '✅ Pago por día actualizado correctamente')
+			return redirect(self.success_url)
+
 		# Crear nuevo(s) registro(s) con desglose
 		registros = RegistroHorasPersonal.crear_con_desglose(
 			personal=personal,

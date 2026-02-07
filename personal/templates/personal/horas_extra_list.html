@@ -188,8 +188,8 @@
                                     <strong>{{ registro.hora_inicio|date:"H:i" }} - {{ registro.hora_fin|date:"H:i" }}</strong>
                                 </span>
                             </td>
-                            <td style="text-align: center;">{{ registro.horas|floatformat:2 }}</td>
-                            <td style="text-align: center;" class="font-weight-bold">${{ registro.valor_total|floatformat:2 }}</td>
+                            <td style="text-align: center;">{{ registro.display_horas|floatformat:2 }}</td>
+                            <td style="text-align: center;" class="font-weight-bold">${{ registro.display_valor_total|floatformat:2 }}</td>
                             <td style="text-align: center;">
                                 <small>{{ registro.get_tipo_extra_display }}</small>
                                 {% if registro.es_desglosado %}

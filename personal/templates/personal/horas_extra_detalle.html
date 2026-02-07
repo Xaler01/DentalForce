@@ -10,13 +10,40 @@
       <p><strong>Clínica:</strong> {{ object.personal.sucursal_principal.clinica.nombre }}</p>
       <p><strong>Sucursal:</strong> {{ object.personal.sucursal_principal.nombre }}</p>
       <p><strong>Fecha:</strong> {{ object.fecha|date:"d/m/Y" }}</p>
-      <p><strong>Hora inicio:</strong> {{ object.hora_inicio }}</p>
-      <p><strong>Hora fin:</strong> {{ object.hora_fin }}</p>
+      <p><strong>Hora inicio:</strong> {{ object.hora_inicio|date:"H:i" }}</p>
+      <p><strong>Hora fin:</strong> {{ object.hora_fin|date:"H:i" }}</p>
       <p><strong>Tipo:</strong> {{ object.get_tipo_extra_display }}</p>
-      <p><strong>Horas:</strong> {{ object.horas }}</p>
-      <p><strong>Valor:</strong> ${{ object.valor_total }}</p>
+      <p><strong>Horas:</strong> {{ object.horas|floatformat:2 }}</p>
+      <p><strong>Valor:</strong> ${{ object.valor_total|floatformat:2 }}</p>
       <p><strong>Estado:</strong> {{ object.get_estado_display }}</p>
       <p><strong>Observaciones:</strong> {{ object.observaciones|default:"-" }}</p>
+
+      {% if object.registros_desglosados.exists %}
+        <hr>
+        <h6>Registros desglosados</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th>Tipo</th>
+                <th>Horas</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in object.registros_desglosados.all %}
+                <tr>
+                  <td>{{ d.hora_inicio|date:"H:i" }} - {{ d.hora_fin|date:"H:i" }}</td>
+                  <td>{{ d.get_tipo_extra_display }}</td>
+                  <td>{{ d.horas|floatformat:2 }}</td>
+                  <td>${{ d.valor_total|floatformat:2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
 
       <a href="{% url 'personal:horas-extra-list' %}" class="btn btn-secondary">Volver</a>
     </div>

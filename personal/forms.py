@@ -113,6 +113,15 @@ class RegistroHorasPersonalForm(forms.ModelForm):
 		if request and hasattr(request.user, 'personal_profile'):
 			self.instance.personal = request.user.personal_profile
 
+		# Inicializar tipo_registro y monto en edición
+		if self.instance and self.instance.pk:
+			if self.instance.tipo_extra == 'SABADO_MEDIO_DIA':
+				self.fields['tipo_registro'].initial = 'PAGO_DIA'
+				self.fields['monto_pago_dia'].initial = self.instance.valor_total
+			else:
+				self.fields['tipo_registro'].initial = 'HORAS_EXTRA'
+				self.fields['monto_pago_dia'].initial = None
+
 	def clean(self):
 		cleaned_data = super().clean()
 		hora_inicio = cleaned_data.get('hora_inicio')

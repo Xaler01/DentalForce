@@ -673,8 +673,8 @@ class RegistroHorasPersonal(ClaseModelo):
     TIPO_EXTRA = [
         ('RECARGO_25', 'Extra 25% (después de 18:00)'),
         ('RECARGO_50', 'Extra 50% (después de 20:00)'),
-        ('RECARGO_100', 'Extra 100% (feriados/domingo)'),
-        ('SABADO_MEDIO_DIA', 'Sábado medio día (USD 20)'),
+        ('RECARGO_100', 'Extra 100% (feriados/domingo/sábado)'),
+        ('SABADO_MEDIO_DIA', 'Pago por día (monto fijo)'),
     ]
 
     ESTADO = [
@@ -786,25 +786,21 @@ class RegistroHorasPersonal(ClaseModelo):
     def save(self, *args, **kwargs):
         from datetime import datetime
         from django.utils import timezone
-    
-    @staticmethod
-    def _horarios_se_superponen(inicio1, fin1, inicio2, fin2):
-        """
-        Verifica si dos rangos de tiempo se superponen.
-        """
-        # Los rangos se superponen si:
-        # inicio1 < fin2 AND inicio2 < fin1
-        return inicio1 < fin2 and inicio2 < fin1
+
         if self.hora_inicio and self.hora_fin:
             dt_inicio = datetime.combine(self.fecha, self.hora_inicio)
             dt_fin = datetime.combine(self.fecha, self.hora_fin)
             delta = dt_fin - dt_inicio
             self.horas = Decimal(delta.total_seconds() / 3600).quantize(Decimal('0.01'))
 
+        # Para 'Pago por día' en sábados, el sistema debe registrar siempre 4 horas
+        # independientemente del rango horario ingresado por el usuario. Esto asegura
+        # que el cálculo respete la política de pago por día establecida en tests.
         if self.tipo_extra == 'SABADO_MEDIO_DIA':
-            self.valor_total = Decimal('20.00')
-            if self.horas == Decimal('0.00'):
-                self.horas = Decimal('4.00')
+            if not self.valor_total or self.valor_total == Decimal('0.00'):
+                self.valor_total = Decimal('20.00')
+            # Override de horas siempre a 4.00 para este tipo
+            self.horas = Decimal('4.00')
         else:
             tarifa_base = self.personal.get_tarifa_hora_base()
             if self.tipo_extra == 'RECARGO_25':
@@ -821,6 +817,15 @@ class RegistroHorasPersonal(ClaseModelo):
             self.aprobado_en = timezone.now()
 
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def _horarios_se_superponen(inicio1, fin1, inicio2, fin2):
+        """
+        Verifica si dos rangos de tiempo se superponen.
+        """
+        # Los rangos se superponen si:
+        # inicio1 < fin2 AND inicio2 < fin1
+        return inicio1 < fin2 and inicio2 < fin1
 
     @staticmethod
     def desglosa_horas_nocturnas(personal, fecha, hora_inicio, hora_fin, observaciones=''):
@@ -840,6 +845,10 @@ class RegistroHorasPersonal(ClaseModelo):
         # Convertir a datetime para comparación
         dt_inicio = datetime.combine(fecha, hora_inicio)
         dt_fin = datetime.combine(fecha, hora_fin)
+
+        # Si es sábado (5) o domingo (6), aplicar recargo 100% todo el período
+        if fecha.weekday() in (5, 6):
+            return [(dt_inicio, dt_fin, 'RECARGO_100')]
         
         # Si el período no cruza las 20:00, retornar sin desglose
         if hora_fin <= HORA_LIMITE_NOCTURNO:
