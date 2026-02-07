@@ -1,4 +1,4 @@
-# Instrucciones para GitHub Copilot Agent - PowerDent
+# Instrucciones para GitHub Copilot Agent - DentalForce
 
 ## Agente de Seguridad Pre-Commit
 
@@ -270,4 +270,4 @@ Este archivo debe actualizarse cuando:
 
 **Última actualización**: 2026-02-07  
 **Versión**: 1.2 (actualizado: cambio de `.jira-docs/` a `.copilot-workspace/`)  
-**Responsable**: Equipo de Desarrollo PowerDent
+**Responsable**: Equipo de Desarrollo DentalForce

@@ -1,4 +1,4 @@
-"""Helpers para mapear permisos Django a permisos granulares de PowerDent."""
+"""Helpers para mapear permisos Django a permisos granulares de DentalForce."""
 from typing import Iterable, Optional
 from django.contrib.auth.models import User
 

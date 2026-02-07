@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-Script para cargar 51 procedimientos odontológicos iniciales en PowerDent.
+Script para cargar 51 procedimientos odontológicos iniciales en DentalForce.
 Corre como: python manage.py shell < procedimientos/load_data.py
 """
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'powerdent.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dentalforce.settings')
 django.setup()
 
 from procedimientos.models import ProcedimientoOdontologico

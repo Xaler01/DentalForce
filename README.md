@@ -1,11 +1,11 @@
-# 🦷 PowerDent - Sistema de Gestión Odontológica
+# 🦷 DentalForce - Sistema de Gestión Odontológica
 
 [![Django](https://img.shields.io/badge/Django-4.2.6-green.svg)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-PowerDent es un sistema integral de gestión diseñado específicamente para clínicas dentales. Desarrollado con Django y PostgreSQL, ofrece una plataforma robusta y segura para administrar todos los aspectos operativos de tu clínica dental.
+DentalForce es un sistema integral de gestión diseñado específicamente para clínicas dentales. Desarrollado con Django y PostgreSQL, ofrece una plataforma robusta y segura para administrar todos los aspectos operativos de tu clínica dental.
 
 ---
 
@@ -99,7 +99,7 @@ PowerDent es un sistema integral de gestión diseñado específicamente para cl�
 
 ### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/Xaler01/PowerDent.git
+git clone https://github.com/Xaler01/DentalForce.git
 cd SisOdonOrbeDent
 ```
 
@@ -262,7 +262,7 @@ SisOdonOrbeDent/
 │   ├── views.py
 │   ├── tests.py            # 10 tests unitarios
 │   └── urls.py
-├── powerdent/              # Configuración del proyecto
+├── dentalforce/              # Configuración del proyecto
 │   ├── settings.py         # Configuración con variables de entorno
 │   ├── urls.py
 │   └── wsgi.py
@@ -489,7 +489,7 @@ python manage.py test cmp.tests.ComprasDetDescuentosTest.test_descuento_por_porc
 - Mantener cobertura de tests > 80%
 
 ### Reportar Bugs
-Usa el [issue tracker](https://github.com/Xaler01/PowerDent/issues) e incluye:
+Usa el [issue tracker](https://github.com/Xaler01/DentalForce/issues) e incluye:
 - Descripción detallada del problema
 - Pasos para reproducir
 - Comportamiento esperado vs actual
@@ -539,7 +539,7 @@ Este proyecto está licenciado bajo la [Licencia MIT](LICENSE).
 ```
 MIT License
 
-Copyright (c) 2025 PowerDent
+Copyright (c) 2025 DentalForce
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -555,11 +555,11 @@ copies of the Software...
 ### Desarrollador
 - **Email**: [xaler01@proton.me](mailto:xaler01@proton.me)
 - **GitHub**: [@Xaler01](https://github.com/Xaler01)
-- **Repositorio**: [PowerDent](https://github.com/Xaler01/PowerDent)
+- **Repositorio**: [DentalForce](https://github.com/Xaler01/DentalForce)
 
 ### Soporte
 Para preguntas, sugerencias o reportar problemas:
-1. Abre un [Issue](https://github.com/Xaler01/PowerDent/issues)
+1. Abre un [Issue](https://github.com/Xaler01/DentalForce/issues)
 2. Envía un email a [xaler01@proton.me](mailto:xaler01@proton.me)
 3. Revisa la [documentación](README.md)
 

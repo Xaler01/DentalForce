@@ -3,7 +3,7 @@
         "model": "cit.clinica",
         "pk": 1,
         "fields": {
-            "nombre": "PowerDent Clínica Odontológica",
+            "nombre": "DentalForce Clínica Odontológica",
             "direccion": "Av. Principal 123, Centro Comercial Plaza, Piso 3",
             "telefono": "02-1234567",
             "email": "contacto@example.com",

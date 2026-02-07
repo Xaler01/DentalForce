@@ -34,15 +34,15 @@ class ClinicaModelTest(TestCase):
     def test_clinica_str_representation(self):
         """Test: Representación en string de la clínica"""
         clinica = Clinica.objects.create(
-            nombre='PowerDent',
+            nombre='DentalForce',
             direccion='Av Principal',
             telefono='02-9999999',
-            email='info@powerdent.com',
+            email='info@dentalforce.com',
             uc=self.user,
             um=self.user.id
         )
         
-        self.assertEqual(str(clinica), 'PowerDent')
+        self.assertEqual(str(clinica), 'DentalForce')
     
     def test_clinica_telefono_invalido(self):
         """Test: Validación de teléfono inválido"""

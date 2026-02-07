@@ -1,5 +1,5 @@
 # ============================================
-# PowerDent - Dependencias de Desarrollo
+# DentalForce - Dependencias de Desarrollo
 # ============================================
 # Actualizado: Noviembre 10, 2025
 # Estas dependencias son ADICIONALES a requirements.txt

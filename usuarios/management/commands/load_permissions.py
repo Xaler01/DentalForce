@@ -1,11 +1,11 @@
 """
-Script para cargar permisos y roles predefinidos en PowerDent
+Script para cargar permisos y roles predefinidos en DentalForce
 
 Ejecutar: python manage.py load_permissions
 """
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from usuarios.models import PermisoPersonalizado, RolUsuarioPowerDent
+from usuarios.models import PermisoPersonalizado, RolUsuarioDentalForce
 
 
 class Command(BaseCommand):
@@ -212,7 +212,7 @@ class Command(BaseCommand):
         }
         
         for nombre_rol, datos in roles_datos.items():
-            rol, created = RolUsuarioPowerDent.objects.get_or_create(
+            rol, created = RolUsuarioDentalForce.objects.get_or_create(
                 nombre=nombre_rol,
                 clinica=None,  # Rol global del sistema
                 defaults={

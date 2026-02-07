@@ -1,5 +1,5 @@
 """
-Utilidades para gestión de usuarios en PowerDent
+Utilidades para gestión de usuarios en DentalForce
 """
 import secrets
 import string
@@ -51,13 +51,13 @@ def generar_username_unico(prefijo, id_referencia, nombre):
     return username
 
 
-def generar_email_temporal(username, dominio='powerdent.local'):
+def generar_email_temporal(username, dominio='dentalforce.local'):
     """
     Genera un email temporal basado en el username.
     
     Args:
         username (str): Nombre de usuario
-        dominio (str): Dominio del email (default: powerdent.local)
+        dominio (str): Dominio del email (default: dentalforce.local)
     
     Returns:
         str: Email en formato {username}@{dominio}
@@ -101,11 +101,11 @@ def enviar_credenciales_email(usuario, password_temporal, tipo_usuario='usuario'
     
     saludo = saludos.get(tipo_usuario, 'Usuario')
     
-    asunto = f'Bienvenido a PowerDent - Credenciales de Acceso'
+    asunto = f'Bienvenido a DentalForce - Credenciales de Acceso'
     mensaje = f"""
 Estimado/a {saludo},
 
-Se ha creado una cuenta para usted en PowerDent.
+Se ha creado una cuenta para usted en DentalForce.
 
 Credenciales de acceso:
 - Usuario: {usuario.username}
@@ -117,7 +117,7 @@ Por favor, inicie sesión y cambie su contraseña en el primer acceso.
 URL de acceso: {settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://localhost:8001'}
 
 Saludos,
-Equipo PowerDent
+Equipo DentalForce
     """.strip()
     
     try:
@@ -192,7 +192,7 @@ def enviar_credenciales_a_destinatario(email_destinatario, nombre_usuario, passw
     
     asunto = f'Credenciales de Acceso - {descripcion} Creado en {clinica_nombre}'
     mensaje = f"""
-Se ha creado una nueva cuenta de {descripcion} en PowerDent.
+Se ha creado una nueva cuenta de {descripcion} en DentalForce.
 
 INFORMACIÓN DE LA CLÍNICA:
 - Clínica: {clinica_nombre}{ubicacion}
@@ -214,7 +214,7 @@ IMPORTANTE:
 - Si el usuario olvida la contraseña, usará la opción "Olvidé mi contraseña"
 
 Saludos,
-Equipo PowerDent
+Equipo DentalForce
     """.strip()
     
     try:

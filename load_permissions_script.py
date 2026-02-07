@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """
-Script para cargar permisos y roles predefinidos en PowerDent
+Script para cargar permisos y roles predefinidos en DentalForce
 Ejecutar: python manage.py runscript load_initial_permissions
 """
 
 import os
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'powerdent.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dentalforce.settings')
 django.setup()
 
-from usuarios.models import PermisoPersonalizado, RolUsuarioPowerDent
+from usuarios.models import PermisoPersonalizado, RolUsuarioDentalForce
 
 def run():
     """Carga permisos y roles iniciales"""
@@ -109,7 +109,7 @@ def run():
     }
     
     for nombre_rol, datos in roles_datos.items():
-        rol, created = RolUsuarioPowerDent.objects.get_or_create(
+        rol, created = RolUsuarioDentalForce.objects.get_or_create(
             nombre=nombre_rol,
             clinica=None,
             defaults={'descripcion': datos['descripcion'], 'activo': True}

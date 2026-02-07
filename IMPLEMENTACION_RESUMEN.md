@@ -1,4 +1,4 @@
-# ✅ IMPLEMENTACIÓN COMPLETADA - Sistema de Permisos Granulares PowerDent
+# ✅ IMPLEMENTACIÓN COMPLETADA - Sistema de Permisos Granulares DentalForce
 
 **Fecha**: 26 de Enero de 2025  
 **Estado**: ✅ COMPLETADO Y FUNCIONAL  
@@ -17,7 +17,7 @@ Implementar un **sistema flexible de permisos granulares** que permita a clínic
 
 ### 1. **Base de Datos** 
 - ✅ Modelo `PermisoPersonalizado` (27 permisos)
-- ✅ Modelo `RolUsuarioPowerDent` (4 roles)
+- ✅ Modelo `RolUsuarioDentalForce` (4 roles)
 - ✅ Expansión de `UsuarioClinica` con ManyToMany roles
 - ✅ Migración aplicada exitosamente
 - ✅ Índices de base de datos para performance
@@ -48,7 +48,7 @@ Implementar un **sistema flexible de permisos granulares** que permita a clínic
 
 ### 6. **Admin Django**
 - ✅ `PermisoPersonalizadoAdmin` - Gestión de permisos
-- ✅ `RolUsuarioPowerDentAdmin` - Gestión de roles
+- ✅ `RolUsuarioDentalForceAdmin` - Gestión de roles
 - ✅ `UsuarioClinicaAdmin` - Actualizado con nuevos campos
 
 ### 7. **Datos Iniciales**
@@ -267,7 +267,7 @@ Un usuario puede tener múltiples roles simultáneamente.
 - [CHECKLIST_IMPLEMENTACION.md](.jira-docs/CHECKLIST_IMPLEMENTACION.md) - Detalles técnicos
 
 ### Modelos
-- [usuarios/models.py](usuarios/models.py) - PermisoPersonalizado, RolUsuarioPowerDent, UsuarioClinica
+- [usuarios/models.py](usuarios/models.py) - PermisoPersonalizado, RolUsuarioDentalForce, UsuarioClinica
 
 ### Vistas
 - [usuarios/views.py](usuarios/views.py) - RolListView, RolDetailView, PermisoListView, UsuarioRolesUpdateView
@@ -300,4 +300,4 @@ Se ha implementado exitosamente un **sistema de permisos granulares y flexible**
 **Creado por**: GitHub Copilot Agent  
 **Fecha**: 26 de Enero de 2025  
 **Estado**: ✅ COMPLETADO  
-**Versión del Proyecto**: PowerDent 1.0
+**Versión del Proyecto**: DentalForce 1.0

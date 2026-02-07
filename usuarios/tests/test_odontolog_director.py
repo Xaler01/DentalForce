@@ -6,7 +6,7 @@ Ejecutar: python manage.py test usuarios.tests.test_odontolog_director
 """
 
 from django.test import TestCase
-from usuarios.models import RolUsuarioPowerDent, PermisoPersonalizado, UsuarioClinica
+from usuarios.models import RolUsuarioDentalForce, PermisoPersonalizado, UsuarioClinica
 from clinicas.models import Clinica
 from django.contrib.auth.models import User
 
@@ -41,18 +41,18 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_odontolog_director_existe(self):
         """Verificar que el rol Odontólogo Director existe"""
-        rol = RolUsuarioPowerDent.objects.filter(nombre='Odontólogo Director').first()
+        rol = RolUsuarioDentalForce.objects.filter(nombre='Odontólogo Director').first()
         self.assertIsNotNone(rol, "Rol 'Odontólogo Director' no existe")
     
     def test_rol_tiene_19_permisos(self):
         """Verificar que el rol tiene exactamente 19 permisos"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         self.assertEqual(rol.permisos.count(), 19, 
             f"Rol debería tener 19 permisos, tiene {rol.permisos.count()}")
     
     def test_rol_tiene_permisos_odontologia(self):
         """Verificar que el rol incluye todos los permisos de odontología"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         codigos_esperados = [
             'odontologia.crear_procedimiento',
             'odontologia.editar_diagnostico',
@@ -69,7 +69,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_tiene_permisos_recepcion(self):
         """Verificar que el rol incluye todos los permisos de recepción"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         codigos_esperados = [
             'recepcion.ver_citas',
             'recepcion.crear_cita',
@@ -87,7 +87,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_tiene_permisos_facturacion_completos(self):
         """✅ Verificar que el rol incluye TODOS los permisos de facturación"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         codigos_esperados = [
             'facturacion.ver_facturas',
             'facturacion.crear_factura',
@@ -103,7 +103,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_tiene_permisos_inventario(self):
         """Verificar que el rol incluye permisos de inventario básico"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         codigos_esperados = [
             'inventario.ver_inventario',
             'inventario.solicitar_inventario',
@@ -117,7 +117,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_tiene_permisos_reportes(self):
         """Verificar que el rol incluye permisos de reportes básicos"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         codigos_esperados = [
             'reportes.ver_reportes_general',
             'reportes.ver_reportes_financiero',
@@ -131,18 +131,18 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_es_global_no_por_clinica(self):
         """Verificar que el rol Odontólogo Director es global (no específico de clínica)"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         self.assertIsNone(rol.clinica, 
             "Rol Odontólogo Director debería ser global (clinica=None)")
     
     def test_rol_esta_activo(self):
         """Verificar que el rol está activo"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         self.assertTrue(rol.activo, "Rol Odontólogo Director debería estar activo")
     
     def test_asignar_rol_a_usuario(self):
         """Verificar que podemos asignar el rol a un usuario"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         self.usuario_clinica.roles_personalizados.add(rol)
         
         self.assertIn(rol, self.usuario_clinica.roles_personalizados.all(),
@@ -150,7 +150,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_usuario_con_rol_tiene_acceso_a_facturacion(self):
         """Verificar que un usuario con el rol puede acceder a facturación"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         self.usuario_clinica.roles_personalizados.add(rol)
         
         # Obtener los permisos del usuario a través del rol
@@ -166,7 +166,7 @@ class OdontologDirectorRoleTest(TestCase):
     
     def test_rol_resumen(self):
         """Mostrar un resumen completo del rol (para debugging)"""
-        rol = RolUsuarioPowerDent.objects.get(nombre='Odontólogo Director')
+        rol = RolUsuarioDentalForce.objects.get(nombre='Odontólogo Director')
         permisos = rol.permisos.all().order_by('categoria', 'nombre')
         
         print("\n" + "="*60)

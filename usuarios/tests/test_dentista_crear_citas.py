@@ -7,7 +7,7 @@ Ejecutar: python manage.py test usuarios.tests.test_dentista_crear_citas
 from django.test import TestCase
 from django.contrib.auth.models import User
 from usuarios.models import (
-    RolUsuarioPowerDent,
+    RolUsuarioDentalForce,
     PermisoPersonalizado,
     UsuarioClinica,
 )
@@ -50,7 +50,7 @@ class DentistaCrearCitasTest(TestCase):
             permisos_objs[codigo] = permiso
 
         # Crear rol Dentista con los permisos esperados
-        self.rol_dentista, _ = RolUsuarioPowerDent.objects.get_or_create(
+        self.rol_dentista, _ = RolUsuarioDentalForce.objects.get_or_create(
             nombre='Dentista',
             defaults={
                 'descripcion': 'Profesional odontológico con acceso a historiales, diagnósticos y procedimientos completos. Puede agendar citas para sus pacientes después de la consulta.',
@@ -82,7 +82,7 @@ class DentistaCrearCitasTest(TestCase):
     
     def test_rol_dentista_tiene_permiso_crear_cita(self):
         """Verificar que el rol Dentista incluye permiso crear_cita"""
-        rol_dentista = RolUsuarioPowerDent.objects.get(nombre='Dentista')
+        rol_dentista = RolUsuarioDentalForce.objects.get(nombre='Dentista')
         
         # Verificar que el permiso crear_cita está en el rol
         tiene_permiso = rol_dentista.permisos.filter(codigo='recepcion.crear_cita').exists()
@@ -91,13 +91,13 @@ class DentistaCrearCitasTest(TestCase):
     
     def test_dentista_tiene_8_permisos(self):
         """Verificar que el rol Dentista tiene 8 permisos (incluyendo crear_cita)"""
-        rol_dentista = RolUsuarioPowerDent.objects.get(nombre='Dentista')
+        rol_dentista = RolUsuarioDentalForce.objects.get(nombre='Dentista')
         self.assertEqual(rol_dentista.permisos.count(), 8,
             f"Dentista debería tener 8 permisos, tiene {rol_dentista.permisos.count()}")
     
     def test_dentista_permisos_incluyen_odontologia_y_recepcion(self):
         """Verificar que dentista tiene permisos de odontología Y crear citas"""
-        rol_dentista = RolUsuarioPowerDent.objects.get(nombre='Dentista')
+        rol_dentista = RolUsuarioDentalForce.objects.get(nombre='Dentista')
         codigos = list(rol_dentista.permisos.values_list('codigo', flat=True))
         
         # Permisos de odontología (debe mantenerlos)
@@ -112,7 +112,7 @@ class DentistaCrearCitasTest(TestCase):
     
     def test_usuario_dentista_puede_crear_citas(self):
         """Verificar que un usuario con rol Dentista puede crear citas"""
-        rol_dentista = RolUsuarioPowerDent.objects.get(nombre='Dentista')
+        rol_dentista = RolUsuarioDentalForce.objects.get(nombre='Dentista')
         self.usuario_clinica.roles_personalizados.add(rol_dentista)
         
         # Verificar que el usuario tiene acceso al permiso
@@ -125,6 +125,6 @@ class DentistaCrearCitasTest(TestCase):
     
     def test_descripcion_rol_dentista_menciona_agendamiento(self):
         """Verificar que la descripción del rol menciona el agendamiento de citas"""
-        rol_dentista = RolUsuarioPowerDent.objects.get(nombre='Dentista')
+        rol_dentista = RolUsuarioDentalForce.objects.get(nombre='Dentista')
         self.assertIn('agendar', rol_dentista.descripcion.lower(),
             "La descripción debería mencionar que puede agendar citas")

@@ -6,7 +6,7 @@ import os
 import django
 from django.utils import timezone
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'powerdent.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dentalforce.settings')
 django.setup()
 
 from django.contrib.auth.models import User

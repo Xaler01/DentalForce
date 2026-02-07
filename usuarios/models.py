@@ -85,7 +85,7 @@ class PermisoPersonalizado(models.Model):
         return self.clinica is None
 
 
-class RolUsuarioPowerDent(models.Model):
+class RolUsuarioDentalForce(models.Model):
     """
     Rol con conjunto predefinido de permisos.
     
@@ -122,11 +122,11 @@ class RolUsuarioPowerDent(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = 'Rol PowerDent'
-        verbose_name_plural = 'Roles PowerDent'
+        verbose_name = 'Rol DentalForce'
+        verbose_name_plural = 'Roles DentalForce'
         unique_together = [['clinica', 'nombre']]
         ordering = ['nombre']
-        db_table = 'usuarios_rol_powerdent'
+        db_table = 'usuarios_rol_dentalforce'
         indexes = [
             models.Index(fields=['nombre', 'activo']),
             models.Index(fields=['clinica']),
@@ -187,7 +187,7 @@ class UsuarioClinica(models.Model):
     
     # NUEVO: Múltiples roles con permisos granulares
     roles_personalizados = models.ManyToManyField(
-        RolUsuarioPowerDent,
+        RolUsuarioDentalForce,
         blank=True,
         related_name='usuarios_asignados',
         verbose_name='Roles Personalizados',

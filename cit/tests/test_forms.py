@@ -30,10 +30,10 @@ class CitaFormTest(TestCase):
         
         # Crear clínica
         self.clinica = Clinica.objects.create(
-            nombre='PowerDent',
+            nombre='DentalForce',
             direccion='Av. Principal 123',
             telefono='02-1234567',
-            email='info@powerdent.com',
+            email='info@dentalforce.com',
             uc=self.user,
             um=self.user.id
         )

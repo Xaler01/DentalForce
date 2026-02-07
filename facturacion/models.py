@@ -1,5 +1,5 @@
 """
-Facturacion app models: Sistema de facturación multi-tenant para PowerDent
+Facturacion app models: Sistema de facturación multi-tenant para DentalForce
 
 Models:
 - Factura: Documento de facturación con número secuencial por clínica

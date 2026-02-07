@@ -356,10 +356,10 @@ class GetDentistaEspecialidadesTest(TestCase):
 
         # Crear clinica y sucursal
         clinica = Clinica.objects.create(
-            nombre='PowerDent Test',
+            nombre='DentalForce Test',
             direccion='Av. Test',
             telefono='02-1234567',
-            email='test@powerdent.com',
+            email='test@dentalforce.com',
             uc=self.user,
             um=self.user.id
         )
@@ -445,10 +445,10 @@ class CitasJsonTest(TestCase):
 
         # Crear datos de prueba
         clinica = Clinica.objects.create(
-            nombre='PowerDent Test',
+            nombre='DentalForce Test',
             direccion='Av. Test',
             telefono='02-1234567',
-            email='test@powerdent.com',
+            email='test@dentalforce.com',
             uc=self.user,
             um=self.user.id
         )

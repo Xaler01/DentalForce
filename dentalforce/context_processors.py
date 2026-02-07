@@ -5,7 +5,7 @@ from django.urls import reverse
 
 def clinica_context(request):
     """Contexto global para mostrar nombre/eslogan de la clínica activa en layout."""
-    default_nombre = "PowerDent"
+    default_nombre = "DentalForce"
     default_eslogan = "Gestión clínica"
 
     context = {
@@ -13,7 +13,7 @@ def clinica_context(request):
         "clinica_nombre": default_nombre,
         "clinica_eslogan": default_eslogan,
         "clinica_titulo_pestana": f"{default_nombre} | {default_eslogan}",
-        "by_powerdent_label": "by PowerDent",
+        "by_dentalforce_label": "by DentalForce",
     }
 
     # 1) Intentar leer clínica activa desde sesión

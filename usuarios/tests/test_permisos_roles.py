@@ -2,7 +2,7 @@
 Pruebas unitarias para el sistema de permisos granulares.
 
 Cubre:
-- Modelos: PermisoPersonalizado, RolUsuarioPowerDent, UsuarioClinica
+- Modelos: PermisoPersonalizado, RolUsuarioDentalForce, UsuarioClinica
 - Métodos: tiene_permiso(), get_permisos(), get_codigos_permisos()
 - Lógica de negocio: múltiples roles, permisos adicionales
 """
@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from usuarios.models import (
     PermisoPersonalizado,
-    RolUsuarioPowerDent,
+    RolUsuarioDentalForce,
     UsuarioClinica,
     RolUsuario
 )
@@ -104,8 +104,8 @@ class PermisoPersonalizadoTestCase(TestCase):
         self.assertFalse(permiso_actualizado.activo)
 
 
-class RolUsuarioPowerDentTestCase(TestCase):
-    """Pruebas para el modelo RolUsuarioPowerDent"""
+class RolUsuarioDentalForceTestCase(TestCase):
+    """Pruebas para el modelo RolUsuarioDentalForce"""
     
     def setUp(self):
         """Configuración inicial"""
@@ -142,7 +142,7 @@ class RolUsuarioPowerDentTestCase(TestCase):
         )
         
         # Rol global
-        self.rol_global = RolUsuarioPowerDent.objects.create(
+        self.rol_global = RolUsuarioDentalForce.objects.create(
             nombre='Recepcionista',
             descripcion='Gestiona citas y pacientes',
             clinica=None,  # Global
@@ -151,7 +151,7 @@ class RolUsuarioPowerDentTestCase(TestCase):
         self.rol_global.permisos.set([self.permiso1, self.permiso2])
         
         # Rol personalizado de clínica
-        self.rol_clinica = RolUsuarioPowerDent.objects.create(
+        self.rol_clinica = RolUsuarioDentalForce.objects.create(
             nombre='Recepcionista Plus',
             descripcion='Recepcionista con permisos extras',
             clinica=self.clinica,
@@ -177,7 +177,7 @@ class RolUsuarioPowerDentTestCase(TestCase):
     
     def test_asignar_permisos(self):
         """Verificar asignación de permisos a rol"""
-        rol = RolUsuarioPowerDent.objects.create(
+        rol = RolUsuarioDentalForce.objects.create(
             nombre='Test Role',
             descripcion='Rol de prueba',
             activo=True
@@ -199,7 +199,7 @@ class RolUsuarioPowerDentTestCase(TestCase):
         self.rol_global.activo = False
         self.rol_global.save()
         
-        rol_actualizado = RolUsuarioPowerDent.objects.get(
+        rol_actualizado = RolUsuarioDentalForce.objects.get(
             pk=self.rol_global.pk
         )
         self.assertFalse(rol_actualizado.activo)
@@ -258,7 +258,7 @@ class UsuarioClinicaPermisosTestCase(TestCase):
         )
         
         # Crear rol
-        self.rol_recepcionista = RolUsuarioPowerDent.objects.create(
+        self.rol_recepcionista = RolUsuarioDentalForce.objects.create(
             nombre='Recepcionista',
             descripcion='Rol de recepcionista',
             activo=True
@@ -303,7 +303,7 @@ class UsuarioClinicaPermisosTestCase(TestCase):
     def test_usuario_con_multiples_roles(self):
         """Usuario con múltiples roles (caso clínica pequeña)"""
         # Crear segundo rol
-        rol_auxiliar = RolUsuarioPowerDent.objects.create(
+        rol_auxiliar = RolUsuarioDentalForce.objects.create(
             nombre='Auxiliar',
             descripcion='Rol auxiliar',
             activo=True
@@ -373,7 +373,7 @@ class UsuarioClinicaPermisosTestCase(TestCase):
         )
         
         # Con múltiples roles
-        rol_auxiliar = RolUsuarioPowerDent.objects.create(
+        rol_auxiliar = RolUsuarioDentalForce.objects.create(
             nombre='Auxiliar',
             descripcion='Rol auxiliar',
             activo=True
@@ -393,7 +393,7 @@ class ScriptCargaPermisosTestCase(TestCase):
         # Ejecutar script de carga
         import os
         import django
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'powerdent.settings')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dentalforce.settings')
         
         # Verificar cantidad mínima de permisos
         permisos_globales = PermisoPersonalizado.objects.filter(
@@ -423,7 +423,7 @@ class ScriptCargaPermisosTestCase(TestCase):
     
     def test_roles_predefinidos_cargados(self):
         """Verificar que existen los 4 roles predefinidos"""
-        roles_globales = RolUsuarioPowerDent.objects.filter(
+        roles_globales = RolUsuarioDentalForce.objects.filter(
             clinica=None
         )
         
@@ -495,7 +495,7 @@ class PermisosCasoUsoRealTestCase(TestCase):
     def test_caso_clinica_grande_roles_separados(self):
         """Clínica grande: cada persona un rol específico"""
         # Crear roles específicos
-        rol_recep = RolUsuarioPowerDent.objects.create(
+        rol_recep = RolUsuarioDentalForce.objects.create(
             nombre='Recepcionista',
             activo=True
         )
@@ -518,7 +518,7 @@ class PermisosCasoUsoRealTestCase(TestCase):
     def test_caso_clinica_pequena_multirole(self):
         """Clínica pequeña: una persona con recepción + asistencia"""
         # Crear rol combinado
-        rol_multi = RolUsuarioPowerDent.objects.create(
+        rol_multi = RolUsuarioDentalForce.objects.create(
             nombre='Recepcionista + Auxiliar',
             descripcion='Para clínicas pequeñas',
             activo=True

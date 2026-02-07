@@ -1,5 +1,5 @@
 """
-Signals para auto-creación de usuarios en PowerDent
+Signals para auto-creación de usuarios en DentalForce
 
 Cuando se crea una Clínica → Se crea automáticamente un Admin de Clínica
 Cuando se crea una Sucursal → Se crean automáticamente Auxiliar + Dentista
@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from clinicas.models import Clinica, Sucursal
-from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioPowerDent
+from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioDentalForce
 from usuarios.utils import (
     generar_password_temporal,
     generar_username_unico,
@@ -113,7 +113,7 @@ def crear_admin_clinica(sender, instance, created, **kwargs):
             
             # Asignar rol granular "Administrador de Clínica" si existe
             try:
-                rol_admin = RolUsuarioPowerDent.objects.filter(
+                rol_admin = RolUsuarioDentalForce.objects.filter(
                     nombre='Administrador de Clínica',
                     clinica__isnull=True,  # Rol global
                     activo=True

@@ -36,46 +36,46 @@ class ClinicaModelTest(TestCase):
     def test_crear_clinica_con_datos_fiscales(self):
         """Test: crear clínica con datos fiscales completos"""
         clinica = Clinica.objects.create(
-            nombre='PowerDent S.A.',
-            razon_social='PowerDent Sociedad Anónima',
+            nombre='DentalForce S.A.',
+            razon_social='DentalForce Sociedad Anónima',
             ruc='1234567890001',
             representante_legal='Juan Pérez',
             direccion='Av. Principal 100',
             telefono='02-9999999',
-            email='info@powerdent.com',
+            email='info@dentalforce.com',
             pais='EC',
             moneda='USD',
             uc=self.user
         )
         
         self.assertEqual(clinica.ruc, '1234567890001')
-        self.assertEqual(clinica.razon_social, 'PowerDent Sociedad Anónima')
+        self.assertEqual(clinica.razon_social, 'DentalForce Sociedad Anónima')
         self.assertEqual(clinica.representante_legal, 'Juan Pérez')
     
     def test_get_nombre_completo(self):
         """Test: método get_nombre_completo retorna razón social si existe"""
         clinica = Clinica.objects.create(
-            nombre='PowerDent',
-            razon_social='PowerDent S.A.',
+            nombre='DentalForce',
+            razon_social='DentalForce S.A.',
             direccion='Av. Test',
             telefono='02-1234567',
             email='test@test.com',
             uc=self.user
         )
         
-        self.assertEqual(clinica.get_nombre_completo(), 'PowerDent S.A.')
+        self.assertEqual(clinica.get_nombre_completo(), 'DentalForce S.A.')
     
     def test_clinica_str(self):
         """Test: representación en string de clínica"""
         clinica = Clinica.objects.create(
-            nombre='PowerDent',
+            nombre='DentalForce',
             direccion='Av. Principal',
             telefono='02-9999999',
-            email='info@powerdent.com',
+            email='info@dentalforce.com',
             uc=self.user
         )
         
-        self.assertEqual(str(clinica), 'PowerDent')
+        self.assertEqual(str(clinica), 'DentalForce')
 
 
 class ClinicaFormTest(TestCase):
@@ -102,13 +102,13 @@ class ClinicaFormTest(TestCase):
     def test_formulario_valido_con_datos_fiscales(self):
         """Test: formulario válido con datos fiscales completos"""
         form_data = {
-            'nombre': 'PowerDent',
-            'razon_social': 'PowerDent S.A.',
+            'nombre': 'DentalForce',
+            'razon_social': 'DentalForce S.A.',
             'ruc': '1234567890001',
             'representante_legal': 'Juan Pérez',
             'direccion': 'Av. Principal 100',
             'telefono': '02-9999999',
-            'email': 'info@powerdent.com',
+            'email': 'info@dentalforce.com',
             'pais': 'EC',
             'moneda': 'USD',
             'zona_horaria': 'America/Guayaquil'

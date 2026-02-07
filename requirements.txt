@@ -1,5 +1,5 @@
 # ============================================
-# PowerDent - Dependencias de Producción
+# DentalForce - Dependencias de Producción
 # ============================================
 # Actualizado: Noviembre 10, 2025
 # Python: 3.12+

@@ -324,7 +324,7 @@
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent",
+    "model": "usuarios.rolusuariodentalforce",
     "pk": 1,
     "fields": {
       "nombre": "Recepcionista",
@@ -334,7 +334,7 @@
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent",
+    "model": "usuarios.rolusuariodentalforce",
     "pk": 2,
     "fields": {
       "nombre": "Auxiliar Odontológico",
@@ -344,7 +344,7 @@
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent",
+    "model": "usuarios.rolusuariodentalforce",
     "pk": 3,
     "fields": {
       "nombre": "Dentista",
@@ -354,138 +354,138 @@
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 1,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 1
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 2,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 2
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 3,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 3
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 4,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 4
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 5,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 5
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 6,
     "fields": {
-      "rolusuariopowerdent_id": 1,
+      "rolusuariodentalforce_id": 1,
       "permisopersonalizado_id": 6
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 7,
     "fields": {
-      "rolusuariopowerdent_id": 2,
+      "rolusuariodentalforce_id": 2,
       "permisopersonalizado_id": 7
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 8,
     "fields": {
-      "rolusuariopowerdent_id": 2,
+      "rolusuariodentalforce_id": 2,
       "permisopersonalizado_id": 8
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 9,
     "fields": {
-      "rolusuariopowerdent_id": 2,
+      "rolusuariodentalforce_id": 2,
       "permisopersonalizado_id": 9
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 10,
     "fields": {
-      "rolusuariopowerdent_id": 2,
+      "rolusuariodentalforce_id": 2,
       "permisopersonalizado_id": 10
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 11,
     "fields": {
-      "rolusuariopowerdent_id": 2,
+      "rolusuariodentalforce_id": 2,
       "permisopersonalizado_id": 11
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 12,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 13
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 13,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 14
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 14,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 15
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 15,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 16
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 16,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 17
     }
   },
   {
-    "model": "usuarios.rolusuariopowerdent_permisos",
+    "model": "usuarios.rolusuariodentalforce_permisos",
     "pk": 17,
     "fields": {
-      "rolusuariopowerdent_id": 3,
+      "rolusuariodentalforce_id": 3,
       "permisopersonalizado_id": 1
     }
   }

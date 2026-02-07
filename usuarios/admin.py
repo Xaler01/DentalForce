@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UsuarioClinica, RolUsuario, PermisoPersonalizado, RolUsuarioPowerDent
+from .models import UsuarioClinica, RolUsuario, PermisoPersonalizado, RolUsuarioDentalForce
 
 
 @admin.register(PermisoPersonalizado)
@@ -43,8 +43,8 @@ class PermisoPersonalizadoAdmin(admin.ModelAdmin):
         return qs
 
 
-@admin.register(RolUsuarioPowerDent)
-class RolUsuarioPowerDentAdmin(admin.ModelAdmin):
+@admin.register(RolUsuarioDentalForce)
+class RolUsuarioDentalForceAdmin(admin.ModelAdmin):
     """Admin para gestionar roles con permisos"""
     
     list_display = ('nombre', 'clinica', 'permisos_count', 'activo', 'fecha_creacion')

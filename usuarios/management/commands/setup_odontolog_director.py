@@ -17,7 +17,7 @@ Uso:
 
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
-from usuarios.models import RolUsuarioPowerDent, PermisoPersonalizado, UsuarioClinica
+from usuarios.models import RolUsuarioDentalForce, PermisoPersonalizado, UsuarioClinica
 from clinicas.models import Clinica
 
 
@@ -77,7 +77,7 @@ class Command(BaseCommand):
         self.stdout.write('Creando rol "Odontólogo Director"...\n')
 
         # Verificar si el rol ya existe
-        rol, created = RolUsuarioPowerDent.objects.get_or_create(
+        rol, created = RolUsuarioDentalForce.objects.get_or_create(
             nombre='Odontólogo Director',
             clinica=None,  # Rol global
             defaults={
@@ -159,8 +159,8 @@ class Command(BaseCommand):
             raise CommandError(f'Clínica "{clinica_name}" no existe')
 
         try:
-            rol = RolUsuarioPowerDent.objects.get(nombre=role_name, clinica=None)
-        except RolUsuarioPowerDent.DoesNotExist:
+            rol = RolUsuarioDentalForce.objects.get(nombre=role_name, clinica=None)
+        except RolUsuarioDentalForce.DoesNotExist:
             raise CommandError(
                 f'Rol "{role_name}" no existe. Usa --list-roles para ver disponibles'
             )
@@ -189,7 +189,7 @@ class Command(BaseCommand):
 
     def list_roles(self):
         """Lista todos los roles disponibles"""
-        roles = RolUsuarioPowerDent.objects.filter(clinica=None, activo=True).order_by('nombre')
+        roles = RolUsuarioDentalForce.objects.filter(clinica=None, activo=True).order_by('nombre')
 
         if not roles.exists():
             self.stdout.write(self.style.WARNING('No hay roles configurados'))
@@ -206,8 +206,8 @@ class Command(BaseCommand):
     def list_permisos_rol(self, nombre_rol):
         """Lista los permisos de un rol específico"""
         try:
-            rol = RolUsuarioPowerDent.objects.get(nombre=nombre_rol)
-        except RolUsuarioPowerDent.DoesNotExist:
+            rol = RolUsuarioDentalForce.objects.get(nombre=nombre_rol)
+        except RolUsuarioDentalForce.DoesNotExist:
             raise CommandError(f'Rol "{nombre_rol}" no existe')
 
         permisos = rol.permisos.all().order_by('categoria', 'nombre')

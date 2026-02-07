@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
             field=models.CharField(choices=[('super_admin', 'Super Administrador'), ('admin_clinica', 'Administrador de Clínica'), ('dentista', 'Dentista'), ('auxiliar', 'Auxiliar Odontológico'), ('recepcionista', 'Recepcionista'), ('administrativo', 'Personal Administrativo'), ('odontologo', 'Odontólogo'), ('asistente', 'Asistente Odontológico')], default='administrativo', help_text='Campo antiguo. Usar "roles_personalizados" para nueva funcionalidad.', max_length=20, verbose_name='Rol del usuario (Legacy)'),
         ),
         migrations.CreateModel(
-            name='RolUsuarioPowerDent',
+            name='RolUsuarioDentalForce',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('nombre', models.CharField(max_length=100, verbose_name='Nombre del Rol')),
@@ -48,9 +48,9 @@ class Migration(migrations.Migration):
                 ('permisos', models.ManyToManyField(blank=True, related_name='roles', to='usuarios.permisopersonalizado', verbose_name='Permisos asignados a este rol')),
             ],
             options={
-                'verbose_name': 'Rol PowerDent',
-                'verbose_name_plural': 'Roles PowerDent',
-                'db_table': 'usuarios_rol_powerdent',
+                'verbose_name': 'Rol DentalForce',
+                'verbose_name_plural': 'Roles DentalForce',
+                'db_table': 'usuarios_rol_dentalforce',
                 'ordering': ['nombre'],
             },
         ),
@@ -62,18 +62,18 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='usuarioclinica',
             name='roles_personalizados',
-            field=models.ManyToManyField(blank=True, help_text='Nuevos roles con permisos granulares. Puede asignar múltiples roles.', related_name='usuarios_asignados', to='usuarios.rolusuariopowerdent', verbose_name='Roles Personalizados'),
+            field=models.ManyToManyField(blank=True, help_text='Nuevos roles con permisos granulares. Puede asignar múltiples roles.', related_name='usuarios_asignados', to='usuarios.rolusuariodentalforce', verbose_name='Roles Personalizados'),
         ),
         migrations.AddIndex(
-            model_name='rolusuariopowerdent',
+            model_name='rolusuariodentalforce',
             index=models.Index(fields=['nombre', 'activo'], name='usuarios_ro_nombre_29a220_idx'),
         ),
         migrations.AddIndex(
-            model_name='rolusuariopowerdent',
+            model_name='rolusuariodentalforce',
             index=models.Index(fields=['clinica'], name='usuarios_ro_clinica_bab30a_idx'),
         ),
         migrations.AlterUniqueTogether(
-            name='rolusuariopowerdent',
+            name='rolusuariodentalforce',
             unique_together={('clinica', 'nombre')},
         ),
         migrations.AddIndex(

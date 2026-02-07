@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.db.models import Q
-from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioPowerDent, PermisoPersonalizado
+from usuarios.models import UsuarioClinica, RolUsuario, RolUsuarioDentalForce, PermisoPersonalizado
 from usuarios.forms import UsuarioForm, PerfilUsuarioForm
 from core.services.tenants import get_clinica_from_request
 
@@ -221,7 +221,7 @@ class RolListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
     Lista todos los roles disponibles para la clínica del usuario.
     Solo accesible para Admin de Clínica.
     """
-    model = RolUsuarioPowerDent
+    model = RolUsuarioDentalForce
     template_name = 'usuarios/rol_list.html'
     context_object_name = 'roles'
     paginate_by = 20
@@ -233,7 +233,7 @@ class RolListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
         2. Roles personalizados de su clínica (si es admin)
         """
         clinica = self.request.user.clinica_asignacion.clinica
-        return RolUsuarioPowerDent.objects.filter(
+        return RolUsuarioDentalForce.objects.filter(
             Q(clinica=None) | Q(clinica=clinica),
             activo=True
         ).order_by('nombre')
@@ -247,13 +247,13 @@ class RolListView(LoginRequiredMixin, UsuarioEsAdminMixin, ListView):
 
 class RolDetailView(LoginRequiredMixin, UsuarioEsAdminMixin, DetailView):
     """Vista detallada de un rol con sus permisos"""
-    model = RolUsuarioPowerDent
+    model = RolUsuarioDentalForce
     template_name = 'usuarios/rol_detail.html'
     context_object_name = 'rol'
     
     def get_queryset(self):
         clinica = self.request.user.clinica_asignacion.clinica
-        return RolUsuarioPowerDent.objects.filter(
+        return RolUsuarioDentalForce.objects.filter(
             Q(clinica=None) | Q(clinica=clinica)
         )
 
@@ -318,7 +318,7 @@ class UsuarioRolesUpdateView(LoginRequiredMixin, UsuarioEsAdminMixin, UpdateView
         clinica = self.request.user.clinica_asignacion.clinica
         
         # Solo mostrar roles y permisos de su clínica o globales
-        form.fields['roles_personalizados'].queryset = RolUsuarioPowerDent.objects.filter(
+        form.fields['roles_personalizados'].queryset = RolUsuarioDentalForce.objects.filter(
             Q(clinica=None) | Q(clinica=clinica),
             activo=True
         )

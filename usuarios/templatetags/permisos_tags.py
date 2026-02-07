@@ -1,5 +1,5 @@
 """
-Template tags personalizados para verificar permisos granulares de PowerDent
+Template tags personalizados para verificar permisos granulares de DentalForce
 """
 from django import template
 
