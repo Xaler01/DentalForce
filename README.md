@@ -5,7 +5,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-PowerDent es un sistema integral de gestión diseñado específicamente para clínicas dentales. Desarrollado con Django y PostgreSQL, ofrece una plataforma robusta y segura para administrar todos los aspectos operativos de tu clínica dental.
+DentalForce es un sistema integral de gestión diseñado específicamente para clínicas dentales. Desarrollado con Django y PostgreSQL, ofrece una plataforma robusta y segura para administrar todos los aspectos operativos de tu clínica dental.
 
 ---
 
