@@ -1,4 +1,4 @@
-# 🦷 PowerDent - Sistema de Gestión Odontológica
+# 🦷 DentalForce - Sistema de Gestión Odontológica
 
 [![Django](https://img.shields.io/badge/Django-4.2.6-green.svg)](https://www.djangoproject.com/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
