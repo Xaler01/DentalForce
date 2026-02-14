@@ -68,12 +68,13 @@ Esta carpeta contiene archivos generados por agentes GitHub Copilot y documentac
   - Guías de arquitectura, módulos, APIs
   - Especificaciones técnicas mantenidas
   - Referencias de seguridad y mejores prácticas
+   - `agentes/` - Subcarpeta con instrucciones de agentes
 - `scripts/` - Scripts auxiliares de configuración y migración
 - `QUICKSTART.md` - Guía rápida de inicio
 
 **Archivos de configuración y sincronización:**
 - (Anteriormente `.jira-docs/`) Configuraciones locales
-- Archivos de agentes: `AGENTE_*.md` (instrucciones específicas)
+- Archivos de agentes: `DocCompleta/agentes/AGENTE_*.md` (instrucciones específicas)
 - Historiales de tickets y cambios
 
 ### Proceso de Revisión
@@ -175,19 +176,76 @@ Una vez completada la revisión exitosamente, el agente debe:
    - Lista de archivos aprobados
    - Sugerencias de mensaje de commit basadas en los cambios
    - Confirmación de que se puede proceder
+   - Linkeo automático con GitHub Issues (#123) si se menciona en el commit
 
-### Reglas del Agente de Commits (Horario Ecuador)
+### Reglas del Agente de Commits (Horario Ecuador) - ACTUALIZADO 2026-02-12
 
 El agente de commits **debe bloquear** cualquier commit o push a ramas de desarrollo en el siguiente horario:
 
 - **Zona horaria**: Ecuador (UTC-5)
-- **Días**: Lunes a Viernes
-- **Horario restringido**: 08:30 a 18:30
+- **Días de Semana**: Lunes a Viernes
+- **Horario restringido**: 08:30 a 20:00 (ACTUALIZADO: antes era 08:30-18:30)
 
-**Regla obligatoria**:
-- Si la fecha/hora local de Ecuador está dentro de ese rango, **NO** se permite commit ni push a ramas de desarrollo (por ejemplo: `develop`, `release/*`, `staging/*`).
-- Los commits y push **solo** están permitidos fuera del horario restringido o en fines de semana.
-- El agente debe validar la hora de Ecuador **antes** de ejecutar cualquier commit/push.
+**Importante**: Este proyecto usa **GitHub Projects** (herramienta nativa de GitHub) para gestión de tareas, NO Jira.
+
+**Reglas obligatorias NUEVAS**:
+
+1. **Commits BLOQUEADOS en:**
+   - Lunes a Viernes, 08:30 - 20:00 (Hora Ecuador UTC-5)
+   - Ramas afectadas: `develop`, `release/*`, `staging/*`, `hotfix/*`
+   - Excepto: Si es un día feriado (aplica TODO EL DÍA - commits permitidos)
+
+2. **Commits PERMITIDOS en:**
+   - ✅ Antes de 08:30 AM (Hora Ecuador)
+   - ✅ Después de 20:00 (Hora Ecuador)
+   - ✅ Sábados (24 horas completas)
+   - ✅ Domingos (24 horas completas)
+   - ✅ Días feriados en Ecuador (TODO EL DÍA)
+   - ✅ Rama `main` siempre (con revisión)
+   - ✅ Rama `feature/*` local (sin restricciones)
+
+3. **Días Feriados 2026 (Commits permitidos TODO EL DÍA):**
+   - Lunes 17 febrero - Carnaval
+   - Martes 18 febrero - Carnaval
+   - Viernes 10 de abril - Viernes Santo
+   - Viernes 1 de mayo - Día del Trabajo
+   - Jueves 28 de mayo - Corpus Christi
+   - Lunes 10 de agosto - García Moreno
+   - Lunes 2 de noviembre - Día de Difuntos
+   - Martes 3 de noviembre - Independencia de Cuenca
+   - Viernes 25 de diciembre - Navidad
+
+4. **Validación requerida:**
+   - El agente debe validar la hora actual de Ecuador **ANTES** de permitir commit/push
+   - Si está bloqueado, mostrar: ✅ próximo horario permitido
+   - Registrar en logs todos los bloqueos e intentos
+   - Mostrar mensaje claro del motivo del bloqueo
+
+**Ejemplo de Mensaje de Bloqueo:**
+```
+❌ COMMIT BLOQUEADO
+   Rama: develop
+   Motivo: Horario restringido TRABAJO (08:30 - 20:00 Ecuador UTC-5)
+   Hora Actual Ecuador: 2026-02-12 14:30
+   Próximo slot permitido: 2026-02-12 20:00 (en 5.5 horas)
+   
+   ℹ️  Commits permitidos:
+      ✅ Fuera de horario: antes de 08:30 o después de 20:00
+      ✅ Fines de semana: Sábados y Domingos
+      ✅ Días feriados: Aplica TODO EL DÍA
+      
+   💡 Tip: Puedes hacer commit en 5.5 horas o esperar al fin de semana
+```
+
+**Ejemplo de Mensaje de Aprobación (Feriado):**
+```
+✅ COMMIT PERMITIDO
+   Rama: develop
+   Motivo: Día festivo - Carnaval 🎉
+   Fecha: 2026-02-17
+   
+   Procede con el commit normalmente
+```
 
 ### Configuración de Categorías de Archivos
 
@@ -239,6 +297,62 @@ Archivos que pueden contener "credenciales" de ejemplo:
 - Archivos de test con datos de fixture
 - Documentación con placeholders: `YOUR_API_KEY_HERE`
 
+---
+
+## Coordinacion explicita y ciclo de vida (Agente META)
+
+### Objetivo
+Garantizar coordinacion total entre Backend, Frontend, DevOps y PM con un solo agente orquestador, documentando cada fase y reportando avances.
+
+### Comando de inicio (formato sugerido)
+"Agente inicia el ciclo de vida del Proyecto <NOMBRE_PROYECTO> y mantenme informado de los cambios hasta version estable"
+
+### Reglas de ejecucion
+1. El agente trabaja en modo documentacion y planeacion primero, sin ejecutar comandos destructivos.
+2. Cada fase debe dejar un registro claro de acciones y decisiones en la documentacion existente.
+3. Ningun cambio se considera completo sin: plan, ejecucion y validacion documentada.
+4. Reportar siempre: que cambio, por que, impacto, y proximo paso.
+
+### Fases y acciones obligatorias
+
+**Fase 0 - Preparacion**
+- Confirmar objetivos y alcance.
+- Definir entregables por modulo.
+- Validar herramientas y entorno (solo checklist, sin ejecucion automatica).
+- Resultado: plan de trabajo y riesgos.
+
+**Fase 1 - Contratos y tipos compartidos**
+- Definir DTOs y contratos API antes de implementar.
+- Centralizar tipos compartidos (backend/frontend).
+- Documentar cambios de contratos y su impacto.
+- Resultado: contratos estables y versionados.
+
+**Fase 2 - Implementacion coordinada**
+- Backend y frontend avanzan con el mismo contrato.
+- Validaciones en runtime (Zod) y compile-time (TypeScript).
+- Documentar endpoints, errores y paginacion.
+- Resultado: features funcionales y sincronizadas.
+
+**Fase 3 - QA automatizado**
+- Plan de pruebas unitarias, integracion y E2E.
+- Validar que los cambios pasen QA antes de continuar.
+- Documentar resultados de pruebas.
+- Resultado: build validado.
+
+**Fase 4 - Despliegue controlado**
+- Definir pipeline CI/CD y checklist de release.
+- Despliegue staging -> validacion -> produccion.
+- Documentar version final y notas de release.
+- Resultado: version estable.
+
+### Registro de cambios (formato requerido)
+- Fecha y fase
+- Tarea realizada
+- Archivos afectados
+- Impacto (backend/frontend/devops/pm)
+- Estado de pruebas
+- Proximo paso
+
 ### Mantenimiento de `.copilot-workspace/`
 
 La carpeta `.copilot-workspace/` debe:
@@ -268,6 +382,16 @@ Este archivo debe actualizarse cuando:
 
 ---
 
-**Última actualización**: 2026-02-07  
-**Versión**: 1.2 (actualizado: cambio de `.jira-docs/` a `.copilot-workspace/`)  
-**Responsable**: Equipo de Desarrollo DentalForce
+**Última actualización**: 2026-02-12  
+**Versión**: 2.0 (ACTUALIZADO: Reglas de commits con feriados, horario extendido a 20:00, recuperación de usuario/contraseña, onboarding)  
+**Responsable**: Equipo de Desarrollo OdontoHub  
+
+**Documentación Relacionada:**
+- Agente de Seguridad: `.copilot-workspace/DocCompleta/agentes/AGENTE_SEGURIDAD_PRE_COMMIT.md`
+- Agente de Commits: `.copilot-workspace/DocCompleta/agentes/AGENTE_COMMITS.md`
+- Agente de GitHub Projects: `.copilot-workspace/DocCompleta/agentes/AGENTE_GITHUB_PROJECTS.md`
+- Agente de QA: `.copilot-workspace/DocCompleta/agentes/AGENTE_QA_FUNCIONAL.md`
+- Agente Meta: `.copilot-workspace/DocCompleta/71_AGENTE_META_MANTENIMIENTO_AGENTES.md`
+- Especificaciones funcionales: `.copilot-workspace/DocCompleta/ESPECIFICACIONES_ODONTOHUB_v2.md`
+- Stack tecnológico: `.copilot-workspace/DocCompleta/54_TECNOLOGIAS_STACK_ODONTOHUB.md`
+- Reporte de validación: Ver `/home/devuser/REPORTE_VALIDACION_STACK_ODONTOHUB.md` en VM
